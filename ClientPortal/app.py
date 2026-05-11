@@ -405,5 +405,12 @@ def questionnaire_client(client_id):
                            soumis=bool(deja_soumis))
 
 
+@app.route('/plan')
+@login_required
+def plan():
+    # Le plan d'affaires est une page standalone — render_template la sert telle quelle
+    return render_template('plan.html')
+
+
 if __name__ == '__main__':
     app.run(debug=True)

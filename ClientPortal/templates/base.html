@@ -26,7 +26,10 @@
                {% if request.path == '/dashboard' %}class="active"{% endif %}>
                 ◈ Dashboard
             </a>
-            {# Plus de liens s'ajoutent ici en Phase 2 (facturation, stats…) #}
+            <a href="/plan"
+               {% if request.path == '/plan' %}class="active"{% endif %}>
+                ◈ Plan d'affaires
+            </a>
         </nav>
 
         <div class="sidebar-user">
