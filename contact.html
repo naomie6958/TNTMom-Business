@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="fr">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>TNTM — Contact</title>
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Nabla&family=Open+Sans:ital,wght@0,300..800;1,300..800&family=Orbitron:wght@400..900&display=swap" rel="stylesheet">
+        <link rel="stylesheet" href="style.css">
+        <link rel="icon" href="images/tntmom-favicon-bleu.svg" type="image/svg+xml">
+    </head>
+    <body>
+        <header>
+            <div id="header-brand">
+                <img src="images/tntmom-favicon-bleu.svg" alt="TNTM" id="header-favicon">
+                <h1>The Nerdy Trap Mom</h1>
+            </div>
+            <nav>
+                <a href="index.html">Accueil</a>
+                <a href="projets.html">Mes projets</a>
+                <a href="about.html">À propos</a>
+                <a href="contact.html">Contact</a>
+            </nav>
+            <button id="menu-toggle">☰</button>
+        </header>
+        <main>
+            <section id="hero" class="page-hero contact-hero">
+                <p id="hero-tagline"><span class="hero-line1">Contact</span></p>
+                <p id="contact-sub">Une idée ? Un projet ? Un message ?</p>
+            </section>
+            <section id="contact-section">
+                <form action="https://formspree.io/f/xaqvwpnw" method="post">
+                    <div class="form-group">
+                        <label for="nom">Nom</label>
+                        <input type="text" id="nom" name="nom" placeholder="Ton nom" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="courriel">Courriel</label>
+                        <input type="email" id="courriel" name="courriel" placeholder="ton@courriel.com" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="message">Message</label>
+                        <textarea id="message" name="message" rows="6" placeholder="Ton message..." required></textarea>
+                    </div>
+                    <button type="submit" class="btn-submit">Envoyer</button>
+                </form>
+            </section>
+        </main>
+        <footer>
+            <div id="footer-brand">
+                <img src="images/tntmom-favicon-bleu.svg" alt="TNTM" id="footer-favicon">
+                <span>The Nerdy Trap Mom</span>
+            </div>
+            <span id="footer-copy">© 2026 TNTM — Naomie McMahon Tanguay</span>
+        </footer>
+    </body>
+    <script src="script.js"></script>
+</html>

@@ -1,0 +1,7 @@
+[
+    { "nom": "Web Lab", "description": "Apprentissage et formation Web", "link": "outils/tntm-progress.html" },
+    { "nom": "Python Lab", "description": "Apprentissage et formation Python", "link": "" },
+    { "nom": "Scheduler TNTM", "description": "Programmation et prototypes", "link": "../_archives/CéduleTNTM/nao-scheduler.html" },
+    { "nom": "Sobriety Tracker", "description": "Programmation et prototypes", "link": "../Sobriety_Tracker/sobriety-tracker.html" },
+    { "nom": "À venir", "description": "...", "link": "" }
+]

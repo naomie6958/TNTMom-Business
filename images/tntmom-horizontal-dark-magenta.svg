@@ -1,0 +1,20 @@
+<svg width="480" height="120" viewBox="0 0 480 120" xmlns="http://www.w3.org/2000/svg">
+  <title>TNT Mom — Horizontal Dark magenta</title>
+  <rect x="0" y="0" width="480" height="120" rx="16" fill="#0f0f14"/>
+  <polygon points="0,0 48,0 0,48" fill="#d94fbd" opacity=".85"/>
+  <rect x="0" y="0" width="24" height="24" fill="#0f0f14"/>
+  <path d="M42 22 L30 22 L30 104 L42 104" fill="none" stroke="#d94fbd" stroke-width="1.5" opacity=".5"/>
+  <path d="M210 22 L222 22 L222 104 L210 104" fill="none" stroke="#d94fbd" stroke-width="1.5" opacity=".5"/>
+  <text x="52" y="84" font-family="Arial Black, Helvetica Neue, sans-serif" font-size="62" font-weight="900" fill="#f0eeff" letter-spacing="-1">T</text>
+  <text x="90" y="84" font-family="Arial Black, Helvetica Neue, sans-serif" font-size="62" font-weight="900" fill="#c8963e" letter-spacing="-1">N</text>
+  <text x="130" y="84" font-family="Arial Black, Helvetica Neue, sans-serif" font-size="62" font-weight="900" fill="#f0eeff" letter-spacing="-1">T</text>
+  <line x1="236" y1="20" x2="236" y2="104" stroke="#2a2a35" stroke-width="1.5"/>
+  <text x="254" y="52" font-family="monospace" font-size="11" font-weight="700" fill="#888" letter-spacing="2">DÉVELOPPEURE</text>
+  <text x="254" y="72" font-family="Arial Black, Helvetica Neue, sans-serif" font-size="28" font-weight="900" fill="#d94fbd" letter-spacing="3">MOM</text>
+  <text x="254" y="92" font-family="monospace" font-size="10" fill="#555" letter-spacing="2">WEB · APP · OUTIL</text>
+  <circle cx="462" cy="108" r="3" fill="#d94fbd"/>
+  <circle cx="472" cy="108" r="2" fill="#d94fbd" opacity=".4"/>
+  <circle cx="462" cy="98" r="1.5" fill="#d94fbd" opacity=".3"/>
+  <rect x="0" y="116" width="480" height="2" rx="1" fill="#d94fbd" opacity=".2"/>
+  <rect x="0" y="116" width="80" height="2" rx="1" fill="#d94fbd"/>
+</svg>

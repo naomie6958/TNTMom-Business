@@ -1,0 +1,972 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TNT Mom — Plan d'affaires 2026</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300&family=Fraunces:ital,wght@0,300;0,700;1,300&display=swap" rel="stylesheet">
+<style>
+:root {
+  --ink: #0d0d0d;
+  --paper: #f5f0e8;
+  --paper2: #ede7d6;
+  --red: #c9392c;
+  --orange: #e07b39;
+  --gold: #c8963e;
+  --green: #3a7d5c;
+  --blue: #2c5f8a;
+  --muted: #7a7060;
+  --border: rgba(13,13,13,0.12);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: 'DM Mono', monospace;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* NOISE TEXTURE */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+  pointer-events: none;
+  z-index: 0;
+  opacity: .5;
+}
+
+.wrap { max-width: 860px; margin: 0 auto; padding: 3rem 2rem 5rem; position: relative; z-index: 1; }
+
+/* HEADER */
+.masthead {
+  border-top: 3px solid var(--ink);
+  border-bottom: 1px solid var(--ink);
+  padding: 1.5rem 0 1.2rem;
+  margin-bottom: 2.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: .3rem;
+}
+.masthead-top {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: .5rem;
+}
+.brand {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: clamp(2.8rem, 8vw, 5rem);
+  letter-spacing: .02em;
+  line-height: 1;
+  color: var(--ink);
+}
+.brand span { color: var(--red); }
+.plan-label {
+  font-family: 'Fraunces', serif;
+  font-style: italic;
+  font-weight: 300;
+  font-size: 1.1rem;
+  color: var(--muted);
+}
+.masthead-meta {
+  font-size: .65rem;
+  color: var(--muted);
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  border-top: 1px solid var(--border);
+  padding-top: .6rem;
+  display: flex;
+  gap: 2rem;
+  flex-wrap: wrap;
+}
+
+/* SECTION */
+.section {
+  margin-bottom: 2.5rem;
+}
+.section-header {
+  display: flex;
+  align-items: baseline;
+  gap: 1rem;
+  margin-bottom: 1rem;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: .5rem;
+}
+.section-num {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 2rem;
+  color: var(--red);
+  line-height: 1;
+}
+.section-title {
+  font-family: 'Fraunces', serif;
+  font-size: 1.1rem;
+  font-weight: 700;
+  letter-spacing: -.01em;
+}
+.section-sub {
+  font-size: .65rem;
+  color: var(--muted);
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  margin-left: auto;
+}
+
+/* CALLOUT */
+.callout {
+  background: var(--paper2);
+  border-left: 3px solid var(--red);
+  padding: .9rem 1.1rem;
+  font-size: .78rem;
+  line-height: 1.7;
+  margin-bottom: 1rem;
+  border-radius: 0 4px 4px 0;
+}
+.callout strong { color: var(--red); }
+.callout.green { border-color: var(--green); }
+.callout.green strong { color: var(--green); }
+.callout.blue { border-color: var(--blue); }
+.callout.blue strong { color: var(--blue); }
+.callout.gold { border-color: var(--gold); }
+.callout.gold strong { color: var(--gold); }
+
+/* TIMELINE */
+.timeline { display: flex; flex-direction: column; gap: 0; }
+.phase {
+  display: grid;
+  grid-template-columns: 90px 1fr;
+  gap: 0 1.2rem;
+  position: relative;
+}
+.phase::before {
+  content: '';
+  position: absolute;
+  left: 89px;
+  top: 24px;
+  bottom: -1px;
+  width: 1px;
+  background: var(--border);
+}
+.phase:last-child::before { display: none; }
+.phase-date {
+  padding-top: 16px;
+  text-align: right;
+  font-size: .62rem;
+  color: var(--muted);
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  line-height: 1.4;
+}
+.phase-body {
+  padding: .9rem 0 1.8rem 1.2rem;
+  border-left: 2px solid var(--border);
+  position: relative;
+}
+.phase-body::before {
+  content: '';
+  position: absolute;
+  left: -5px;
+  top: 20px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--paper);
+  border: 2px solid var(--ink);
+}
+.phase.active .phase-body::before { background: var(--red); border-color: var(--red); }
+.phase.medium .phase-body::before { background: var(--orange); border-color: var(--orange); }
+.phase.long .phase-body::before { background: var(--green); border-color: var(--green); }
+
+.phase-label {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 1.15rem;
+  letter-spacing: .04em;
+  margin-bottom: .2rem;
+  display: flex;
+  align-items: center;
+  gap: .6rem;
+}
+.phase-badge {
+  font-family: 'DM Mono', monospace;
+  font-size: .58rem;
+  padding: 2px 8px;
+  border-radius: 20px;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  font-weight: 400;
+}
+.badge-red { background: rgba(201,57,44,.12); color: var(--red); border: 1px solid rgba(201,57,44,.25); }
+.badge-orange { background: rgba(224,123,57,.12); color: var(--orange); border: 1px solid rgba(224,123,57,.25); }
+.badge-green { background: rgba(58,125,92,.12); color: var(--green); border: 1px solid rgba(58,125,92,.25); }
+.badge-blue { background: rgba(44,95,138,.12); color: var(--blue); border: 1px solid rgba(44,95,138,.25); }
+
+.phase-focus {
+  font-size: .7rem;
+  color: var(--muted);
+  font-style: italic;
+  margin-bottom: .7rem;
+  font-family: 'Fraunces', serif;
+  font-weight: 300;
+}
+
+.milestones { display: flex; flex-direction: column; gap: .35rem; }
+.milestone {
+  display: flex;
+  align-items: flex-start;
+  gap: .6rem;
+  font-size: .75rem;
+  line-height: 1.5;
+}
+.milestone::before {
+  content: '→';
+  color: var(--muted);
+  flex-shrink: 0;
+  margin-top: .05rem;
+}
+.milestone.check::before { content: '✓'; color: var(--green); }
+.milestone strong { color: var(--ink); }
+.milestone em { color: var(--muted); font-style: normal; font-size: .68rem; }
+
+/* REVENUE TABLE */
+.rev-table { width: 100%; border-collapse: collapse; font-size: .73rem; margin-top: .5rem; }
+.rev-table th {
+  text-align: left;
+  padding: .5rem .7rem;
+  font-size: .6rem;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--muted);
+  border-bottom: 1px solid var(--border);
+}
+.rev-table td {
+  padding: .55rem .7rem;
+  border-bottom: 1px solid var(--border);
+  vertical-align: top;
+  line-height: 1.5;
+}
+.rev-table tr:last-child td { border-bottom: none; }
+.rev-table .num { text-align: right; font-weight: 500; }
+.rev-table .phase-ct { font-size: .6rem; color: var(--muted); letter-spacing: .05em; }
+.rev-table .total-row td { font-weight: 500; background: var(--paper2); }
+.tag-ct { font-size: .58rem; padding: 1px 6px; border-radius: 10px; white-space: nowrap; }
+
+/* RISK TABLE */
+.risk-grid { display: grid; grid-template-columns: 1fr 1fr; gap: .6rem; }
+.risk-card {
+  background: var(--paper2);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: .8rem 1rem;
+  font-size: .72rem;
+  line-height: 1.6;
+}
+.risk-card .risk-title { font-weight: 500; margin-bottom: .25rem; display: flex; align-items: center; gap: .4rem; }
+.risk-card .risk-mit { font-size: .67rem; color: var(--muted); }
+.dot-red { width: 6px; height: 6px; border-radius: 50%; background: var(--red); flex-shrink: 0; }
+.dot-orange { width: 6px; height: 6px; border-radius: 50%; background: var(--orange); flex-shrink: 0; }
+
+/* STACK */
+.stack-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: .6rem; margin-top: .5rem; }
+.stack-card {
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: .75rem 1rem;
+  font-size: .72rem;
+  line-height: 1.5;
+}
+.stack-card .sk-phase { font-size: .58rem; color: var(--muted); letter-spacing: .06em; text-transform: uppercase; margin-bottom: .3rem; }
+.stack-card .sk-name { font-weight: 500; margin-bottom: .2rem; }
+.stack-card .sk-why { font-size: .65rem; color: var(--muted); }
+.stack-now { border-left: 2px solid var(--green); }
+.stack-soon { border-left: 2px solid var(--orange); }
+.stack-later { border-left: 2px solid var(--blue); }
+
+/* KPI */
+.kpi-row { display: flex; gap: .6rem; flex-wrap: wrap; margin-top: .5rem; }
+.kpi {
+  flex: 1;
+  min-width: 140px;
+  background: var(--paper2);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: .8rem 1rem;
+  text-align: center;
+}
+.kpi-val { font-family: 'Bebas Neue', sans-serif; font-size: 1.8rem; line-height: 1; color: var(--red); }
+.kpi-label { font-size: .62rem; color: var(--muted); letter-spacing: .07em; text-transform: uppercase; margin-top: .2rem; }
+
+/* PRINCIPE */
+.principes { display: flex; flex-direction: column; gap: .5rem; margin-top: .5rem; }
+.principe {
+  display: flex;
+  gap: .8rem;
+  align-items: flex-start;
+  padding: .7rem 1rem;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-size: .74rem;
+  line-height: 1.6;
+}
+.principe-num {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 1.4rem;
+  color: var(--red);
+  line-height: 1;
+  flex-shrink: 0;
+  width: 24px;
+}
+
+.nav-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: .5rem;
+  font-family: 'DM Mono', monospace;
+  font-size: .65rem;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--ink);
+  background: var(--paper2);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: .45rem .9rem;
+  text-decoration: none;
+  transition: border-color .15s, background .15s;
+}
+.nav-btn:hover { border-color: var(--red); background: var(--paper); }
+
+footer {
+  margin-top: 3rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border);
+  font-size: .62rem;
+  color: var(--muted);
+  letter-spacing: .07em;
+  text-transform: uppercase;
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: .3rem;
+  align-items: center;
+}
+
+/* COMPARE */
+.compare-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  overflow: hidden;
+  font-size: .73rem;
+}
+.compare-col-header {
+  padding: .65rem 1rem;
+  font-size: .6rem;
+  letter-spacing: .09em;
+  text-transform: uppercase;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+}
+.compare-col-header.initial {
+  background: var(--paper2);
+  border-bottom: 2px solid var(--border);
+  color: var(--muted);
+}
+.compare-col-header.actuel {
+  background: rgba(58,125,92,.07);
+  border-bottom: 2px solid var(--green);
+  color: var(--green);
+  border-left: 1px solid var(--border);
+}
+.compare-row {
+  display: contents;
+}
+.compare-cell {
+  padding: .75rem 1rem;
+  border-bottom: 1px solid var(--border);
+  line-height: 1.55;
+}
+.compare-cell.initial {
+  background: var(--paper);
+  color: var(--muted);
+}
+.compare-cell.actuel {
+  background: rgba(58,125,92,.04);
+  border-left: 1px solid var(--border);
+}
+.compare-cell:last-child,
+.compare-cell:nth-last-child(2) { border-bottom: none; }
+.compare-cat {
+  font-size: .57rem;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: .2rem;
+}
+.compare-val { line-height: 1.5; }
+.compare-val strong { color: var(--ink); }
+.compare-val.win strong { color: var(--green); }
+.delta {
+  display: inline-flex;
+  align-items: center;
+  gap: .3rem;
+  font-size: .58rem;
+  padding: 2px 7px;
+  border-radius: 10px;
+  margin-top: .4rem;
+  font-weight: 500;
+  letter-spacing: .04em;
+}
+.delta-ahead { background: rgba(58,125,92,.12); color: var(--green); border: 1px solid rgba(58,125,92,.25); }
+.delta-track { background: rgba(200,150,62,.12); color: var(--gold); border: 1px solid rgba(200,150,62,.25); }
+.delta-behind { background: rgba(201,57,44,.1); color: var(--red); border: 1px solid rgba(201,57,44,.2); }
+.compare-divider {
+  grid-column: 1 / -1;
+  padding: .4rem 1rem;
+  font-size: .58rem;
+  letter-spacing: .09em;
+  text-transform: uppercase;
+  color: var(--muted);
+  background: var(--paper2);
+  border-bottom: 1px solid var(--border);
+  font-weight: 500;
+}
+
+@media(max-width: 600px) {
+  .wrap { padding: 2rem 1rem 4rem; }
+  .risk-grid { grid-template-columns: 1fr; }
+  .phase { grid-template-columns: 70px 1fr; }
+  .compare-grid { grid-template-columns: 1fr; }
+  .compare-cell.actuel { border-left: none; border-top: 1px solid var(--green); }
+  .compare-col-header.actuel { border-left: none; }
+  .compare-divider { grid-column: 1; }
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="masthead">
+    <div class="masthead-top">
+      <div class="brand">TNT<span>.</span>Mom</div>
+      <div class="plan-label">plan d'affaires · an 1</div>
+    </div>
+    <div class="masthead-meta">
+      <span>Naomie McMahon Tanguay</span>
+      <span>Bootstrap · Services numériques</span>
+      <span>Horizon · Avril 2026 → Avril 2027</span>
+      <span>Modèle · Freelance dev · paiement par milestones</span>
+    </div>
+  </div>
+
+  <!-- 01 POSITIONNEMENT -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-num">01</div>
+      <div class="section-title">Positionnement & proposition de valeur</div>
+    </div>
+
+    <div class="callout">
+      <strong>TNT Mom</strong> développe des sites vitrines, applications web et outils numériques pour de jeunes entrepreneurs — projets sélectionnés selon leurs valeurs, livrés par milestones fonctionnels, payés à chaque étape concrète.
+    </div>
+
+    <div class="callout green">
+      <strong>Avantage différenciateur :</strong> t'es pas une agence froide. T'es quelqu'un qui choisit ses clients parce qu'elle croit au projet. Ça crée une relation différente — plus investie, moins transactionnelle. Pour un jeune entrepreneur avec peu de budget, c'est exactement ce qu'il cherche.
+    </div>
+
+    <div class="callout blue">
+      <strong>Modèle milestones :</strong> chaque livrable = une version fonctionnelle = un paiement. Ça élimine le risque des clients fantômes qui disparaissent après la moitié du projet. C'est aussi rassurant pour eux — ils voient le résultat avant de payer la prochaine tranche.
+    </div>
+  </div>
+
+  <!-- 02 ÉVALUATION COMPÉTENCES -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-num">02</div>
+      <div class="section-title">Évaluation honnête — stack actuel vs requis</div>
+    </div>
+
+    <div class="stack-grid">
+      <div class="stack-card stack-now">
+        <div class="sk-phase">Tu l'as ✓</div>
+        <div class="sk-name">Python</div>
+        <div class="sk-why">Logique, fonctions, data structures, try/except — solide.</div>
+      </div>
+      <div class="stack-card stack-now">
+        <div class="sk-phase">Tu l'as ✓</div>
+        <div class="sk-name">HTML + CSS</div>
+        <div class="sk-why">Diplômes Mimo. Structure et mise en page de base acquises.</div>
+      </div>
+      <div class="stack-card stack-now">
+        <div class="sk-phase">Tu l'as ✓</div>
+        <div class="sk-name">SQL</div>
+        <div class="sk-why">Bases de données relationnelles — utile pour apps avec données.</div>
+      </div>
+      <div class="stack-card stack-now">
+        <div class="sk-phase">Tu l'as ✓</div>
+        <div class="sk-name">JavaScript</div>
+        <div class="sk-why">DOM, events, fetch API, JSON — modules 10–12 complétés.</div>
+      </div>
+      <div class="stack-card stack-now">
+        <div class="sk-phase">Tu l'as ✓</div>
+        <div class="sk-name">Flask + Claude API</div>
+        <div class="sk-why">Routing, templates Jinja2, static files, widget MVP shell + Claude API connectée et fonctionnelle. Repo GitHub live.</div>
+      </div>
+      <div class="stack-card stack-now">
+        <div class="sk-phase">Tu l'as ✓</div>
+        <div class="sk-name">Git + déploiement</div>
+        <div class="sk-why">Versioning, branches, GitHub Pages — site TNT Mom live.</div>
+      </div>
+      <div class="stack-card stack-now">
+        <div class="sk-phase">Tu l'as ✓</div>
+        <div class="sk-name">Auth Flask</div>
+        <div class="sk-why">Sessions, login/logout, rôles utilisateurs (parent/enfant) — Family Dashboard en cours.</div>
+      </div>
+      <div class="stack-card stack-later">
+        <div class="sk-phase">Phase 2 — 5-6 mois</div>
+        <div class="sk-name">React ou Vue (bases)</div>
+        <div class="sk-why">Pour les apps plus complexes et interfaces dynamiques.</div>
+      </div>
+      <div class="stack-card stack-later">
+        <div class="sk-phase">Phase 2 — 6 mois</div>
+        <div class="sk-name">Gestion de projet client</div>
+        <div class="sk-why">Contrats, scope, milestones écrits, communication pro.</div>
+      </div>
+    </div>
+
+    <div class="callout" style="margin-top:1rem;">
+      <strong>Verdict (mis à jour · 10 Mai 2026) :</strong> Full stack avancé en production. Family Dashboard quasi-complet — auth Flask, 9 tables SQLite, rôles parent/enfant, horaire heure par heure, todos, épicerie, Claude AI intégré, mode bilingue FR/EN/bilingue, thèmes visuels par utilisateur, jeux éducatifs. Widget NerdyTrapMom archivé — ses fonctionnalités ont été absorbées dans le Dashboard. T'es solidement en Phase 2 avec un projet client en vue.
+    </div>
+  </div>
+
+  <!-- 03 ROADMAP -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-num">03</div>
+      <div class="section-title">Roadmap 12 mois</div>
+      <div class="section-sub">Apprentissage → Lancement → Croissance</div>
+    </div>
+
+    <div class="timeline">
+
+      <div class="phase active">
+        <div class="phase-date">Avr — Mai<br/>2026</div>
+        <div class="phase-body">
+          <div class="phase-label">
+            Phase 1 — Finition du site
+            <span class="phase-badge badge-green">complété ✓</span>
+          </div>
+          <div class="phase-focus">Compléter TNT Mom · apprendre Flask · stack front-end bouclé</div>
+          <div class="milestones">
+            <div class="milestone check"><span>Python, HTML, CSS, JS, Git — stack front-end acquis</span></div>
+            <div class="milestone check"><span>TNT Mom site live — index, projets, about, scheduler, tracker</span></div>
+            <div class="milestone check"><strong>contact.html</strong> — formulaire Formspree, page complète <em>· module 15</em></div>
+            <div class="milestone check"><strong>Flask basics</strong> — routing ✓, templates Jinja2 ✓, Claude API ✓, repo GitHub ✓</div>
+            <div class="milestone check"><strong>1 mini-app Flask</strong> — widget NerdyTrapMom live sur Render ✓ <em>· tntmom-widget.onrender.com</em></div>
+            <div class="milestone"><strong>Présence TNT Mom</strong> — LinkedIn mis à jour avec site et projets</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="phase medium">
+        <div class="phase-date">Juin — Août<br/>2026</div>
+        <div class="phase-body">
+          <div class="phase-label">
+            Phase 2 — Premier client
+            <span class="phase-badge badge-red">en cours</span>
+          </div>
+          <div class="phase-focus">Facturer pour la première fois · scope petit, processus propre</div>
+          <div class="milestones">
+            <div class="milestone"><strong>Portfolio renforcé</strong> — 3 projets publics distincts : TNT Mom, Scheduler, app Flask</div>
+            <div class="milestone"><strong>Modèle de contrat simple</strong> — scope écrit, milestones définis, conditions de paiement</div>
+            <div class="milestone"><strong>Premier client 0$</strong> — projet ami/famille, pour le processus, pas pour l'argent</div>
+            <div class="milestone"><strong>Premier client payant</strong> — site vitrine 3–5 pages livré par milestones</div>
+            <div class="milestone"><strong>Tarif cible :</strong> 300–600$ pour un site vitrine complet <em>· valider le modèle, pas s'enrichir</em></div>
+            <div class="milestone"><strong>Témoignage client</strong> — une citation honnête pour le portfolio</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="phase long">
+        <div class="phase-date">Sep 2026 —<br/>Avr 2027</div>
+        <div class="phase-body">
+          <div class="phase-label">
+            Phase 3 — Croissance contrôlée
+            <span class="phase-badge badge-green">long terme</span>
+          </div>
+          <div class="phase-focus">Monter les tarifs · augmenter la complexité · 2–3 clients actifs max</div>
+          <div class="milestones">
+            <div class="milestone"><strong>Apps Flask en production</strong> — auth, base de données, déploiement cloud</div>
+            <div class="milestone"><strong>Tarifs révisés</strong> — site vitrine 800–1500$ · app web simple 1500–3000$</div>
+            <div class="milestone"><strong>React ou Vue bases</strong> — pour interfaces dynamiques et apps complexes</div>
+            <div class="milestone"><strong>2–3 clients simultanés max</strong> — qualité de livraison avant volume</div>
+            <div class="milestone"><strong>Processus documenté</strong> — onboarding client, contrat rodé, suivi milestones</div>
+            <div class="milestone"><strong>Objectif fin d'année :</strong> 2000–4000$ de revenus cumulés <em>· réaliste bootstrap an 1</em></div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- 04 REVENUS -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-num">04</div>
+      <div class="section-title">Projections de revenus — scénario réaliste</div>
+    </div>
+
+    <div class="callout gold">
+      <strong>Hypothèse de base (mise à jour Mai 2026) :</strong> 54.99$ de démarrage (API Anthropic). Widget NerdyTrapMom avec Claude API fonctionnelle en jour 1. Acquisition 100% bouche-à-oreille et réseau personnel. Max 2 clients actifs simultanément.
+    </div>
+
+    <table class="rev-table">
+      <thead>
+        <tr>
+          <th>Phase</th>
+          <th>Période</th>
+          <th>Type de projet</th>
+          <th>Nb projets</th>
+          <th class="num">Revenus est.</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><span class="tag-ct badge-red">Phase 1</span></td>
+          <td>Avr–Mai 2026</td>
+          <td>Finition site · Flask basics · 0 client</td>
+          <td>—</td>
+          <td class="num">0 $</td>
+        </tr>
+        <tr>
+          <td><span class="tag-ct badge-orange">Phase 2</span></td>
+          <td>Juin–Août 2026</td>
+          <td>Site vitrine bénévole + 1 client payant</td>
+          <td>1–2</td>
+          <td class="num">300–800 $</td>
+        </tr>
+        <tr>
+          <td><span class="tag-ct badge-green">Phase 3</span></td>
+          <td>Sep 2026–Avr 2027</td>
+          <td>Sites vitrines + apps Flask simples</td>
+          <td>2–4</td>
+          <td class="num">2 500–5 000 $</td>
+        </tr>
+        <tr class="total-row">
+          <td colspan="4"><strong>Total an 1 (scénario réaliste)</strong></td>
+          <td class="num"><strong>2 800–5 800 $</strong></td>
+        </tr>
+        <tr class="total-row">
+          <td colspan="4">Scénario optimiste (3+ clients Phase 3 + app Flask)</td>
+          <td class="num">6 000–9 000 $</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="kpi-row" style="margin-top:1rem;">
+      <div class="kpi">
+        <div class="kpi-val">2</div>
+        <div class="kpi-label">mois avant 1er $ potentiel</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-val">2</div>
+        <div class="kpi-label">clients max simultanés</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-val">54.99$</div>
+        <div class="kpi-label">coût de démarrage · API Anthropic</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-val">5</div>
+        <div class="kpi-label">mois pour tarifs viables</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 05 RISQUES -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-num">05</div>
+      <div class="section-title">Risques & mitigation</div>
+    </div>
+
+    <div class="risk-grid">
+      <div class="risk-card">
+        <div class="risk-title"><div class="dot-red"></div>Scope creep client</div>
+        <div class="risk-mit">Le client demande toujours «juste un petit extra». → Contrat avec scope écrit, changements = nouveau milestone = nouveau paiement. Sans exception.</div>
+      </div>
+      <div class="risk-card">
+        <div class="risk-title"><div class="dot-red"></div>Sous-estimer le temps</div>
+        <div class="risk-mit">Les premières estimations seront presque toujours trop optimistes. → Toujours multiplier ton estimation par 1.5x pour les 6 premiers mois.</div>
+      </div>
+      <div class="risk-card">
+        <div class="risk-title"><div class="dot-orange"></div>Burnout apprentissage</div>
+        <div class="risk-mit">T'apprends vite mais en hyperfocus — risque de crash. → Scheduler en place. Blocs dev bornés. Pas de marathon de 14h.</div>
+      </div>
+      <div class="risk-card">
+        <div class="risk-title"><div class="dot-orange"></div>Client qui ne paie pas</div>
+        <div class="risk-mit">Ça arrive même avec les bonnes personnes. → Paiement par milestone = max 1 milestone à risque à la fois. Jamais livrer le milestone suivant sans paiement reçu.</div>
+      </div>
+      <div class="risk-card">
+        <div class="risk-title"><div class="dot-orange"></div>Stack change trop vite</div>
+        <div class="risk-mit">Tentations constantes d'apprendre le «nouveau truc». → Suivre le pipeline défini : Flask → déploiement cloud → React/Vue. Python et JS sont acquis. Pas de détours.</div>
+      </div>
+      <div class="risk-card">
+        <div class="risk-title"><div class="dot-orange"></div>Prendre trop de clients</div>
+        <div class="risk-mit">La tentation de dire oui à tout au début. → Max 2 clients actifs simultanément en Phase 2–3. Qualité de livraison = réputation.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 06 PRINCIPES -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-num">06</div>
+      <div class="section-title">Principes d'opération TNT Mom</div>
+    </div>
+
+    <div class="principes">
+      <div class="principe">
+        <div class="principe-num">1</div>
+        <div>Je choisis mes clients. Pas de projet auquel je crois pas, même si l'argent est là. Ça protège ma motivation et la qualité du travail.</div>
+      </div>
+      <div class="principe">
+        <div class="principe-num">2</div>
+        <div>Pas de milestone livré sans paiement du précédent. Jamais. C'est pas de la méfiance, c'est de la structure saine pour les deux parties.</div>
+      </div>
+      <div class="principe">
+        <div class="principe-num">3</div>
+        <div>Scope écrit avant de coder une ligne. Ce qui est pas dans le contrat, c'est pas dans le projet. Les extras coûtent.</div>
+      </div>
+      <div class="principe">
+        <div class="principe-num">4</div>
+        <div>Underpromise, overdeliver. Je vends ce que je suis certaine de livrer. Si je dépasse, le client est enchanté. Si j'avais trop promis, c'est un désastre.</div>
+      </div>
+      <div class="principe">
+        <div class="principe-num">5</div>
+        <div>L'apprentissage continu fait partie du business. Être honnête avec les clients sur mon niveau actuel — et sur le fait que ça évolue vite.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 07 PROCHAINES ACTIONS -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-num">07</div>
+      <div class="section-title">Actions immédiates — Mai 2026</div>
+    </div>
+
+    <div class="callout green">
+      <strong>Mise à jour 10 Mai 2026 — Phase 2 en cours :</strong> Phase 1 complète ✓. Widget NerdyTrapMom archivé — fonctionnalités absorbées dans le Family Dashboard ✓. Family Dashboard quasi-complet — auth, horaire, todos, épicerie, Claude AI, bilingue, thèmes, jeux ✓. Repo restructuré proprement (FlaskLab + CéduleTNTM archivés, TNTM_Master organisé en sous-dossiers). Prochaine priorité — sécurité (passwords + secret key) puis déploiement + client foodtruck.
+    </div>
+
+    <div class="milestones" style="font-size:.78rem;">
+      <div class="milestone check"><strong>Cette semaine</strong> — Compléter about.html : CSS styling, nav, quiz (module 14 étapes 6–8)</div>
+      <div class="milestone check"><strong>Semaine 1–2</strong> — Créer contact.html avec formulaire Formspree (module 15)</div>
+      <div class="milestone check"><strong>Semaine 2–3</strong> — Démarrer Flask : installation, routing, premier template Jinja2 <em>· routing ✓, templates Jinja2 ✓, structure static ✓</em></div>
+      <div class="milestone check"><strong>Semaine 3–4</strong> — Mini-app Flask déployée sur Render <em>· widget complet live ✓ · archivé depuis</em></div>
+      <div class="milestone check"><strong>Dans 30 jours</strong> — TNT Mom site complet + app Flask live en production = portfolio crédible <em>· les deux ✓</em></div>
+      <div class="milestone check"><strong>Mai 2026</strong> — Family Dashboard · auth, horaire, todos, épicerie, Claude AI, bilingue, thèmes, jeux ✓</div>
+      <div class="milestone check"><strong>Mai 2026</strong> — Repo restructuré · FlaskLab + CéduleTNTM archivés · TNTM_Master organisé ✓</div>
+      <div class="milestone"><strong>Mai–Juin 2026</strong> — Sécurité (password hashing + secret key) + déploiement Family Dashboard</div>
+      <div class="milestone"><strong>Juin 2026</strong> — Client foodtruck · scope écrit · livraison site vitrine</div>
+      <div class="milestone"><strong>Juin 2026</strong> — LinkedIn mis à jour avec portfolio complet</div>
+    </div>
+  </div>
+
+  <!-- 08 COMPARATIF -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-num">08</div>
+      <div class="section-title">Comparatif — Plan initial vs Réalité · Mai 2026</div>
+      <div class="section-sub">1 mois après le lancement</div>
+    </div>
+
+    <div class="callout green" style="margin-bottom:1.2rem;">
+      <strong>TL;DR :</strong> Tu es systématiquement en avance sur le plan original. Ce qui était prévu pour 2–3 mois a été accompli en 3–4 semaines. Le Family Dashboard dépasse largement le scope Phase 2 — il est quasi-complet avec des fonctionnalités qui n'étaient même pas planifiées (bilingue, thèmes, jeux, Claude AI intégré). T'es prête pour le premier client.
+    </div>
+
+    <div class="compare-grid">
+
+      <!-- EN-TÊTES -->
+      <div class="compare-col-header initial">Plan initial · Avril 2026</div>
+      <div class="compare-col-header actuel">✓ Réalité · Mai 2026</div>
+
+      <!-- SECTION : TIMELINE -->
+      <div class="compare-divider">Timeline & progression</div>
+
+      <!-- Stack front-end -->
+      <div class="compare-cell initial">
+        <div class="compare-cat">Stack front-end</div>
+        <div class="compare-val">HTML, CSS, JS — à compléter via Mimo sur plusieurs semaines. Estimation : mois 1–2.</div>
+      </div>
+      <div class="compare-cell actuel">
+        <div class="compare-cat">Stack front-end</div>
+        <div class="compare-val win"><strong>✓ Complété — diplômes Mimo.</strong> Python, HTML, CSS, JS, SQL, Git — tous acquis avant même le début du plan.</div>
+        <span class="delta delta-ahead">↑ En avance</span>
+      </div>
+
+      <!-- Flask -->
+      <div class="compare-cell initial">
+        <div class="compare-cat">Flask</div>
+        <div class="compare-val">Objectif : apprendre le routing et les templates Jinja2. Estimation : semaines 2–3.</div>
+      </div>
+      <div class="compare-cell actuel">
+        <div class="compare-cat">Flask</div>
+        <div class="compare-val win"><strong>✓ Routing, templates Jinja2, static files, Claude API, SQLite — tout en 1 journée.</strong></div>
+        <span class="delta delta-ahead">↑ Très en avance</span>
+      </div>
+
+      <!-- Première app -->
+      <div class="compare-cell initial">
+        <div class="compare-cat">Première app Flask</div>
+        <div class="compare-val">Mini-app déployée sur Render. Scope minimal — pas d'API, pas de DB. Fin Phase 1.</div>
+      </div>
+      <div class="compare-cell actuel">
+        <div class="compare-cat">Première app Flask</div>
+        <div class="compare-val win"><strong>Family Dashboard :</strong> auth complète, 9 tables SQLite, 20+ routes API REST, horaire, todos, épicerie, Claude AI, bilingue, thèmes par user, jeux éducatifs. Widget (FlaskLab) archivé — fonctionnalités absorbées.</div>
+        <span class="delta delta-ahead">↑ Très loin au-delà du scope prévu</span>
+      </div>
+
+      <!-- Déploiement -->
+      <div class="compare-cell initial">
+        <div class="compare-cat">Déploiement cloud</div>
+        <div class="compare-val">Render ou Railway — objectif fin Phase 1 (mai 2026).</div>
+      </div>
+      <div class="compare-cell actuel">
+        <div class="compare-cat">Déploiement cloud</div>
+        <div class="compare-val">App trop complexe pour le free tier Render tel quel. Prochaine étape : password hashing + secret key .env, puis déploiement. Pas urgent — usage local pour l'instant.</div>
+        <span class="delta delta-track">→ Reporté volontairement</span>
+      </div>
+
+      <!-- SECTION : STACK -->
+      <div class="compare-divider">Stack & outils</div>
+
+      <!-- API Claude -->
+      <div class="compare-cell initial">
+        <div class="compare-cat">Claude API</div>
+        <div class="compare-val">Pas mentionnée dans le plan initial. Hors scope Phase 1.</div>
+      </div>
+      <div class="compare-cell actuel">
+        <div class="compare-cat">Claude API</div>
+        <div class="compare-val win"><strong>✓ Connectée et fonctionnelle.</strong> claude-haiku-4-5-20251001, clé .env, SDK Anthropic. Ajouté spontanément comme différenciateur.</div>
+        <span class="delta delta-ahead">↑ Hors plan — bonus</span>
+      </div>
+
+      <!-- Base de données -->
+      <div class="compare-cell initial">
+        <div class="compare-cat">Base de données</div>
+        <div class="compare-val">SQLite mentionnée comme objectif Phase 2–3 pour les apps complexes.</div>
+      </div>
+      <div class="compare-cell actuel">
+        <div class="compare-cat">Base de données</div>
+        <div class="compare-val win"><strong>✓ SQLite créée en Phase 1.</strong> 3 tables (projects, conversations, messages), FK ON DELETE CASCADE, seed_db(), row_factory.</div>
+        <span class="delta delta-ahead">↑ 1–2 phases en avance</span>
+      </div>
+
+      <!-- Contrôle de version -->
+      <div class="compare-cell initial">
+        <div class="compare-cat">Git + GitHub</div>
+        <div class="compare-val">Git acquis — GitHub Pages pour le site TNT Mom. Pas de repo Flask prévu Phase 1.</div>
+      </div>
+      <div class="compare-cell actuel">
+        <div class="compare-cat">Git + GitHub</div>
+        <div class="compare-val win"><strong>✓ Repo TNTmom-widget live (privé)</strong> — commits réguliers, .gitignore propre, .env protégé.</div>
+        <span class="delta delta-ahead">↑ En avance</span>
+      </div>
+
+      <!-- SECTION : BUSINESS -->
+      <div class="compare-divider">Business & coûts</div>
+
+      <!-- Coût de démarrage -->
+      <div class="compare-cell initial">
+        <div class="compare-cat">Coût de démarrage</div>
+        <div class="compare-val">Quasi-zéro — outils gratuits (GitHub Pages, Render free tier). Pas d'API payante prévue.</div>
+      </div>
+      <div class="compare-cell actuel">
+        <div class="compare-cat">Coût de démarrage</div>
+        <div class="compare-val"><strong>54.99$</strong> — API Anthropic. Justifié : Claude API au cœur du widget = différenciateur portfolio. Dépense stratégique.</div>
+        <span class="delta delta-track">→ Léger écart — justifié</span>
+      </div>
+
+      <!-- Revenus Phase 1 -->
+      <div class="compare-cell initial">
+        <div class="compare-cat">Revenus Phase 1</div>
+        <div class="compare-val">0$ prévu — phase d'apprentissage seulement. Pas de client avant Phase 2.</div>
+      </div>
+      <div class="compare-cell actuel">
+        <div class="compare-cat">Revenus Phase 1</div>
+        <div class="compare-val">0$ — conforme au plan. Focus apprentissage et portfolio.</div>
+        <span class="delta delta-track">→ Conforme</span>
+      </div>
+
+      <!-- Portfolio -->
+      <div class="compare-cell initial">
+        <div class="compare-cat">Portfolio pour Phase 2</div>
+        <div class="compare-val">Objectif : site TNT Mom + 1 mini-app Flask simple pour crédibiliser le portfolio avant de chercher des clients.</div>
+      </div>
+      <div class="compare-cell actuel">
+        <div class="compare-cat">Portfolio pour Phase 2</div>
+        <div class="compare-val win"><strong>✓ Site TNT Mom complet + widget Flask + Claude API + SQLite.</strong> Portfolio déjà plus fort que l'objectif Phase 1 prévu. Prêt pour Phase 2 dès juin.</div>
+        <span class="delta delta-ahead">↑ Au-delà des attentes</span>
+      </div>
+
+      <!-- SECTION : APPRENTISSAGE -->
+      <div class="compare-divider">Apprentissage & rythme</div>
+
+      <!-- Vitesse -->
+      <div class="compare-cell initial">
+        <div class="compare-cat">Rythme d'apprentissage</div>
+        <div class="compare-val">Estimation conservatrice — 2–3 semaines par technologie. Plan conçu pour ne pas surcharger.</div>
+      </div>
+      <div class="compare-cell actuel">
+        <div class="compare-cat">Rythme d'apprentissage</div>
+        <div class="compare-val win"><strong>Flask, Claude API, SQLite, JS DOM, CSS avancé — maîtrisés en 1 journée.</strong> Vitesse d'acquisition nettement supérieure aux estimations.</div>
+        <span class="delta delta-ahead">↑ Beaucoup plus rapide que prévu</span>
+      </div>
+
+      <!-- Méthode -->
+      <div class="compare-cell initial">
+        <div class="compare-cat">Méthode d'apprentissage</div>
+        <div class="compare-val">Mimo (modules structurés) + tutoriels → appliquer ensuite sur projet perso.</div>
+      </div>
+      <div class="compare-cell actuel">
+        <div class="compare-cat">Méthode d'apprentissage</div>
+        <div class="compare-val win"><strong>Apprendre en construisant un vrai projet</strong> — mode prof, Nao tape tout le code. Più efficace que prévu. Continue JS sur Mimo + Flask en VS Code avec Claude.</div>
+        <span class="delta delta-ahead">↑ Méthode plus efficace</span>
+      </div>
+
+      <!-- Lignes de code -->
+      <div class="compare-cell initial">
+        <div class="compare-cat">Volume de code écrit</div>
+        <div class="compare-val">Non estimé — projet en mode apprentissage, pas de cible fixée.</div>
+      </div>
+      <div class="compare-cell actuel">
+        <div class="compare-cat">Volume de code écrit</div>
+        <div class="compare-val win"><strong>~6 000 lignes</strong> en 2 sessions (site TNT Mom + widget Flask). Écrit à la main — pas copié-collé.</div>
+        <span class="delta delta-ahead">↑ Hors plan — impressionnant</span>
+      </div>
+
+    </div>
+
+    <div class="callout" style="margin-top:1.2rem;">
+      <strong>Ce qui reste du plan original :</strong> Password hashing + secret key .env (sécurité), déploiement Family Dashboard, LinkedIn mis à jour, puis client foodtruck juin 2026. Le plan tient. L'exécution dépasse les attentes sur tous les points techniques — le focus maintenant c'est le business : scope écrit + premier client payant.
+    </div>
+  </div>
+
+  <footer>
+    <span>TNT Mom · Plan d'affaires An 1 · Mis à jour 10 Mai 2026</span>
+    <span>Bootstrap · 54.99$ de démarrage · API Anthropic · Milestones fonctionnels</span>
+    <a href="../index.html" class="nav-btn">← Accueil</a>
+    <a href="tntmom-roadmap.html" class="nav-btn">Feuille de route →</a>
+  </footer>
+
+</div>
+</body>
+</html>
