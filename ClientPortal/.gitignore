@@ -1,0 +1,23 @@
+# Secrets — ne jamais commiter
+.env
+
+# Base de données SQLite — données réelles, pas dans le dépôt
+portal.db
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+
+# Environnement virtuel
+venv/
+.venv/
+env/
+
+# VS Code
+.vscode/
+
+# macOS
+.DS_Store

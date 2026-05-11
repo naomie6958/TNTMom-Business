@@ -1,0 +1,230 @@
+{% extends "base.html" %}
+
+{% block title %}Contrat — {{ client.nom }}{% endblock %}
+
+{% block content %}
+
+<div class="page-header">
+    <div>
+        <div class="text-muted" style="font-size: 0.75rem; margin-bottom: 0.3rem;">
+            <a href="/clients/{{ client.id }}">← {{ client.nom }}</a>
+        </div>
+        <h1 class="page-title">Contrat <span>{{ client.nom }}</span></h1>
+        {% if contrat %}
+            <div class="page-sub">Dernière modification : {{ contrat.created_at[:10] }}</div>
+        {% endif %}
+    </div>
+    {% if contrat %}
+        <span class="badge badge-{{ contrat.statut }}">{{ contrat.statut }}</span>
+    {% endif %}
+</div>
+
+<form method="POST" action="/clients/{{ client.id }}/contrat" id="contrat-form">
+
+    {# ── PARTIES ─────────────────────────────────────────────────────────── #}
+    <div class="card">
+        <div class="card-title">Parties</div>
+        <div style="font-size: 0.85rem; color: var(--muted); line-height: 1.8;">
+            <strong style="color: var(--text);">Prestataire :</strong> Naomie McMahon Tanguay, opérant sous TNTMom Dev<br>
+            <strong style="color: var(--text);">Client :</strong>
+            {{ client.nom }}{% if client.entreprise %}, {{ client.entreprise }}{% endif %}
+            {% if client.email %} · {{ client.email }}{% endif %}
+        </div>
+    </div>
+
+    {# ── SCOPE ───────────────────────────────────────────────────────────── #}
+    <div class="card mt-md">
+        <div class="card-title">Scope du projet</div>
+        <div class="form-group">
+            <label for="scope">Description détaillée du projet et des livrables</label>
+            <textarea id="scope" name="scope" rows="5"
+                      placeholder="Décris ce qui est inclus : type de site, nombre de pages, fonctionnalités, intégrations...">{{ contrat.scope if contrat else '' }}</textarea>
+        </div>
+    </div>
+
+    {# ── MILESTONES ──────────────────────────────────────────────────────── #}
+    <div class="card mt-md">
+        <div class="card-title">Milestones & Prix</div>
+        <div class="text-muted" style="font-size: 0.8rem; margin-bottom: 1rem;">
+            Principe : chaque livrable fonctionnel = un paiement.
+            Le milestone suivant ne commence pas sans le paiement du précédent.
+        </div>
+
+        {# En-têtes des colonnes #}
+        <div style="display: grid; grid-template-columns: 1fr 1fr 100px 120px 32px;
+                    gap: 0.5rem; padding: 0 0.8rem; margin-bottom: 0.4rem;">
+            <span class="text-muted" style="font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.06em;">Milestone</span>
+            <span class="text-muted" style="font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.06em;">Livrable</span>
+            <span class="text-muted" style="font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.06em;">Prix ($)</span>
+            <span class="text-muted" style="font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.06em;">Statut</span>
+            <span></span>
+        </div>
+
+        <div class="milestones-list" id="milestones-list">
+            {# Les milestones existants sont injectés via JS au chargement de la page #}
+        </div>
+
+        <button type="button" class="btn btn-secondary" id="add-milestone">
+            + Ajouter un milestone
+        </button>
+
+        <div class="milestones-total" id="total-display" style="margin-top: 0.8rem; display: none;">
+            Total : <strong id="total-value">0</strong>$
+        </div>
+
+        {# Champ caché : le JS y écrit le JSON des milestones avant soumission du form #}
+        {# C'est ce que Flask lit côté serveur dans request.form.get('milestones_json') #}
+        <input type="hidden" name="milestones_json" id="milestones_json">
+    </div>
+
+    {# ── CONDITIONS ──────────────────────────────────────────────────────── #}
+    <div class="card mt-md">
+        <div class="card-title">Conditions de paiement</div>
+        <div class="form-group">
+            <textarea name="conditions_paiement" rows="3"
+                      placeholder="ex: Virement interac dans les 5 jours ouvrables suivant la livraison de chaque milestone. Aucune propriété intellectuelle transférée avant paiement complet.">{{ contrat.conditions_paiement if contrat else '' }}</textarea>
+        </div>
+    </div>
+
+    {# ── RÉVISIONS ───────────────────────────────────────────────────────── #}
+    <div class="card mt-md">
+        <div class="card-title">Politique de révisions</div>
+        <div class="form-group">
+            <textarea name="politique_revisions" rows="3"
+                      placeholder="ex: 2 rounds de révisions inclus par milestone. Au-delà, chaque round supplémentaire est facturé 75$/h.">{{ contrat.politique_revisions if contrat else '' }}</textarea>
+        </div>
+    </div>
+
+    {# ── HORS-SCOPE ──────────────────────────────────────────────────────── #}
+    <div class="card mt-md">
+        <div class="card-title">Hors-scope</div>
+        <div class="text-muted" style="font-size: 0.8rem; margin-bottom: 0.5rem;">
+            Tout travail hors-scope = nouveau milestone = nouveau devis. Être précis ici protège les deux parties.
+        </div>
+        <div class="form-group">
+            <textarea name="hors_scope" rows="3"
+                      placeholder="ex: Rédaction de contenu (textes fournis par le client), traduction, SEO avancé, maintenance mensuelle, fonctionnalités e-commerce...">{{ contrat.hors_scope if contrat else '' }}</textarea>
+        </div>
+    </div>
+
+    {# ── TIMELINE ────────────────────────────────────────────────────────── #}
+    <div class="card mt-md">
+        <div class="card-title">Timeline estimée</div>
+        <div class="form-group">
+            <textarea name="timeline" rows="3"
+                      placeholder="ex: Milestone 1 : 2 semaines après dépôt initial. Milestone 2 : 3 semaines après approbation M1. Livraison finale : ~6-8 semaines au total.">{{ contrat.timeline if contrat else '' }}</textarea>
+        </div>
+    </div>
+
+    {# ── STATUT + BOUTONS ────────────────────────────────────────────────── #}
+    <div class="card mt-md" style="padding: 1rem 1.6rem;">
+        <div style="display: flex; gap: 1rem; align-items: center; flex-wrap: wrap;">
+            <div class="form-group" style="flex: 1; min-width: 180px; margin: 0;">
+                <label for="statut">Statut du contrat</label>
+                <select id="statut" name="statut">
+                    {% set s = contrat.statut if contrat else 'draft' %}
+                    <option value="draft"   {% if s == 'draft'   %}selected{% endif %}>Brouillon</option>
+                    <option value="envoyé"  {% if s == 'envoyé'  %}selected{% endif %}>Envoyé au client</option>
+                    <option value="signé"   {% if s == 'signé'   %}selected{% endif %}>Signé</option>
+                </select>
+            </div>
+            <div class="form-actions" style="margin-top: 1.2rem; flex: 2;">
+                <button type="submit" class="btn btn-primary">Sauvegarder →</button>
+                <a href="/clients/{{ client.id }}" class="btn btn-ghost">Annuler</a>
+            </div>
+        </div>
+    </div>
+
+</form>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+// ── DONNÉES INITIALES ────────────────────────────────────────────────────────
+// Jinja2 injecte les milestones existants en JSON directement dans le JS.
+// Le filtre | tojson génère un JSON valide (guillemets, caractères spéciaux).
+const initialMilestones = {{ milestones | tojson }};
+
+// ── ÉTAT ─────────────────────────────────────────────────────────────────────
+// On garde les milestones dans un tableau JS — plus facile à manipuler que le DOM.
+let milestones = initialMilestones.length > 0
+    ? initialMilestones
+    : [{ titre: '', livrable: '', prix: '', statut: 'pending' }];
+
+// ── RENDER ───────────────────────────────────────────────────────────────────
+function render() {
+    const list = document.getElementById('milestones-list');
+    // Vide la liste et la reconstruit — approche simple pour Phase 1
+    list.innerHTML = '';
+
+    milestones.forEach((m, i) => {
+        const row = document.createElement('div');
+        row.className = 'milestone-row';
+        row.innerHTML = `
+            <input type="text" placeholder="ex: Design + maquette"
+                   value="${esc(m.titre)}"
+                   oninput="milestones[${i}].titre = this.value">
+            <input type="text" placeholder="ex: Maquette approuvée"
+                   value="${esc(m.livrable)}"
+                   oninput="milestones[${i}].livrable = this.value">
+            <input type="number" placeholder="0" min="0"
+                   value="${esc(m.prix)}"
+                   oninput="milestones[${i}].prix = this.value; updateTotal()">
+            <select onchange="milestones[${i}].statut = this.value">
+                <option value="pending"    ${m.statut === 'pending'    ? 'selected' : ''}>En attente</option>
+                <option value="en_cours"   ${m.statut === 'en_cours'   ? 'selected' : ''}>En cours</option>
+                <option value="livré"      ${m.statut === 'livré'      ? 'selected' : ''}>Livré</option>
+                <option value="payé"       ${m.statut === 'payé'       ? 'selected' : ''}>Payé ✓</option>
+            </select>
+            <button type="button" class="btn btn-ghost"
+                    style="color: var(--red); padding: 0.3rem 0.5rem;"
+                    onclick="removeMilestone(${i})">✕</button>
+        `;
+        list.appendChild(row);
+    });
+
+    updateTotal();
+    syncHiddenInput();
+}
+
+// esc() échappe les caractères spéciaux pour éviter des injections HTML dans les value=""
+function esc(str) {
+    return String(str || '').replace(/"/g, '&quot;').replace(/</g, '&lt;');
+}
+
+function addMilestone() {
+    milestones.push({ titre: '', livrable: '', prix: '', statut: 'pending' });
+    render();
+}
+
+function removeMilestone(i) {
+    if (milestones.length === 1) return; // Garder au moins un milestone
+    milestones.splice(i, 1);
+    render();
+}
+
+function updateTotal() {
+    const total = milestones.reduce((sum, m) => sum + (parseFloat(m.prix) || 0), 0);
+    const display = document.getElementById('total-display');
+    document.getElementById('total-value').textContent = total.toFixed(2).replace('.00', '');
+    // Affiche le total seulement si au moins un prix est rempli
+    display.style.display = milestones.some(m => m.prix) ? 'block' : 'none';
+}
+
+// syncHiddenInput() sérialise les milestones en JSON dans le champ caché
+// Ce JSON est ce que Flask reçoit dans request.form.get('milestones_json')
+function syncHiddenInput() {
+    document.getElementById('milestones_json').value = JSON.stringify(milestones);
+}
+
+// ── EVENTS ───────────────────────────────────────────────────────────────────
+document.getElementById('add-milestone').addEventListener('click', addMilestone);
+
+// Avant soumission du form, on s'assure que le JSON est à jour
+document.getElementById('contrat-form').addEventListener('submit', syncHiddenInput);
+
+// Rendu initial
+render();
+</script>
+{% endblock %}

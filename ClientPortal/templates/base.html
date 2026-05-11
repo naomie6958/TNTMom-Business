@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    {# block title : chaque template enfant peut personnaliser le titre de l'onglet #}
+    <title>{% block title %}ClientPortal{% endblock %} — TNTMom</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    {# url_for('static', ...) génère le bon chemin peu importe où Flask est monté #}
+    {% block head %}{% endblock %}
+</head>
+<body>
+
+{# ── LAYOUT : sidebar gauche + contenu principal ─────────────────────────── #}
+{# Héritage Jinja2 : base.html définit la structure,
+   les templates enfants remplissent les blocs avec {% block %} ... {% endblock %} #}
+
+<div class="app-layout">
+
+    {# ── SIDEBAR ─────────────────────────────────────────────────────────── #}
+    <aside class="sidebar">
+        <div class="sidebar-logo">TNT<span>Mom</span></div>
+
+        <nav class="sidebar-nav">
+            <a href="/dashboard"
+               {% if request.path == '/dashboard' %}class="active"{% endif %}>
+                ◈ Dashboard
+            </a>
+            {# Plus de liens s'ajoutent ici en Phase 2 (facturation, stats…) #}
+        </nav>
+
+        <div class="sidebar-user">
+            <strong>{{ name }}</strong>
+            <a href="/logout" class="text-muted">→ Déconnexion</a>
+        </div>
+    </aside>
+
+    {# ── CONTENU PRINCIPAL ───────────────────────────────────────────────── #}
+    <main class="main">
+        {% block content %}{% endblock %}
+    </main>
+
+</div>
+
+{% block scripts %}{% endblock %}
+</body>
+</html>

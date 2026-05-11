@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Connexion — TNTMom ClientPortal</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+
+{# La page login n'hérite PAS de base.html — pas de sidebar, layout centré #}
+<div class="login-page">
+    <div class="login-card">
+
+        <div class="login-logo">TNTMom</div>
+        <div class="login-sub">CLIENT PORTAL — ADMIN</div>
+
+        {# Affiche le message d'erreur si les identifiants sont mauvais #}
+        {% if error %}
+            <div class="error-msg">{{ error }}</div>
+        {% endif %}
+
+        {# method="POST" envoie les données de façon sécurisée dans le corps de la requête
+           (contrairement à GET qui les met dans l'URL, visible dans les logs) #}
+        <form method="POST" action="/login">
+            <div class="form-group">
+                <label for="username">Identifiant</label>
+                <input type="text" id="username" name="username"
+                       placeholder="naomie" autocomplete="username" required>
+            </div>
+            <div class="form-group" style="margin-bottom: 1.4rem;">
+                <label for="password">Mot de passe</label>
+                <input type="password" id="password" name="password"
+                       placeholder="••••••••" autocomplete="current-password" required>
+            </div>
+            <button type="submit" class="btn btn-primary" style="width: 100%;">
+                Connexion →
+            </button>
+        </form>
+
+    </div>
+</div>
+
+</body>
+</html>

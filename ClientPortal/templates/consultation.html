@@ -1,0 +1,137 @@
+{% extends "base.html" %}
+
+{% block title %}Consultation — {{ client.nom }}{% endblock %}
+
+{% block content %}
+
+<div class="page-header">
+    <div>
+        <div class="text-muted" style="font-size: 0.75rem; margin-bottom: 0.3rem;">
+            <a href="/clients/{{ client.id }}">← {{ client.nom }}</a>
+        </div>
+        <h1 class="page-title">Consultation <span>en direct</span></h1>
+        <div class="page-sub">Guide de conversation — rempli pendant la réunion</div>
+    </div>
+</div>
+
+{# Si le client a soumis un questionnaire avant la réunion, on l'indique #}
+{% if prefill %}
+    <div style="background: rgba(62, 207, 142, 0.08); border: 1px solid rgba(62, 207, 142, 0.2);
+                border-radius: var(--radius); padding: 0.7rem 1rem; margin-bottom: 1.5rem;
+                font-size: 0.82rem; color: var(--green);">
+        ✓ Ce client a soumis un questionnaire — les champs sont pré-remplis avec ses réponses.
+        Complète ou ajuste selon la discussion.
+    </div>
+{% endif %}
+
+<form method="POST" action="/clients/{{ client.id }}/consultation/new">
+
+    <div class="card">
+        <div class="card-title">1. Contexte business</div>
+
+        <div class="form-grid">
+            <div class="form-group span-2">
+                <label for="activite">Ce qu'ils font / leur activité</label>
+                <textarea id="activite" name="activite" rows="2"
+                          placeholder="Décris leur business en 2-3 phrases...">{{ prefill.get('activite', '') }}</textarea>
+            </div>
+            <div class="form-group span-2">
+                <label for="clientele">Qui ils servent (clientèle cible)</label>
+                <textarea id="clientele" name="clientele" rows="2"
+                          placeholder="Âge, démographie, besoins...">{{ prefill.get('clientele', '') }}</textarea>
+            </div>
+            <div class="form-group span-2">
+                <label for="pourquoi_maintenant">Pourquoi ils viennent me voir MAINTENANT</label>
+                <textarea id="pourquoi_maintenant" name="pourquoi_maintenant" rows="2"
+                          placeholder="Déclencheur : lancement, relance, problème actuel...">{{ prefill.get('pourquoi_maintenant', '') }}</textarea>
+            </div>
+        </div>
+    </div>
+
+    <div class="card mt-md">
+        <div class="card-title">2. Le projet</div>
+
+        <div class="form-grid">
+            <div class="form-group">
+                <label for="type_projet">Type de projet</label>
+                <select id="type_projet" name="type_projet">
+                    {# On compare la valeur du prefill pour sélectionner la bonne option #}
+                    {% set tp = prefill.get('type_projet', '') %}
+                    <option value="" {% if not tp %}selected{% endif %}>— Choisir —</option>
+                    <option value="Site vitrine"      {% if tp == 'Site vitrine'      %}selected{% endif %}>Site vitrine</option>
+                    <option value="Application web"   {% if tp == 'Application web'   %}selected{% endif %}>Application web</option>
+                    <option value="Outil interne"     {% if tp == 'Outil interne'     %}selected{% endif %}>Outil interne</option>
+                    <option value="Refonte"           {% if tp == 'Refonte'           %}selected{% endif %}>Refonte de site existant</option>
+                    <option value="Autre"             {% if tp == 'Autre'             %}selected{% endif %}>Autre</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="budget">Budget approximatif</label>
+                <select id="budget" name="budget">
+                    {% set b = prefill.get('budget', '') %}
+                    <option value="" {% if not b %}selected{% endif %}>— Choisir —</option>
+                    <option value="300–600$"    {% if b == '300–600$'    %}selected{% endif %}>300–600$ (site vitrine simple)</option>
+                    <option value="600–1500$"   {% if b == '600–1500$'   %}selected{% endif %}>600–1500$ (site vitrine évolué)</option>
+                    <option value="1500–3000$"  {% if b == '1500–3000$'  %}selected{% endif %}>1500–3000$ (application web)</option>
+                    <option value="3000$+"      {% if b == '3000$+'      %}selected{% endif %}>3000$+ (projet complexe)</option>
+                    <option value="À discuter"  {% if b == 'À discuter'  %}selected{% endif %}>À discuter</option>
+                </select>
+            </div>
+            <div class="form-group span-2">
+                <label for="vision">Vision esthétique (exemples de sites qu'ils aiment)</label>
+                <textarea id="vision" name="vision" rows="2"
+                          placeholder="URLs, descriptions, mots-clés de style (minimaliste, coloré, professionnel...)">{{ prefill.get('vision', '') }}</textarea>
+            </div>
+        </div>
+    </div>
+
+    <div class="card mt-md">
+        <div class="card-title">3. Logistique</div>
+
+        <div class="form-grid">
+            <div class="form-group">
+                <label for="deadline">Deadline / urgence</label>
+                <input type="text" id="deadline" name="deadline"
+                       placeholder="ex: lancement dans 2 mois, pas de deadline..."
+                       value="{{ prefill.get('deadline', '') }}">
+            </div>
+            <div class="form-group">
+                <label for="implication">Niveau d'implication souhaité</label>
+                <select id="implication" name="implication">
+                    {% set imp = prefill.get('implication', '') %}
+                    <option value="" {% if not imp %}selected{% endif %}>— Choisir —</option>
+                    <option value="Minimal — juste approuver"   {% if imp == 'Minimal — juste approuver'   %}selected{% endif %}>Minimal — juste approuver</option>
+                    <option value="Modéré — impliqué aux étapes clés" {% if imp == 'Modéré — impliqué aux étapes clés' %}selected{% endif %}>Modéré — étapes clés</option>
+                    <option value="Très impliqué — collaboration étroite" {% if imp == 'Très impliqué — collaboration étroite' %}selected{% endif %}>Très impliqué</option>
+                </select>
+            </div>
+            <div class="form-group span-2">
+                <label for="assets">Assets existants (logo, charte, contenu)</label>
+                <textarea id="assets" name="assets" rows="2"
+                          placeholder="Logo: oui/non, charte graphique: oui/non, textes/photos fournis: oui/non...">{{ prefill.get('assets', '') }}</textarea>
+            </div>
+            <div class="form-group span-2">
+                <label for="acces_technique">Accès technique (domaine, hébergement)</label>
+                <textarea id="acces_technique" name="acces_technique" rows="2"
+                          placeholder="Ont-ils un domaine? Un hébergement existant? Accès au cpanel?">{{ prefill.get('acces_technique', '') }}</textarea>
+            </div>
+        </div>
+    </div>
+
+    <div class="card mt-md">
+        <div class="card-title">Notes libres</div>
+        <div class="form-group">
+            <label for="notes">Notes personnelles post-consultation</label>
+            <textarea id="notes" name="notes" rows="4"
+                      placeholder="Impressions, red flags, fit culturel, points à clarifier, prochaine étape..."></textarea>
+        </div>
+    </div>
+
+    <div class="form-actions mt-md">
+        <button type="submit" class="btn btn-primary">Sauvegarder la consultation →</button>
+        <a href="/clients/{{ client.id }}" class="btn btn-ghost">Annuler</a>
+    </div>
+
+</form>
+
+{% endblock %}

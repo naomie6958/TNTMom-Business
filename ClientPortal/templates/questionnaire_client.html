@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Questionnaire — TNTMom Dev</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+
+{# Page publique — pas de sidebar, pas de login requis.
+   Le client accède à cette page via le lien /q/<id> que Naomie lui envoie. #}
+
+<div class="q-page">
+    <div class="q-container">
+
+        <div class="q-logo">TNTMom Dev</div>
+
+        {% if soumis %}
+
+        {# ── CONFIRMATION ──────────────────────────────────────────────── #}
+        <div class="q-success">
+            <h2>Merci !</h2>
+            <p>Tes réponses ont bien été reçues.<br>
+               Je les lirai avant notre rencontre et on construira ensemble quelque chose qui te ressemble.</p>
+            <p style="margin-top: 1rem; color: var(--muted); font-size: 0.82rem;">
+                — Naomie, TNTMom Dev
+            </p>
+        </div>
+
+        {% else %}
+
+        {# ── INTRO ─────────────────────────────────────────────────────── #}
+        <div class="q-intro">
+            <h1>Dis-moi <span style="color: var(--accent);">qui tu es</span></h1>
+            <p>
+                Ce questionnaire est optionnel — si tu ne sais pas quoi répondre, pas de stress,
+                on fait tout ça ensemble lors de notre rencontre.<br><br>
+                Si tu veux arriver préparé{{ 'e' if client.nom and client.nom[-1] in 'eéèêë' else '' }},
+                remplis ce que tu peux. Il n'y a pas de mauvaise réponse.
+            </p>
+        </div>
+
+        <form method="POST" action="/q/{{ client.id }}" class="q-form">
+
+            <div class="card">
+                <div class="card-title" style="font-size: 1.1rem; margin-bottom: 1.2rem;">Ton business</div>
+
+                <div class="form-group">
+                    <label for="activite">Ce que tu fais / ton activité</label>
+                    <textarea id="activite" name="activite" rows="3"
+                              placeholder="Décris ton business en quelques phrases — produits, services, comment tu génères de la valeur..."></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label for="clientele">À qui tu t'adresses (ta clientèle cible)</label>
+                    <textarea id="clientele" name="clientele" rows="2"
+                              placeholder="Qui sont tes clients idéaux? Âge, besoins, où les trouves-tu?"></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label for="pourquoi_maintenant">Pourquoi tu me contactes maintenant</label>
+                    <textarea id="pourquoi_maintenant" name="pourquoi_maintenant" rows="2"
+                              placeholder="Lancement, relance, site vieillissant, nouveau projet? Qu'est-ce qui t'a amené ici?"></textarea>
+                </div>
+            </div>
+
+            <div class="card" style="margin-top: 1rem;">
+                <div class="card-title" style="font-size: 1.1rem; margin-bottom: 1.2rem;">Le projet</div>
+
+                <div class="form-group">
+                    <label for="type_projet">Ce que tu veux (si tu le sais déjà)</label>
+                    <select id="type_projet" name="type_projet">
+                        <option value="">— Je sais pas encore, on verra ensemble —</option>
+                        <option value="Site vitrine">Site vitrine (présentation de mon business)</option>
+                        <option value="Application web">Application web (outil avec login, données...)</option>
+                        <option value="Outil interne">Outil interne (pour mon équipe ou moi seulement)</option>
+                        <option value="Refonte">Refonte d'un site existant</option>
+                        <option value="Autre">Autre</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="vision">Ta vision esthétique</label>
+                    <textarea id="vision" name="vision" rows="3"
+                              placeholder="Des sites que tu aimes (donne des URLs!), des mots pour décrire le style que tu veux : minimaliste, coloré, professionnel, ludique... tout aide."></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label for="budget">Budget approximatif</label>
+                    <select id="budget" name="budget">
+                        <option value="">— Pas encore fixé —</option>
+                        <option value="300–600$">300–600$ (site vitrine simple)</option>
+                        <option value="600–1500$">600–1500$ (site vitrine avec fonctionnalités)</option>
+                        <option value="1500–3000$">1500–3000$ (application web)</option>
+                        <option value="3000$+">3000$+ (projet plus complexe)</option>
+                        <option value="À discuter">Je préfère en discuter directement</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="card" style="margin-top: 1rem;">
+                <div class="card-title" style="font-size: 1.1rem; margin-bottom: 1.2rem;">Logistique</div>
+
+                <div class="form-group">
+                    <label for="deadline">Deadline ou urgence</label>
+                    <input type="text" id="deadline" name="deadline"
+                           placeholder="ex: j'aimerais lancer en septembre, pas de deadline précise...">
+                </div>
+
+                <div class="form-group">
+                    <label for="assets">Ce que tu as déjà</label>
+                    <textarea id="assets" name="assets" rows="2"
+                              placeholder="Logo? Charte graphique? Textes rédigés? Photos? Nom de domaine?"></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label for="acces_technique">Accès technique</label>
+                    <textarea id="acces_technique" name="acces_technique" rows="2"
+                              placeholder="Tu as déjà un hébergement? Un nom de domaine? Accès à ton cpanel/registraire?"></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label for="implication">À quel point tu veux être impliqué dans le processus</label>
+                    <select id="implication" name="implication">
+                        <option value="">— Pas sûr encore —</option>
+                        <option value="Minimal — juste approuver">Minimal — juste approuver à chaque étape</option>
+                        <option value="Modéré — impliqué aux étapes clés">Modéré — impliqué aux moments importants</option>
+                        <option value="Très impliqué — collaboration étroite">Très impliqué — je veux être dans la boucle constamment</option>
+                    </select>
+                </div>
+            </div>
+
+            <div style="margin-top: 1.5rem; text-align: center;">
+                <button type="submit" class="btn btn-primary" style="padding: 0.8rem 2rem; font-size: 0.9rem;">
+                    Envoyer mes réponses →
+                </button>
+                <div class="text-muted" style="margin-top: 0.8rem; font-size: 0.78rem;">
+                    Rien n'est obligatoire. Laisse vide ce que tu ne sais pas encore.
+                </div>
+            </div>
+
+        </form>
+
+        {% endif %}
+
+    </div>
+</div>
+
+</body>
+</html>

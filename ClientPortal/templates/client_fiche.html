@@ -1,0 +1,315 @@
+{% extends "base.html" %}
+
+{% block title %}{{ client.nom }}{% endblock %}
+
+{% block content %}
+
+{# ── EN-TÊTE ─────────────────────────────────────────────────────────────── #}
+<div class="page-header">
+    <div>
+        <div class="text-muted" style="font-size: 0.75rem; margin-bottom: 0.3rem;">
+            <a href="/dashboard">← Dashboard</a>
+        </div>
+        <h1 class="page-title">{{ client.nom }}</h1>
+        {% if client.entreprise %}
+            <div class="page-sub">{{ client.entreprise }}{% if client.secteur %} · {{ client.secteur }}{% endif %}</div>
+        {% endif %}
+    </div>
+    <div class="flex gap-sm items-center">
+        <span class="badge badge-{{ client.statut }}">{{ client.statut }}</span>
+    </div>
+</div>
+
+{# ── LAYOUT DEUX COLONNES ─────────────────────────────────────────────────── #}
+<div class="fiche-layout">
+
+    {# ── COLONNE GAUCHE : infos + actions ──────────────────────────────── #}
+    <div>
+
+        {# ── INFOS CLIENT ──────────────────────────────────────────────── #}
+        <div class="client-info-card">
+            <div class="info-row">Courriel : <span>{{ client.email or '—' }}</span></div>
+            <div class="info-row">Entreprise : <span>{{ client.entreprise or '—' }}</span></div>
+            <div class="info-row">Secteur : <span>{{ client.secteur or '—' }}</span></div>
+            {% if client.notes %}
+                <hr class="divider">
+                <div class="text-muted" style="font-size: 0.82rem; white-space: pre-wrap;">{{ client.notes }}</div>
+            {% endif %}
+
+            <hr class="divider">
+
+            {# ── ÉDITER LE CLIENT ──────────────────────────────────────── #}
+            <details class="collapsible">
+                <summary style="font-size: 0.8rem;">✎ Modifier</summary>
+                <div class="collapsible-body">
+                    <form method="POST" action="/clients/{{ client.id }}/edit">
+                        <div class="form-group" style="margin-bottom: 0.7rem;">
+                            <label>Nom</label>
+                            <input type="text" name="nom" value="{{ client.nom }}" required>
+                        </div>
+                        <div class="form-group" style="margin-bottom: 0.7rem;">
+                            <label>Courriel</label>
+                            <input type="email" name="email" value="{{ client.email or '' }}">
+                        </div>
+                        <div class="form-group" style="margin-bottom: 0.7rem;">
+                            <label>Entreprise</label>
+                            <input type="text" name="entreprise" value="{{ client.entreprise or '' }}">
+                        </div>
+                        <div class="form-group" style="margin-bottom: 0.7rem;">
+                            <label>Secteur</label>
+                            <input type="text" name="secteur" value="{{ client.secteur or '' }}">
+                        </div>
+                        <div class="form-group" style="margin-bottom: 0.7rem;">
+                            <label>Statut</label>
+                            <select name="statut">
+                                {# selected = pré-sélectionne la valeur actuelle #}
+                                <option value="prospect"  {% if client.statut == 'prospect'  %}selected{% endif %}>Prospect</option>
+                                <option value="actif"     {% if client.statut == 'actif'     %}selected{% endif %}>Actif</option>
+                                <option value="complété"  {% if client.statut == 'complété'  %}selected{% endif %}>Complété</option>
+                                <option value="archivé"   {% if client.statut == 'archivé'   %}selected{% endif %}>Archivé</option>
+                            </select>
+                        </div>
+                        <div class="form-group" style="margin-bottom: 0.9rem;">
+                            <label>Notes</label>
+                            <textarea name="notes" rows="3">{{ client.notes or '' }}</textarea>
+                        </div>
+                        <button type="submit" class="btn btn-primary" style="width: 100%;">Sauvegarder</button>
+                    </form>
+                </div>
+            </details>
+
+            {# ── SUPPRIMER ─────────────────────────────────────────────── #}
+            <div style="margin-top: 0.8rem;">
+                <form method="POST" action="/clients/{{ client.id }}/delete"
+                      onsubmit="return confirm('Supprimer {{ client.nom }} et toutes ses données?')">
+                    {# confirm() est une boîte de dialogue JS native — évite les suppressions accidentelles #}
+                    <button type="submit" class="btn btn-danger" style="width: 100%; font-size: 0.78rem;">
+                        ✕ Supprimer ce client
+                    </button>
+                </form>
+            </div>
+        </div>
+
+    </div>
+
+    {# ── COLONNE DROITE : historique ───────────────────────────────────── #}
+    <div class="fiche-right">
+
+        {# ── QUESTIONNAIRE CLIENT (lien à envoyer) ──────────────────────── #}
+        <div class="card">
+            <div class="section-header">
+                <div class="section-title">Questionnaire client</div>
+            </div>
+            {% if questionnaire %}
+                <div class="flex gap-sm items-center">
+                    <span class="badge badge-actif">Soumis</span>
+                    <span class="text-muted">{{ questionnaire.submitted_at[:10] }}</span>
+                </div>
+                {# Afficher les réponses du client dans un collapsible #}
+                <details class="collapsible" style="margin-top: 0.8rem;">
+                    <summary>Voir les réponses</summary>
+                    <div class="collapsible-body">
+                        {% set rep = questionnaire.reponses | tojson | from_json %}
+                        {# Note: on utilise un filtre Jinja2 custom plus bas,
+                           ou on parse dans app.py — ici on affiche le JSON brut proprement #}
+                        {% set rep = questionnaire.reponses %}
+                        <pre style="font-size: 0.78rem; color: var(--muted); white-space: pre-wrap; overflow-x: auto;">{{ rep }}</pre>
+                    </div>
+                </details>
+            {% else %}
+                <div class="text-muted" style="margin-bottom: 0.8rem; font-size: 0.82rem;">
+                    Aucune réponse soumise. Envoie ce lien au client avant la réunion (optionnel).
+                </div>
+                <div class="flex gap-sm items-center" style="flex-wrap: wrap;">
+                    <code style="background: var(--surface2); padding: 0.35rem 0.6rem;
+                                 border-radius: var(--radius); font-size: 0.78rem; flex: 1; min-width: 0;
+                                 overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                        /q/{{ client.id }}
+                    </code>
+                    <button class="btn btn-secondary" onclick="copyQLink({{ client.id }})">
+                        Copier le lien
+                    </button>
+                </div>
+            {% endif %}
+        </div>
+
+        {# ── CONSULTATIONS ────────────────────────────────────────────── #}
+        <div class="card">
+            <div class="section-header">
+                <div class="section-title">Consultations</div>
+                <a href="/clients/{{ client.id }}/consultation/new" class="btn btn-primary">
+                    + Nouvelle consultation
+                </a>
+            </div>
+
+            {% if consultations %}
+                {% for c in consultations %}
+                <details class="consult-item" {% if loop.first %}open{% endif %}>
+                    <summary>
+                        <span>Consultation du {{ c.date }}</span>
+                        <form method="POST" action="/consultations/{{ c.id }}/delete"
+                              style="display:inline;"
+                              onsubmit="return confirm('Supprimer cette consultation?')">
+                            <button type="submit" class="btn btn-ghost" style="font-size: 0.75rem; color: var(--red);"
+                                    onclick="event.stopPropagation()">
+                                ✕
+                            </button>
+                        </form>
+                    </summary>
+                    <div class="consult-body">
+
+                        {# Affiche les réponses parsées depuis app.py #}
+                        {% set r = c.reponses_parsed %}
+
+                        {% if r.activite %}
+                        <div class="q-row">
+                            <div class="q-label">Ce qu'ils font</div>
+                            <div class="q-value">{{ r.activite }}</div>
+                        </div>
+                        {% endif %}
+
+                        {% if r.clientele %}
+                        <div class="q-row">
+                            <div class="q-label">Clientèle cible</div>
+                            <div class="q-value">{{ r.clientele }}</div>
+                        </div>
+                        {% endif %}
+
+                        {% if r.pourquoi_maintenant %}
+                        <div class="q-row">
+                            <div class="q-label">Pourquoi maintenant</div>
+                            <div class="q-value">{{ r.pourquoi_maintenant }}</div>
+                        </div>
+                        {% endif %}
+
+                        {% if r.type_projet %}
+                        <div class="q-row">
+                            <div class="q-label">Type de projet</div>
+                            <div class="q-value">{{ r.type_projet }}</div>
+                        </div>
+                        {% endif %}
+
+                        {% if r.vision %}
+                        <div class="q-row">
+                            <div class="q-label">Vision esthétique</div>
+                            <div class="q-value">{{ r.vision }}</div>
+                        </div>
+                        {% endif %}
+
+                        {% if r.budget %}
+                        <div class="q-row">
+                            <div class="q-label">Budget</div>
+                            <div class="q-value">{{ r.budget }}</div>
+                        </div>
+                        {% endif %}
+
+                        {% if r.deadline %}
+                        <div class="q-row">
+                            <div class="q-label">Deadline</div>
+                            <div class="q-value">{{ r.deadline }}</div>
+                        </div>
+                        {% endif %}
+
+                        {% if r.assets %}
+                        <div class="q-row">
+                            <div class="q-label">Assets existants</div>
+                            <div class="q-value">{{ r.assets }}</div>
+                        </div>
+                        {% endif %}
+
+                        {% if r.acces_technique %}
+                        <div class="q-row">
+                            <div class="q-label">Accès technique</div>
+                            <div class="q-value">{{ r.acces_technique }}</div>
+                        </div>
+                        {% endif %}
+
+                        {% if r.implication %}
+                        <div class="q-row">
+                            <div class="q-label">Niveau d'implication</div>
+                            <div class="q-value">{{ r.implication }}</div>
+                        </div>
+                        {% endif %}
+
+                        {% if c.notes %}
+                        <hr class="divider">
+                        <div class="q-row">
+                            <div class="q-label">Notes</div>
+                            <div class="q-value" style="white-space: pre-wrap;">{{ c.notes }}</div>
+                        </div>
+                        {% endif %}
+
+                    </div>
+                </details>
+                {% endfor %}
+            {% else %}
+                <div class="empty-state">
+                    Aucune consultation enregistrée.
+                </div>
+            {% endif %}
+        </div>
+
+        {# ── CONTRAT ──────────────────────────────────────────────────── #}
+        <div class="card">
+            <div class="section-header">
+                <div class="section-title">Contrat</div>
+                <a href="/clients/{{ client.id }}/contrat" class="btn btn-secondary">
+                    {% if contrat %}Modifier{% else %}Créer{% endif %}
+                </a>
+            </div>
+
+            {% if contrat %}
+                <div class="flex gap-sm items-center" style="margin-bottom: 0.8rem; flex-wrap: wrap;">
+                    <span class="badge badge-{{ contrat.statut }}">{{ contrat.statut }}</span>
+                    <span class="text-muted">Créé le {{ contrat.created_at[:10] }}</span>
+                </div>
+
+                {% if milestones %}
+                    <div style="margin-bottom: 0.5rem;">
+                        {% for m in milestones %}
+                        <div style="display: flex; justify-content: space-between; align-items: center;
+                                    padding: 0.4rem 0; border-bottom: 1px solid var(--border);
+                                    font-size: 0.85rem;">
+                            <span>{{ m.titre or '—' }}</span>
+                            <span style="color: var(--green); font-size: 0.88rem;">
+                                {{ m.prix | default(0) }}$
+                            </span>
+                        </div>
+                        {% endfor %}
+                        <div style="text-align: right; padding-top: 0.5rem;
+                                    font-size: 0.9rem; color: var(--green);">
+                            Total : <strong>{{ total_contrat | int }}$</strong>
+                        </div>
+                    </div>
+                {% endif %}
+
+                {% if contrat.scope %}
+                    <div class="text-muted" style="font-size: 0.82rem; margin-top: 0.5rem;
+                                                    white-space: pre-wrap;">{{ contrat.scope[:200] }}{% if contrat.scope | length > 200 %}…{% endif %}</div>
+                {% endif %}
+            {% else %}
+                <div class="empty-state">
+                    Aucun contrat pour ce client.
+                </div>
+            {% endif %}
+        </div>
+
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+    function copyQLink(clientId) {
+        // Construit l'URL complète avec le domaine actuel
+        const url = window.location.origin + '/q/' + clientId;
+        navigator.clipboard.writeText(url).then(() => {
+            // Feedback visuel temporaire
+            const btn = event.target;
+            btn.textContent = '✓ Copié!';
+            setTimeout(() => btn.textContent = 'Copier le lien', 2000);
+        });
+    }
+</script>
+{% endblock %}

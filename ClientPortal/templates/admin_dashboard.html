@@ -1,0 +1,126 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+
+{# ── EN-TÊTE ─────────────────────────────────────────────────────────────── #}
+<div class="page-header">
+    <div>
+        <h1 class="page-title">Mes <span>clients</span></h1>
+        <div class="page-sub">{{ stats.total }} client{{ 's' if stats.total != 1 }} enregistré{{ 's' if stats.total != 1 }}</div>
+    </div>
+</div>
+
+{# ── STATS ────────────────────────────────────────────────────────────────── #}
+<div class="stats-bar">
+    <div class="stat-card">
+        <div class="stat-value">{{ stats.total }}</div>
+        <div class="stat-label">Total</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-value" style="color: var(--accent2);">{{ stats.prospects }}</div>
+        <div class="stat-label">Prospects</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-value" style="color: var(--green);">{{ stats.actifs }}</div>
+        <div class="stat-label">Actifs</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-value" style="color: var(--gold);">{{ stats.completes }}</div>
+        <div class="stat-label">Complétés</div>
+    </div>
+</div>
+
+{# ── FORMULAIRE NOUVEAU CLIENT (collapsible) ──────────────────────────────── #}
+{# <details> est un élément HTML natif qui se toggle sans JS — pratique! #}
+<details class="collapsible" id="new-client-form">
+    <summary>＋ Nouveau client</summary>
+    <div class="collapsible-body">
+        <form method="POST" action="/clients/new">
+            <div class="form-grid">
+                <div class="form-group">
+                    <label for="nom">Nom *</label>
+                    <input type="text" id="nom" name="nom" placeholder="Prénom Nom" required>
+                </div>
+                <div class="form-group">
+                    <label for="email">Courriel</label>
+                    <input type="email" id="email" name="email" placeholder="client@exemple.com">
+                </div>
+                <div class="form-group">
+                    <label for="entreprise">Entreprise</label>
+                    <input type="text" id="entreprise" name="entreprise" placeholder="Nom de l'entreprise">
+                </div>
+                <div class="form-group">
+                    <label for="secteur">Secteur</label>
+                    <input type="text" id="secteur" name="secteur" placeholder="ex: Restauration, Beauté...">
+                </div>
+                <div class="form-group span-2">
+                    <label for="notes">Notes initiales</label>
+                    <textarea id="notes" name="notes" rows="2"
+                              placeholder="Premier contact, source de référence, notes libres..."></textarea>
+                </div>
+            </div>
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary">Créer le client →</button>
+            </div>
+        </form>
+    </div>
+</details>
+
+{# ── LISTE DES CLIENTS ────────────────────────────────────────────────────── #}
+<div class="card">
+    {% if clients %}
+        <table class="client-table">
+            <thead>
+                <tr>
+                    <th>Client</th>
+                    <th>Entreprise</th>
+                    <th>Secteur</th>
+                    <th>Statut</th>
+                    <th>Ajouté</th>
+                </tr>
+            </thead>
+            <tbody>
+                {# loop.index = numéro de l'itération (commence à 1 en Jinja2) #}
+                {% for client in clients %}
+                <tr onclick="window.location='/clients/{{ client.id }}'">
+                    <td>
+                        <strong>{{ client.nom }}</strong>
+                        {% if client.email %}
+                            <div class="text-muted">{{ client.email }}</div>
+                        {% endif %}
+                    </td>
+                    <td>{{ client.entreprise or '—' }}</td>
+                    <td>{{ client.secteur or '—' }}</td>
+                    <td>
+                        <span class="badge badge-{{ client.statut }}">
+                            {{ client.statut }}
+                        </span>
+                    </td>
+                    <td class="text-muted">
+                        {# Affiche seulement la date (pas l'heure) #}
+                        {{ client.created_at[:10] if client.created_at else '—' }}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <div class="empty-state">
+            Aucun client pour l'instant. Utilise le formulaire ci-dessus pour en ajouter un.
+        </div>
+    {% endif %}
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Si l'URL contient #new-client-form (ex: après une erreur de validation),
+    // on ouvre automatiquement le formulaire collapsible
+    if (window.location.hash === '#new-client-form') {
+        document.getElementById('new-client-form').open = true;
+    }
+</script>
+{% endblock %}
