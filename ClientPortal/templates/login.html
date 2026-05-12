@@ -28,10 +28,27 @@
                 <input type="text" id="username" name="username"
                        placeholder="naomie" autocomplete="username" required>
             </div>
-            <div class="form-group" style="margin-bottom: 1.4rem;">
+            <div class="form-group" style="margin-bottom: 0.8rem;">
                 <label for="password">Mot de passe</label>
-                <input type="password" id="password" name="password"
-                       placeholder="••••••••" autocomplete="current-password" required>
+                <div style="position: relative;">
+                    <input type="password" id="password" name="password"
+                           placeholder="••••••••" autocomplete="current-password" required
+                           style="padding-right: 2.8rem;">
+                    {# Le bouton est positionné en absolu à l'intérieur du input #}
+                    <button type="button" onclick="togglePassword('password', this)"
+                            style="position: absolute; right: 0.7rem; top: 50%; transform: translateY(-50%);
+                                   background: none; border: none; cursor: pointer;
+                                   color: var(--muted); font-size: 1rem; padding: 0;">
+                        👁
+                    </button>
+                </div>
+            </div>
+            <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 1.4rem;">
+                {# localStorage mémorise des données côté navigateur, sans expiration #}
+                <input type="checkbox" id="remember" style="accent-color: var(--magenta);">
+                <label for="remember" style="font-size: 0.8rem; color: var(--muted); cursor: pointer;">
+                    Se souvenir de moi
+                </label>
             </div>
             <button type="submit" class="btn btn-primary" style="width: 100%;">
                 Connexion →
@@ -41,5 +58,34 @@
     </div>
 </div>
 
+<script>
+    // Bascule le type de l'input entre "password" (caché) et "text" (visible)
+    function togglePassword(inputId, btn) {
+        const input = document.getElementById(inputId);
+        const showing = input.type === 'text';
+        input.type = showing ? 'password' : 'text';
+        btn.textContent = showing ? '👁' : '🙈';
+    }
+
+    // Au chargement : pré-remplit l'identifiant si mémorisé
+    const saved = localStorage.getItem('admin_username');
+    if (saved) {
+        document.getElementById('username').value = saved;
+        document.getElementById('remember').checked = true;
+    }
+
+    // À la soumission : sauvegarde ou efface selon la checkbox
+    document.querySelector('form').addEventListener('submit', () => {
+        const username = document.getElementById('username').value;
+        const remember = document.getElementById('remember').checked;
+        // localStorage.setItem persiste jusqu'à ce qu'on l'efface manuellement
+        // localStorage.removeItem efface la clé
+        if (remember) {
+            localStorage.setItem('admin_username', username);
+        } else {
+            localStorage.removeItem('admin_username');
+        }
+    });
+</script>
 </body>
 </html>

@@ -110,6 +110,14 @@ def migrate_db():
     except Exception:
         pass  # Colonne déjà présente, rien à faire
 
+    try:
+        # password est nullable : NULL = pas de compte client encore créé.
+        # On ne crée le compte que quand Naomie décide d'en donner l'accès.
+        conn.execute("ALTER TABLE clients ADD COLUMN password TEXT")
+        conn.commit()
+    except Exception:
+        pass  # Colonne déjà présente, rien à faire
+
     # Génère un token UUID pour chaque client qui n'en a pas encore
     # (clients créés avant la migration)
     existing = conn.execute("SELECT id FROM clients WHERE token IS NULL").fetchall()

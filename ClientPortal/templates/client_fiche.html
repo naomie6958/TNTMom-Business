@@ -78,6 +78,39 @@
                 </div>
             </details>
 
+            {# ── ACCÈS PORTAIL CLIENT ──────────────────────────────────── #}
+            {# client.password est NULL si aucun compte n'a encore été créé #}
+            <details class="collapsible" style="margin-top: 0.5rem;">
+                <summary style="font-size: 0.8rem;">
+                    🔑 Accès portail
+                    {% if client.password %}
+                        <span class="badge badge-actif" style="margin-left: 0.4rem; font-size: 0.7rem;">Actif</span>
+                    {% else %}
+                        <span class="badge" style="margin-left: 0.4rem; font-size: 0.7rem; background: var(--surface2); color: var(--muted);">Aucun</span>
+                    {% endif %}
+                </summary>
+                <div class="collapsible-body">
+                    <div class="text-muted" style="font-size: 0.8rem; margin-bottom: 0.7rem;">
+                        {% if client.password %}
+                            Compte actif. Tu peux changer le mot de passe ici.
+                        {% else %}
+                            Crée un mot de passe pour donner accès au portail client.
+                        {% endif %}
+                    </div>
+                    <form method="POST" action="/clients/{{ client.id }}/set-password">
+                        <div class="form-group" style="margin-bottom: 0.7rem;">
+                            <label>{{ 'Nouveau mot de passe' if client.password else 'Mot de passe' }}</label>
+                            {# autocomplete="new-password" = dit au navigateur de ne pas proposer l'ancien mot de passe #}
+                            <input type="password" name="password" required
+                                   autocomplete="new-password" placeholder="Minimum 6 caractères">
+                        </div>
+                        <button type="submit" class="btn btn-primary" style="width: 100%;">
+                            {{ 'Changer le mot de passe' if client.password else 'Créer le compte' }}
+                        </button>
+                    </form>
+                </div>
+            </details>
+
             {# ── SUPPRIMER ─────────────────────────────────────────────── #}
             <div style="margin-top: 0.8rem;">
                 <form method="POST" action="/clients/{{ client.id }}/delete"
@@ -271,9 +304,20 @@
                                     padding: 0.4rem 0; border-bottom: 1px solid var(--border);
                                     font-size: 0.85rem;">
                             <span>{{ m.titre or '—' }}</span>
-                            <span style="color: var(--green); font-size: 0.88rem;">
-                                {{ m.prix | default(0) }}$
-                            </span>
+                            <div style="display: flex; align-items: center; gap: 0.6rem;">
+                                <span style="color: var(--green); font-size: 0.88rem;">
+                                    {{ m.prix | default(0) }}$
+                                </span>
+                                {# loop.index0 = index du milestone dans le tableau, commence à 0 #}
+                                {# On soumet via un form POST — jamais GET pour une action qui modifie des données #}
+                                <form method="POST"
+                                      action="/clients/{{ client.id }}/milestone/{{ loop.index0 }}/toggle">
+                                    <button type="submit" class="btn btn-ghost" style="font-size: 0.75rem;
+                                            color: {% if m.statut == 'complété' %}var(--green){% else %}var(--muted){% endif %};">
+                                        {% if m.statut == 'complété' %}✓ complété{% else %}○ en cours{% endif %}
+                                    </button>
+                                </form>
+                            </div>
                         </div>
                         {% endfor %}
                         <div style="text-align: right; padding-top: 0.5rem;

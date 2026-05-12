@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+
+{% block title %}Mon projet{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1 class="page-title">Bonjour, {{ client.nom }} 👋</h1>
+        <div class="page-sub">Voici l'avancement de ton projet.</div>
+    </div>
+    <a href="/portail/logout" class="btn btn-ghost" style="font-size: 0.82rem;">
+        Déconnexion
+    </a>
+</div>
+
+<div style="max-width: 700px;">
+    {% if milestones %}
+        <div class="card">
+            <div class="section-title" style="margin-bottom: 1rem;">Milestones</div>
+
+            {% for m in milestones %}
+            <div style="display: flex; justify-content: space-between; align-items: center;
+                        padding: 0.75rem 0; border-bottom: 1px solid var(--border);">
+                <div>
+                    <div style="font-size: 0.9rem;">{{ m.titre or '—' }}</div>
+                    {% if m.livrable %}
+                        <div class="text-muted" style="font-size: 0.78rem;">{{ m.livrable }}</div>
+                    {% endif %}
+                </div>
+                <div style="display: flex; align-items: center; gap: 0.8rem;">
+                    <span style="color: var(--green); font-size: 0.85rem;">{{ m.prix | default(0) }}$</span>
+                    {# Le badge change de couleur selon le statut du milestone #}
+                    <span class="badge badge-{{ m.statut | default('en cours') | replace(' ', '-') }}">
+                        {{ m.statut | default('en cours') }}
+                    </span>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="card">
+            <div class="empty-state">Aucun milestone pour le moment. Naomie les ajoutera bientôt.</div>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

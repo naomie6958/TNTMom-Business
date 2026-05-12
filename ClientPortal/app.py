@@ -1,6 +1,6 @@
 from flask import Flask, render_template, request, redirect, session, jsonify
 from database import init_db, seed_db, migrate_db, get_db
-from werkzeug.security import check_password_hash
+from werkzeug.security import check_password_hash, generate_password_hash
 from dotenv import load_dotenv
 from functools import wraps
 import datetime
@@ -36,6 +36,13 @@ def login_required(f):
         return f(*args, **kwargs)
     return decorated
 
+def client_login_required(f):
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        if 'client_id' not in session:
+            return redirect('/portail/login')
+        return f(*args, **kwargs)
+    return decorated
 
 # ─── AUTH ─────────────────────────────────────────────────────────────────────
 
@@ -431,6 +438,63 @@ def contrat_print(client_id):
                            milestones=milestones, total=total)
 
 
+# ─── MILESTONES ───────────────────────────────────────────────────────────────
+
+@app.route('/clients/<int:client_id>/milestone/<int:index>/toggle', methods=['POST'])
+@login_required
+def toggle_milestone(client_id, index):
+    conn = get_db()
+    contrat = conn.execute(
+        'SELECT * FROM contrats WHERE client_id = ? ORDER BY created_at DESC LIMIT 1',
+        (client_id,)
+    ).fetchone()
+
+    if not contrat or not contrat['milestones']:
+        conn.close()
+        return redirect(f'/clients/{client_id}')
+
+    # On charge le JSON, modifie l'élément à l'index voulu, et resauvegarde.
+    # L'index vient de l'URL — c'est la position du milestone dans le tableau.
+    milestones = json.loads(contrat['milestones'])
+
+    if 0 <= index < len(milestones):
+        actuel = milestones[index].get('statut', 'en cours')
+        # Bascule entre les deux statuts possibles
+        milestones[index]['statut'] = 'complété' if actuel != 'complété' else 'en cours'
+
+    conn.execute(
+        'UPDATE contrats SET milestones = ? WHERE id = ?',
+        (json.dumps(milestones, ensure_ascii=False), contrat['id'])
+    )
+    conn.commit()
+    conn.close()
+    return redirect(f'/clients/{client_id}')
+
+
+# ─── ACCÈS PORTAIL CLIENT ─────────────────────────────────────────────────────
+
+@app.route('/clients/<int:client_id>/set-password', methods=['POST'])
+@login_required
+def set_client_password(client_id):
+    password = request.form.get('password', '').strip()
+
+    # Validation minimale : on refuse un mot de passe vide
+    if not password:
+        return redirect(f'/clients/{client_id}')
+
+    conn = get_db()
+    # generate_password_hash() transforme le mot de passe en hash sécurisé.
+    # Même logique que pour l'admin — on ne stocke jamais un mot de passe en clair.
+    conn.execute(
+        'UPDATE clients SET password = ? WHERE id = ?',
+        (generate_password_hash(password), client_id)
+    )
+    conn.commit()
+    conn.close()
+
+    return redirect(f'/clients/{client_id}')
+
+
 @app.route('/plan')
 @login_required
 def plan():
@@ -441,6 +505,62 @@ def plan():
 @login_required
 def roadmap():
     return render_template('roadmap.html')
+
+
+# ─── PORTAIL CLIENT ───────────────────────────────────────────────────────────
+
+@app.route('/portail/login', methods=['GET', 'POST'])
+def portail_login():
+    error = None
+    if request.method == 'POST':
+        email = request.form.get('email', '').strip()
+        password = request.form.get('password', '')
+
+        conn = get_db()
+        client = conn.execute(
+            'SELECT * FROM clients WHERE email = ?', (email,)
+        ).fetchone()
+        conn.close()
+
+        if client and client['password'] and check_password_hash(client['password'], password):
+            session['client_id']   = client['id']
+            session['client_nom'] = client['nom']
+            return redirect('/portail/dashboard')
+
+        error = 'Courriel ou mot de passe incorrect.'
+
+    return render_template('portail_login.html', error=error)
+
+
+@app.route('/portail/logout')
+def portail_logout():
+    session.pop('client_id', None)
+    session.pop('client_nom', None)
+    return redirect('/portail/login')
+
+
+
+@app.route('/portail/dashboard')
+@client_login_required
+def portail_dashboard():
+    conn = get_db()
+    client = conn.execute(
+        'SELECT * FROM clients WHERE id = ?', (session['client_id'],)
+    ).fetchone()
+
+    contrat = conn.execute(
+        'SELECT * FROM contrats WHERE client_id = ? ORDER BY created_at DESC LIMIT 1',
+        (session['client_id'],)
+    ).fetchone()
+    conn.close()
+
+    milestones = []
+    if contrat and contrat['milestones']:
+        milestones = json.loads(contrat['milestones'])
+
+    return render_template('portail_dashboard.html',
+                            client=client,
+                            milestones=milestones)
 
 
 if __name__ == '__main__':
