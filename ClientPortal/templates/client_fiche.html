@@ -124,9 +124,9 @@
                     <code style="background: var(--surface2); padding: 0.35rem 0.6rem;
                                  border-radius: var(--radius); font-size: 0.78rem; flex: 1; min-width: 0;
                                  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
-                        /q/{{ client.id }}
+                        /q/{{ client.token }}
                     </code>
-                    <button class="btn btn-secondary" onclick="copyQLink({{ client.id }})">
+                    <button class="btn btn-secondary" onclick="copyQLink('{{ client.token }}')">
                         Copier le lien
                     </button>
                 </div>
@@ -301,9 +301,9 @@
 
 {% block scripts %}
 <script>
-    function copyQLink(clientId) {
+    function copyQLink(token) {
         // Construit l'URL complète avec le domaine actuel
-        const url = window.location.origin + '/q/' + clientId;
+        const url = window.location.origin + '/q/' + token;
         navigator.clipboard.writeText(url).then(() => {
             // Feedback visuel temporaire
             const btn = event.target;

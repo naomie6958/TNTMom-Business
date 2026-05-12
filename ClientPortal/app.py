@@ -1,11 +1,12 @@
 from flask import Flask, render_template, request, redirect, session, jsonify
-from database import init_db, seed_db, get_db
+from database import init_db, seed_db, migrate_db, get_db
 from werkzeug.security import check_password_hash
 from dotenv import load_dotenv
 from functools import wraps
 import datetime
 import json
 import os
+import uuid
 
 load_dotenv()
 
@@ -17,6 +18,7 @@ app.secret_key = os.getenv('SECRET_KEY', 'dev-only-change-me')
 
 # On initialise et peuple la DB au démarrage de l'app
 init_db()
+migrate_db()  # Ajoute token aux clients existants si nécessaire
 seed_db()
 
 
@@ -110,14 +112,18 @@ def new_client():
         return redirect('/dashboard')
 
     conn = get_db()
+    # uuid.uuid4() génère un identifiant aléatoire unique — format : xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+    # str() le convertit en texte pour le stocker dans SQLite
+    token = str(uuid.uuid4())
     cursor = conn.execute(
-        'INSERT INTO clients (nom, email, entreprise, secteur, notes) VALUES (?,?,?,?,?)',
+        'INSERT INTO clients (nom, email, entreprise, secteur, notes, token) VALUES (?,?,?,?,?,?)',
         (
             nom,
             request.form.get('email', '').strip(),
             request.form.get('entreprise', '').strip(),
             request.form.get('secteur', '').strip(),
             request.form.get('notes', '').strip(),
+            token,
         )
     )
     client_id = cursor.lastrowid  # lastrowid = l'id de la ligne qu'on vient d'insérer
@@ -363,12 +369,13 @@ def contrat(client_id):
 
 # ─── QUESTIONNAIRE CLIENT (accès public, pas de login) ───────────────────────
 
-@app.route('/q/<int:client_id>', methods=['GET', 'POST'])
-def questionnaire_client(client_id):
+@app.route('/q/<token>', methods=['GET', 'POST'])
+def questionnaire_client(token):
     conn = get_db()
-    # On n'expose que le nom du client — pas l'email ni les notes
+    # On cherche le client par token (pas par id) — l'id ne sort jamais dans l'URL
+    # On n'expose que le nom et l'entreprise au client
     client = conn.execute(
-        'SELECT id, nom, entreprise FROM clients WHERE id = ?', (client_id,)
+        'SELECT id, nom, entreprise FROM clients WHERE token = ?', (token,)
     ).fetchone()
 
     if not client:
@@ -376,7 +383,7 @@ def questionnaire_client(client_id):
         return render_template('404.html'), 404
 
     deja_soumis = conn.execute(
-        'SELECT id FROM questionnaires_client WHERE client_id = ?', (client_id,)
+        'SELECT id FROM questionnaires_client WHERE client_id = ?', (client['id'],)
     ).fetchone()
 
     if request.method == 'POST' and not deja_soumis:
@@ -394,7 +401,7 @@ def questionnaire_client(client_id):
         }
         conn.execute(
             'INSERT INTO questionnaires_client (client_id, reponses) VALUES (?,?)',
-            (client_id, json.dumps(reponses, ensure_ascii=False))
+            (client['id'], json.dumps(reponses, ensure_ascii=False))
         )
         conn.commit()
         deja_soumis = True

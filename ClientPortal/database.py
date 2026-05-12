@@ -1,5 +1,6 @@
 import sqlite3
 import os
+import uuid
 from dotenv import load_dotenv
 from werkzeug.security import generate_password_hash
 
@@ -42,6 +43,7 @@ def init_db():
             notes      TEXT,
             statut     TEXT DEFAULT 'prospect',
             -- statuts possibles : prospect / actif / complété / archivé
+            token      TEXT UNIQUE,  -- UUID pour le lien questionnaire public /q/<token>
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         );
 
@@ -92,6 +94,33 @@ def init_db():
 
     ''')
     conn.commit()
+    conn.close()
+
+
+def migrate_db():
+    conn = get_db()
+
+    # ALTER TABLE ajoute une colonne à une table existante.
+    # Si la colonne existe déjà (redémarrage), SQLite lève une erreur — on l'ignore.
+    try:
+        # SQLite ne supporte pas UNIQUE dans ALTER TABLE ADD COLUMN.
+        # L'unicité est garantie de fait par uuid.uuid4() — collision impossible en pratique.
+        conn.execute("ALTER TABLE clients ADD COLUMN token TEXT")
+        conn.commit()
+    except Exception:
+        pass  # Colonne déjà présente, rien à faire
+
+    # Génère un token UUID pour chaque client qui n'en a pas encore
+    # (clients créés avant la migration)
+    existing = conn.execute("SELECT id FROM clients WHERE token IS NULL").fetchall()
+    for row in existing:
+        conn.execute(
+            "UPDATE clients SET token = ? WHERE id = ?",
+            (str(uuid.uuid4()), row['id'])
+        )
+    if existing:
+        conn.commit()
+
     conn.close()
 
 
