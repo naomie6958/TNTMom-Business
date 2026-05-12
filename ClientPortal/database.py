@@ -1,5 +1,10 @@
 import sqlite3
+import os
+from dotenv import load_dotenv
 from werkzeug.security import generate_password_hash
+
+# Charge le .env pour que os.getenv() puisse lire ADMIN_PASSWORD et SECRET_KEY
+load_dotenv()
 
 # SQLite = base de données dans un seul fichier .db, pas de serveur séparé.
 # Parfait pour une app mono-utilisateur ou petit trafic.
@@ -102,7 +107,8 @@ def seed_db():
         # On ne stocke JAMAIS un mot de passe en clair dans une DB.
         conn.execute(
             "INSERT INTO users (username, password, name) VALUES (?, ?, ?)",
-            ('naomie', generate_password_hash('tntmom2024'), 'Naomie')
+            # Le mot de passe vient du .env (jamais hardcodé dans le code public)
+        ('naomie', generate_password_hash(os.getenv('ADMIN_PASSWORD', 'change-me')), 'Naomie')
         )
         # Client de démo pour avoir quelque chose à voir au premier lancement
         conn.execute('''
