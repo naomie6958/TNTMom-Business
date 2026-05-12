@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Contrat — {{ client.nom }}</title>
+    <style>
+        /* @media print = styles appliqués uniquement à l'impression.
+           Tout le reste est pour l'aperçu à l'écran avant d'imprimer. */
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Georgia', serif;
+            font-size: 11pt;
+            color: #1a1a1a;
+            background: #f5f5f5;
+            padding: 2rem;
+        }
+
+        .doc {
+            max-width: 780px;
+            margin: 0 auto;
+            background: white;
+            padding: 3.5rem 4rem;
+            box-shadow: 0 2px 20px rgba(0,0,0,0.1);
+        }
+
+        /* ── EN-TÊTE ── */
+        .doc-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 2.5rem;
+            padding-bottom: 1.5rem;
+            border-bottom: 2px solid #1a1a1a;
+        }
+
+        .doc-brand {
+            font-family: 'Arial Black', sans-serif;
+            font-size: 1.6rem;
+            letter-spacing: 0.05em;
+            color: #d94fbd;
+        }
+
+        .doc-meta {
+            text-align: right;
+            font-size: 9pt;
+            color: #555;
+            line-height: 1.6;
+        }
+
+        h1 {
+            font-size: 1.8rem;
+            margin-bottom: 0.3rem;
+            letter-spacing: 0.02em;
+        }
+
+        .doc-subtitle {
+            font-size: 10pt;
+            color: #555;
+            margin-bottom: 2.5rem;
+        }
+
+        /* ── SECTIONS ── */
+        .section {
+            margin-bottom: 1.8rem;
+        }
+
+        .section-title {
+            font-family: 'Arial', sans-serif;
+            font-size: 8pt;
+            font-weight: bold;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            color: #888;
+            margin-bottom: 0.5rem;
+            padding-bottom: 0.3rem;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .section p,
+        .section .content {
+            font-size: 10.5pt;
+            line-height: 1.7;
+            color: #2a2a2a;
+            white-space: pre-wrap;
+        }
+
+        .parties-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+        }
+
+        .partie h4 {
+            font-size: 9pt;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: #555;
+            margin-bottom: 0.3rem;
+        }
+
+        /* ── TABLE MILESTONES ── */
+        .milestones-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 10pt;
+        }
+
+        .milestones-table th {
+            text-align: left;
+            font-size: 8.5pt;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+            color: #888;
+            padding: 0.4rem 0.6rem;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .milestones-table td {
+            padding: 0.5rem 0.6rem;
+            border-bottom: 1px solid #f0f0f0;
+            vertical-align: top;
+        }
+
+        .milestones-table .prix {
+            text-align: right;
+            font-weight: bold;
+            white-space: nowrap;
+        }
+
+        .milestones-total {
+            text-align: right;
+            font-weight: bold;
+            font-size: 11pt;
+            padding: 0.6rem 0.6rem 0;
+            color: #1a1a1a;
+        }
+
+        /* ── SIGNATURES ── */
+        .signatures {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 3rem;
+            margin-top: 3rem;
+            padding-top: 2rem;
+            border-top: 1px solid #ddd;
+        }
+
+        .sig-block p {
+            font-size: 9pt;
+            color: #555;
+            margin-bottom: 2.5rem;
+        }
+
+        .sig-line {
+            border-top: 1px solid #1a1a1a;
+            margin-top: 0.3rem;
+            padding-top: 0.3rem;
+            font-size: 9pt;
+            color: #555;
+        }
+
+        /* ── BOUTON IMPRIMER (masqué à l'impression) ── */
+        .print-bar {
+            position: fixed;
+            top: 1rem;
+            right: 1rem;
+            display: flex;
+            gap: 0.5rem;
+            z-index: 100;
+        }
+
+        .btn-print {
+            background: #d94fbd;
+            color: white;
+            border: none;
+            padding: 0.6rem 1.2rem;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            cursor: pointer;
+            font-family: monospace;
+        }
+
+        .btn-back {
+            background: white;
+            color: #555;
+            border: 1px solid #ccc;
+            padding: 0.6rem 1rem;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            cursor: pointer;
+            font-family: monospace;
+            text-decoration: none;
+        }
+
+        /* @media print : ce qui est masqué/modifié à l'impression */
+        @media print {
+            body { background: white; padding: 0; }
+            .doc { box-shadow: none; padding: 2rem; }
+            .print-bar { display: none; }  /* cache les boutons */
+        }
+    </style>
+</head>
+<body>
+
+<!-- Barre d'actions (masquée à l'impression) -->
+<div class="print-bar">
+    <a href="/clients/{{ client.id }}/contrat" class="btn-back">← Retour</a>
+    <button class="btn-print" onclick="window.print()">Imprimer / PDF</button>
+</div>
+
+<div class="doc">
+
+    <!-- EN-TÊTE -->
+    <div class="doc-header">
+        <div class="doc-brand">TNTMom Dev</div>
+        <div class="doc-meta">
+            Naomie McMahon Tanguay<br>
+            naomiemcmahont@gmail.com<br>
+            Statut : <strong>{{ contrat.statut | upper }}</strong><br>
+            {{ contrat.created_at[:10] }}
+        </div>
+    </div>
+
+    <h1>Contrat de services</h1>
+    <div class="doc-subtitle">{{ client.nom }}{% if client.entreprise %} · {{ client.entreprise }}{% endif %}</div>
+
+    <!-- PARTIES -->
+    <div class="section">
+        <div class="section-title">Parties</div>
+        <div class="parties-grid">
+            <div class="partie">
+                <h4>Prestataire</h4>
+                <p>Naomie McMahon Tanguay<br>
+                   TNTMom Dev<br>
+                   naomiemcmahont@gmail.com</p>
+            </div>
+            <div class="partie">
+                <h4>Client</h4>
+                <p>{{ client.nom }}<br>
+                   {% if client.entreprise %}{{ client.entreprise }}<br>{% endif %}
+                   {% if client.email %}{{ client.email }}{% endif %}</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- SCOPE -->
+    {% if contrat.scope %}
+    <div class="section">
+        <div class="section-title">Description du projet et scope</div>
+        <div class="content">{{ contrat.scope }}</div>
+    </div>
+    {% endif %}
+
+    <!-- MILESTONES -->
+    {% if milestones %}
+    <div class="section">
+        <div class="section-title">Milestones, livrables et prix</div>
+        <p style="font-size:9.5pt; color:#555; margin-bottom:0.8rem;">
+            Principe : chaque livrable fonctionnel = un paiement.
+            Le milestone suivant ne commence pas sans le paiement du précédent.
+        </p>
+        <table class="milestones-table">
+            <thead>
+                <tr>
+                    <th>Milestone</th>
+                    <th>Livrable</th>
+                    <th style="text-align:right;">Prix</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for m in milestones %}
+                <tr>
+                    <td>{{ m.titre or '—' }}</td>
+                    <td>{{ m.livrable or '—' }}</td>
+                    <td class="prix">{{ m.prix or 0 }} $</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        <div class="milestones-total">Total : {{ total | int }} $</div>
+    </div>
+    {% endif %}
+
+    <!-- CONDITIONS DE PAIEMENT -->
+    {% if contrat.conditions_paiement %}
+    <div class="section">
+        <div class="section-title">Conditions de paiement</div>
+        <div class="content">{{ contrat.conditions_paiement }}</div>
+    </div>
+    {% endif %}
+
+    <!-- RÉVISIONS -->
+    {% if contrat.politique_revisions %}
+    <div class="section">
+        <div class="section-title">Politique de révisions</div>
+        <div class="content">{{ contrat.politique_revisions }}</div>
+    </div>
+    {% endif %}
+
+    <!-- HORS-SCOPE -->
+    {% if contrat.hors_scope %}
+    <div class="section">
+        <div class="section-title">Hors-scope</div>
+        <div class="content">{{ contrat.hors_scope }}</div>
+    </div>
+    {% endif %}
+
+    <!-- TIMELINE -->
+    {% if contrat.timeline %}
+    <div class="section">
+        <div class="section-title">Timeline estimée</div>
+        <div class="content">{{ contrat.timeline }}</div>
+    </div>
+    {% endif %}
+
+    <!-- PROPRIÉTÉ INTELLECTUELLE -->
+    <div class="section">
+        <div class="section-title">Propriété intellectuelle</div>
+        <p class="content">Le client reçoit la pleine propriété de tous les livrables une fois le paiement
+        de chaque milestone complété. Aucun transfert de propriété n'a lieu avant paiement complet du milestone correspondant.</p>
+    </div>
+
+    <!-- ANNULATION -->
+    <div class="section">
+        <div class="section-title">Annulation</div>
+        <p class="content">En cas d'annulation, le milestone en cours est facturé au prorata du travail accompli.
+        Les milestones complétés et payés sont acquis.</p>
+    </div>
+
+    <!-- SIGNATURES -->
+    <div class="signatures">
+        <div class="sig-block">
+            <p>Prestataire — Naomie McMahon Tanguay</p>
+            <div style="height: 2rem;"></div>
+            <div class="sig-line">Signature &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Date</div>
+        </div>
+        <div class="sig-block">
+            <p>Client — {{ client.nom }}</p>
+            <div style="height: 2rem;"></div>
+            <div class="sig-line">Signature &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Date</div>
+        </div>
+    </div>
+
+</div>
+</body>
+</html>

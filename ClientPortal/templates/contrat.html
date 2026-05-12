@@ -15,7 +15,12 @@
         {% endif %}
     </div>
     {% if contrat %}
-        <span class="badge badge-{{ contrat.statut }}">{{ contrat.statut }}</span>
+        <div class="flex gap-sm items-center">
+            <span class="badge badge-{{ contrat.statut }}">{{ contrat.statut }}</span>
+            <a href="/clients/{{ client.id }}/contrat/print" target="_blank" class="btn btn-secondary">
+                Aperçu / Imprimer
+            </a>
+        </div>
     {% endif %}
 </div>
 

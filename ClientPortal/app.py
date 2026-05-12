@@ -412,6 +412,25 @@ def questionnaire_client(token):
                            soumis=bool(deja_soumis))
 
 
+@app.route('/clients/<int:client_id>/contrat/print')
+@login_required
+def contrat_print(client_id):
+    conn = get_db()
+    client = conn.execute('SELECT * FROM clients WHERE id = ?', (client_id,)).fetchone()
+    contrat = conn.execute(
+        'SELECT * FROM contrats WHERE client_id = ? ORDER BY created_at DESC LIMIT 1',
+        (client_id,)
+    ).fetchone()
+    conn.close()
+    if not client or not contrat:
+        return redirect(f'/clients/{client_id}')
+    milestones = json.loads(contrat['milestones']) if contrat['milestones'] else []
+    total = sum(float(m.get('prix', 0)) for m in milestones)
+    return render_template('contrat_print.html',
+                           client=client, contrat=contrat,
+                           milestones=milestones, total=total)
+
+
 @app.route('/plan')
 @login_required
 def plan():
