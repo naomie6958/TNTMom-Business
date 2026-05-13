@@ -156,6 +156,18 @@ def migrate_db():
         conn.commit()
 
     try:
+        conn.execute("ALTER TABLE messages_client ADD COLUMN reponse TEXT")
+        conn.commit()
+    except Exception:
+        pass
+
+    try:
+        conn.execute("ALTER TABLE messages_client ADD COLUMN repondu_at TEXT")
+        conn.commit()
+    except Exception:
+        pass
+
+    try:
         conn.execute("ALTER TABLE contrats ADD COLUMN nom TEXT")
         conn.commit()
     except Exception:

@@ -54,5 +54,63 @@
         </div>
     </div>
 
+    {# Historique groupé par fil de conversation #}
+    {% if threads %}
+    <div class="card" style="margin-top: 1rem;">
+        <div class="section-title" style="margin-bottom: 1rem;">Historique</div>
+
+        {% for subject, msgs in threads %}
+        {% set last = msgs[-1] %}
+        <details class="chat-thread" open>
+            <summary>
+                <span>{{ subject }}</span>
+                <span style="font-size: 0.65rem; color: var(--muted); font-weight: 400;">
+                    {{ msgs[0].created_at[:10] }}
+                    {% if not last.reponse %} · En attente…{% endif %}
+                </span>
+            </summary>
+            <div class="chat-thread-body">
+
+                {# Tous les messages du fil dans l'ordre #}
+                {% for msg in msgs %}
+                <div class="chat-row">
+                    <div class="chat-bubble client">
+                        <div class="chat-meta">Toi · {{ msg.created_at[:16] | replace('T', ' ') }}</div>
+                        {{ msg.message }}
+                    </div>
+                </div>
+                {% if msg.reponse %}
+                <div class="chat-row">
+                    <div class="chat-bubble admin">
+                        <div class="chat-meta">Naomie · {{ msg.repondu_at[:16] | replace('T', ' ') }}</div>
+                        {{ msg.reponse }}
+                    </div>
+                </div>
+                {% endif %}
+                {% endfor %}
+
+                {# Formulaire de réponse — seulement si Naomie a répondu au dernier message #}
+                {% if last.reponse %}
+                <details class="collapsible" style="margin-top: 0.5rem;">
+                    <summary style="font-size: 0.75rem;">↩ Répondre</summary>
+                    <div class="collapsible-body">
+                        <form method="POST" action="/portail/contact">
+                            <input type="hidden" name="sujet" value="{{ subject }}">
+                            <textarea name="message" rows="3" required
+                                      placeholder="Continue la conversation…"
+                                      style="width: 100%; margin-bottom: 0.5rem; font-size: 0.85rem;"></textarea>
+                            <button type="submit" class="btn btn-primary"
+                                    style="font-size: 0.8rem;">Envoyer</button>
+                        </form>
+                    </div>
+                </details>
+                {% endif %}
+
+            </div>
+        </details>
+        {% endfor %}
+    </div>
+    {% endif %}
+
 </div>
 {% endblock %}

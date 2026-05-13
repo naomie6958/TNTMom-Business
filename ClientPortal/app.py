@@ -12,6 +12,26 @@ import uuid
 load_dotenv()
 
 app = Flask(__name__)
+
+
+def group_messages(messages):
+    """Regroupe les messages en fils de conversation par sujet de base (ignore les Re:)."""
+    from collections import OrderedDict
+
+    def base_subject(s):
+        s = (s or '').strip()
+        while s.lower().startswith('re: '):
+            s = s[4:].strip()
+        return s or 'Sans sujet'
+
+    threads = OrderedDict()
+    for msg in messages:
+        key = base_subject(msg['sujet'])
+        if key not in threads:
+            threads[key] = []
+        threads[key].append(dict(msg))
+
+    return list(threads.items())
 # La secret_key sert à signer les cookies de session.
 # Si elle change, toutes les sessions actives sont invalidées.
 # En prod elle vient du .env — jamais hardcodée dans le code.
@@ -182,7 +202,7 @@ def client_fiche(client_id):
     ).fetchall()
 
     messages = conn.execute(
-        'SELECT * FROM messages_client WHERE client_id = ? ORDER BY created_at DESC',
+        'SELECT * FROM messages_client WHERE client_id = ? ORDER BY created_at ASC',
         (client_id,)
     ).fetchall()
 
@@ -234,6 +254,7 @@ def client_fiche(client_id):
                            questionnaire_rep=questionnaire_rep,
                            fichiers=fichiers,
                            messages=messages,
+                           msg_threads=group_messages(messages),
                            name=session['user_name'])
 
 
@@ -530,7 +551,20 @@ def toggle_milestone(client_id, contrat_id, index):
             'payé':       'en attente',
         }
         actuel = milestones[index].get('statut', 'en attente')
-        milestones[index]['statut'] = cycle.get(actuel, 'en cours')
+        nouveau = cycle.get(actuel, 'en cours')
+
+        # Bloquer le démarrage si le milestone précédent n'est pas payé
+        if nouveau == 'en cours' and index > 0:
+            prev = milestones[index - 1].get('statut', 'en attente')
+            if prev != 'payé':
+                conn.close()
+                msg = 'Le milestone précédent doit être payé avant de commencer celui-ci.'
+                if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                    return jsonify({'error': msg}), 403
+                flash(msg, 'error')
+                return redirect(f'/clients/{client_id}')
+
+        milestones[index]['statut'] = nouveau
 
     conn.execute(
         'UPDATE contrats SET milestones = ? WHERE id = ?',
@@ -538,6 +572,9 @@ def toggle_milestone(client_id, contrat_id, index):
     )
     conn.commit()
     conn.close()
+
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        return jsonify({'statut': milestones[index]['statut']})
     flash('Statut du milestone mis à jour.', 'success')
     return redirect(f'/clients/{client_id}')
 
@@ -746,6 +783,23 @@ def portail_dashboard():
                             fichiers=fichiers)
 
 
+@app.route('/clients/<int:client_id>/messages/<int:message_id>/repondre', methods=['POST'])
+@login_required
+def repondre_message(client_id, message_id):
+    reponse = request.form.get('reponse', '').strip()
+    if reponse:
+        now = datetime.datetime.now().isoformat(timespec='seconds')
+        conn = get_db()
+        conn.execute(
+            'UPDATE messages_client SET reponse=?, repondu_at=? WHERE id=? AND client_id=?',
+            (reponse, now, message_id, client_id)
+        )
+        conn.commit()
+        conn.close()
+        flash('Réponse envoyée.', 'success')
+    return redirect(f'/clients/{client_id}')
+
+
 @app.route('/portail/contrat/<int:contrat_id>/signer', methods=['POST'])
 @client_login_required
 def portail_signer(contrat_id):
@@ -791,8 +845,13 @@ def portail_contact():
             flash('Le message ne peut pas être vide.', 'error')
         return redirect('/portail/contact')
 
+    historique = conn.execute(
+        'SELECT * FROM messages_client WHERE client_id = ? ORDER BY created_at ASC',
+        (session['client_id'],)
+    ).fetchall()
     conn.close()
-    return render_template('portail_contact.html', client=client)
+    return render_template('portail_contact.html', client=client,
+                           threads=group_messages(historique))
 
 
 if __name__ == '__main__':

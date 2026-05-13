@@ -787,6 +787,63 @@ select option { background: var(--surface2); }
     color: var(--red);
 }
 
+/* ── CHAT MESSAGES ───────────────────────────────────────────────────────── */
+.chat-row { margin-bottom: 0.5rem; }
+
+.chat-bubble {
+    width: 100%;
+    padding: 0.45rem 0.7rem;
+    border-radius: var(--radius);
+    font-size: 0.84rem;
+    line-height: 1.5;
+    white-space: pre-wrap;
+    text-align: left;
+}
+.chat-bubble.client {
+    background: rgba(100, 200, 255, 0.07);
+    border-left: 3px solid rgba(100, 200, 255, 0.5);
+}
+.chat-bubble.admin {
+    background: rgba(217, 79, 189, 0.07);
+    border-left: 3px solid rgba(217, 79, 189, 0.4);
+}
+.chat-meta {
+    font-size: 0.63rem;
+    color: var(--muted);
+    margin-bottom: 0.15rem;
+}
+
+.chat-thread {
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    margin-bottom: 0.6rem;
+    overflow: hidden;
+}
+.chat-thread summary {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.55rem 0.8rem;
+    cursor: pointer;
+    font-size: 0.78rem;
+    font-weight: 600;
+    letter-spacing: 0.03em;
+    background: var(--surface2);
+    list-style: none;
+    user-select: none;
+}
+.chat-thread summary::-webkit-details-marker { display: none; }
+.chat-thread summary::after {
+    content: '›';
+    font-size: 1rem;
+    color: var(--muted);
+    transition: transform 0.2s;
+}
+.chat-thread[open] summary::after { transform: rotate(90deg); }
+.chat-thread-body {
+    padding: 0.7rem 0.8rem 0.4rem;
+}
+
 /* ── TIMELINE MILESTONES (portail client) ────────────────────────────────── */
 .timeline {
     display: flex;

@@ -182,7 +182,7 @@
 
             {% if consultations %}
                 {% for c in consultations %}
-                <details class="consult-item" {% if loop.first %}open{% endif %}>
+                <details class="consult-item">
                     <summary>
                         <span>Consultation du {{ c.date }}</span>
                         <form id="delete-consult-{{ c.id }}" method="POST"
@@ -347,6 +347,7 @@
                             <form method="POST"
                                   action="/clients/{{ client.id }}/contrat/{{ c.id }}/milestone/{{ loop.index0 }}/toggle">
                                 <button type="submit" class="timeline-dot-btn"
+                                        data-toggle-url="/clients/{{ client.id }}/contrat/{{ c.id }}/milestone/{{ loop.index0 }}/toggle"
                                         title="Cliquer pour avancer le statut">
                                     <div class="timeline-dot"></div>
                                 </button>
@@ -435,7 +436,7 @@
         </div>
 
         {# ── MESSAGES CLIENT ──────────────────────────────────────────── #}
-        {% if messages %}
+        {% if msg_threads %}
         <div class="card">
             <div class="section-header">
                 <div class="section-title">Messages du client</div>
@@ -443,21 +444,56 @@
                     {{ messages | length }}
                 </span>
             </div>
-            {% for msg in messages %}
-            <div style="padding: 0.7rem 0; border-bottom: 1px solid var(--border);
-                        {% if not loop.last %}{% endif %}">
-                <div style="display: flex; justify-content: space-between;
-                            align-items: baseline; margin-bottom: 0.3rem;">
-                    <div style="font-size: 0.78rem; font-weight: 600; color: var(--text);">
-                        {% if msg.sujet %}{{ msg.sujet }}{% else %}Sans sujet{% endif %}
+
+            {% for subject, msgs in msg_threads %}
+            {% set last = msgs[-1] %}
+            <details class="chat-thread" open>
+                <summary>
+                    <span>{{ subject }}</span>
+                    <span style="font-size: 0.65rem; color: var(--muted); font-weight: 400;">
+                        {{ msgs[0].created_at[:10] }}
+                        {% if not last.reponse %} · Sans réponse{% endif %}
+                    </span>
+                </summary>
+                <div class="chat-thread-body">
+
+                    {# Tous les messages du fil dans l'ordre #}
+                    {% for msg in msgs %}
+                    <div class="chat-row">
+                        <div class="chat-bubble client">
+                            <div class="chat-meta">{{ client.nom }} · {{ msg.created_at[:16] | replace('T', ' ') }}</div>
+                            {{ msg.message }}
+                        </div>
                     </div>
-                    <div style="font-size: 0.7rem; color: var(--muted);">
-                        {{ msg.created_at[:16] | replace('T', ' ') }}
+                    {% if msg.reponse %}
+                    <div class="chat-row">
+                        <div class="chat-bubble admin">
+                            <div class="chat-meta">Naomie · {{ msg.repondu_at[:16] | replace('T', ' ') }}</div>
+                            {{ msg.reponse }}
+                        </div>
                     </div>
+                    {% endif %}
+                    {% endfor %}
+
+                    {# Répondre au dernier message sans réponse #}
+                    {% if not last.reponse %}
+                    <details class="collapsible" style="margin-top: 0.5rem;">
+                        <summary style="font-size: 0.75rem;">↩ Répondre</summary>
+                        <div class="collapsible-body">
+                            <form method="POST"
+                                  action="/clients/{{ client.id }}/messages/{{ last.id }}/repondre">
+                                <textarea name="reponse" rows="3"
+                                          placeholder="Ta réponse au client…"
+                                          style="width: 100%; margin-bottom: 0.5rem; font-size: 0.85rem;"></textarea>
+                                <button type="submit" class="btn btn-primary"
+                                        style="font-size: 0.8rem;">Envoyer</button>
+                            </form>
+                        </div>
+                    </details>
+                    {% endif %}
+
                 </div>
-                <div style="font-size: 0.84rem; color: var(--muted);
-                            white-space: pre-wrap; line-height: 1.5;">{{ msg.message }}</div>
-            </div>
+            </details>
             {% endfor %}
         </div>
         {% endif %}
@@ -512,5 +548,61 @@
             setTimeout(() => btn.textContent = 'Copier le lien', 2000);
         });
     }
+
+    // Toggle milestone sans rechargement de page
+    document.querySelectorAll('.timeline-dot-btn[data-toggle-url]').forEach(btn => {
+        btn.addEventListener('click', async (e) => {
+            e.preventDefault();
+            const url = btn.dataset.toggleUrl;
+            const resp = await fetch(url, {
+                method: 'POST',
+                headers: { 'X-Requested-With': 'XMLHttpRequest' }
+            });
+
+            const data = await resp.json();
+
+            if (resp.status === 403) {
+                // Shake le dot + message temporaire sous le point
+                const point = btn.closest('.timeline-point');
+                const dot = btn.querySelector('.timeline-dot');
+                dot.style.animation = 'none';
+                dot.style.transform = 'scale(1.3)';
+                dot.style.borderColor = 'var(--red)';
+                setTimeout(() => {
+                    dot.style.transform = '';
+                    dot.style.borderColor = '';
+                    dot.style.animation = '';
+                }, 400);
+
+                let errEl = point.querySelector('.timeline-block-msg');
+                if (!errEl) {
+                    errEl = document.createElement('div');
+                    errEl.className = 'timeline-block-msg';
+                    errEl.style.cssText = 'position:absolute; top:calc(100% + 0.3rem); left:50%; transform:translateX(-50%); font-size:0.6rem; color:var(--red); white-space:nowrap; background:var(--surface); padding:0.2rem 0.4rem; border-radius:4px; border:1px solid var(--red); z-index:10;';
+                    point.appendChild(errEl);
+                }
+                errEl.textContent = '⛔ Précédent non payé';
+                setTimeout(() => errEl.remove(), 2200);
+                return;
+            }
+
+            if (!resp.ok) return;
+
+            const point = btn.closest('.timeline-point');
+            const { statut } = data;
+
+            // Mettre à jour la classe du point
+            point.classList.remove('done', 'active');
+            if (statut === 'livré' || statut === 'payé') point.classList.add('done');
+            else if (statut === 'en cours') point.classList.add('active');
+
+            // Mettre à jour le badge statut
+            const badge = point.querySelector('.badge');
+            if (badge) {
+                badge.textContent = statut;
+                badge.className = 'badge badge-' + statut.replace(' ', '-');
+            }
+        });
+    });
 </script>
 {% endblock %}
