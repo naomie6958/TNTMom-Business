@@ -15,24 +15,36 @@
         <div class="card">
             <div class="section-title" style="margin-bottom: 1rem;">Milestones</div>
 
-            {% for m in milestones %}
-            <div style="display: flex; justify-content: space-between; align-items: center;
-                        padding: 0.75rem 0; border-bottom: 1px solid var(--border);">
-                <div>
-                    <div style="font-size: 0.9rem;">{{ m.titre or '—' }}</div>
-                    {% if m.livrable %}
-                        <div class="text-muted" style="font-size: 0.78rem;">{{ m.livrable }}</div>
-                    {% endif %}
+            <div class="timeline">
+                {% for m in milestones %}
+                {% if m.statut in ['livré', 'payé'] %}
+                    {% set point_class = 'done' %}
+                {% elif m.statut == 'en_cours' %}
+                    {% set point_class = 'active' %}
+                {% else %}
+                    {% set point_class = '' %}
+                {% endif %}
+                <div class="timeline-point {{ point_class }}">
+                    <div class="timeline-dot"></div>
+                    <div class="timeline-label">{{ m.titre or '—' }}</div>
                 </div>
-                <div style="display: flex; align-items: center; gap: 0.8rem;">
-                    <span style="color: var(--green); font-size: 0.85rem;">{{ m.prix | default(0) }}$</span>
-                    {# Le badge change de couleur selon le statut du milestone #}
-                    <span class="badge badge-{{ m.statut | default('en cours') | replace(' ', '-') }}">
-                        {{ m.statut | default('en cours') }}
-                    </span>
-                </div>
+                {% endfor %}
             </div>
+
+            {# namespace() = permet de modifier une variable dans une boucle Jinja2.
+               Sans ça, les variables créées dans un {% for %} ne sortent pas de la boucle. #}
+            {% set ns = namespace(faits=0) %}
+            {% for m in milestones %}
+                {% if m.statut in ['livré', 'payé'] %}
+                    {% set ns.faits = ns.faits + 1 %}
+                {% endif %}
             {% endfor %}
+            {% set pct = (ns.faits / milestones|length * 100)|int %}
+
+            <div style="margin-top: 0.4rem; font-size: 0.75rem; color: var(--muted); text-align: right;">
+                {{ ns.faits }} / {{ milestones|length }} complétés
+            </div>
+
         </div>
     {% else %}
         <div class="card">
