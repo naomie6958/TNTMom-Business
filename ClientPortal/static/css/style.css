@@ -723,9 +723,10 @@ select option { background: var(--surface2); }
 
     .sidebar-nav a { font-size: 0.78rem; padding: 0.4rem 0.55rem; }
 
-    /* Le nom du client est déjà visible dans le "Bonjour X" du dashboard —
-       on cache le bloc user de la sidebar pour gagner de l'espace */
-    .sidebar-user { display: none; }
+
+    .sidebar-user strong { display: none; }
+    .sidebar-user { border-left: none; padding-left: 0; font-size: 0.72rem; }
+
 
     .main { padding: 1rem 0.85rem; }
 
