@@ -675,27 +675,87 @@ select option { background: var(--surface2); }
     border-radius: var(--radius);
 }
 
-/* ── RESPONSIVE ──────────────────────────────────────────────────────────── */
+/* ── RESPONSIVE TABLETTE ─────────────────────────────────────────────────── */
 @media (max-width: 900px) {
     .app-layout { grid-template-columns: 1fr; }
 
+    /* La sidebar verticale devient une barre horizontale en haut */
     .sidebar {
         position: static;
         height: auto;
         flex-direction: row;
         align-items: center;
-        padding: 1rem 1.2rem;
+        padding: 0.9rem 1.2rem;
         flex-wrap: wrap;
+        gap: 0.6rem;
     }
 
     .sidebar-nav { flex-direction: row; flex: none; }
-    .sidebar-user { border-top: none; padding-top: 0; border-left: 1px solid var(--border); padding-left: 1rem; }
+
+    /* L'info user (nom + logout) est poussée à droite avec margin-left: auto */
+    .sidebar-user {
+        border-top: none;
+        padding-top: 0;
+        border-left: 1px solid var(--border);
+        padding-left: 1rem;
+        margin-left: auto;
+    }
+
     .main { padding: 1.5rem 1.2rem; }
     .fiche-layout { grid-template-columns: 1fr; }
     .client-info-card { position: static; }
     .form-grid { grid-template-columns: 1fr; }
     .form-grid .span-2 { grid-column: span 1; }
     .milestone-row { grid-template-columns: 1fr 1fr; gap: 0.4rem; }
+
+    /* Table admin scrollable horizontalement sur tablette */
+    .client-table-wrap {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+}
+
+/* ── RESPONSIVE TÉLÉPHONE ────────────────────────────────────────────────── */
+@media (max-width: 540px) {
+    .sidebar { padding: 0.75rem 1rem; gap: 0.5rem; }
+
+    .sidebar-logo { font-size: 1.25rem; }
+
+    .sidebar-nav a { font-size: 0.78rem; padding: 0.4rem 0.55rem; }
+
+    /* Le nom du client est déjà visible dans le "Bonjour X" du dashboard —
+       on cache le bloc user de la sidebar pour gagner de l'espace */
+    .sidebar-user { display: none; }
+
+    .main { padding: 1rem 0.85rem; }
+
+    /* Titre plus petit pour éviter le débordement */
+    .page-title { font-size: 1.9rem; }
+
+    .card { padding: 1rem; }
+
+    .stat-card { padding: 0.75rem 0.9rem; min-width: 80px; }
+    .stat-card .stat-value { font-size: 1.7rem; }
+
+    /* Cibles touch min 40px — plus facile à tapper sur téléphone */
+    .btn { min-height: 40px; padding: 0.6rem 0.9rem; }
+
+    /* En-tête de page empilé verticalement sur petit écran */
+    .page-header { flex-direction: column; align-items: flex-start; margin-bottom: 1.2rem; }
+
+    /* Milestones editor : 2 colonnes sur téléphone */
+    .milestone-row { grid-template-columns: 1fr 1fr; }
+
+    /* Contrat print : ajuste les marges */
+    .contrat-preview { padding: 1.2rem; }
+}
+
+/* ── RESPONSIVE TRÈS PETIT (iPhone SE, etc.) ─────────────────────────────── */
+@media (max-width: 380px) {
+    .page-title { font-size: 1.55rem; }
+    .sidebar-nav a { font-size: 0.72rem; padding: 0.35rem 0.45rem; }
+    /* Milestone editor en 1 colonne sur très petits écrans */
+    .milestone-row { grid-template-columns: 1fr; }
 }
 
 /* ── FLASH MESSAGES ─────────────────────────────────────────────────────── */

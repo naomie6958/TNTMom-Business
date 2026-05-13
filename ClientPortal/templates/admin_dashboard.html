@@ -71,6 +71,8 @@
 {# ── LISTE DES CLIENTS ────────────────────────────────────────────────────── #}
 <div class="card">
     {% if clients %}
+        {# client-table-wrap permet le scroll horizontal sur mobile sans casser le layout #}
+        <div class="client-table-wrap">
         <table class="client-table">
             <thead>
                 <tr>
@@ -106,6 +108,7 @@
                 {% endfor %}
             </tbody>
         </table>
+        </div>
     {% else %}
         <div class="empty-state">
             Aucun client pour l'instant. Utilise le formulaire ci-dessus pour en ajouter un.
