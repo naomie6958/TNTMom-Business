@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Mon projet{% endblock %} — TNTMom</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="icon" href="{{ url_for('static', filename='images/favicon.svg') }}" type="image/svg+xml">
+    {% block head %}{% endblock %}
+</head>
+<body>
+
+<div class="app-layout">
+
+    {# ── SIDEBAR CLIENT ──────────────────────────────────────────────────────── #}
+    <aside class="sidebar">
+        <div class="sidebar-logo">TNT<span>Mom</span></div>
+
+        <nav class="sidebar-nav">
+            <a href="/portail/dashboard"
+               {% if request.path == '/portail/dashboard' %}class="active"{% endif %}>
+                ◈ Mon projet
+            </a>
+            <a href="mailto:naomiemt@tntm.ca">
+                ◈ Contacter Naomie
+            </a>
+        </nav>
+
+        <div class="sidebar-user">
+            <strong>{{ client.nom }}</strong>
+            <a href="/portail/logout" class="text-muted">→ Déconnexion</a>
+        </div>
+    </aside>
+
+    {# ── CONTENU PRINCIPAL ───────────────────────────────────────────────────── #}
+    <main class="main">
+        {% with messages = get_flashed_messages(with_categories=True) %}
+            {% if messages %}
+                <div class="flash-container">
+                    {% for category, message in messages %}
+                        <div class="flash flash-{{ category }}">{{ message }}</div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+        {% block content %}{% endblock %}
+    </main>
+
+</div>
+
+{% block scripts %}{% endblock %}
+</body>
+</html>
