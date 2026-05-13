@@ -11,12 +11,41 @@
 </div>
 
 <div style="max-width: 700px;">
-    {% if milestones %}
-        <div class="card">
-            <div class="section-title" style="margin-bottom: 1rem;">Milestones</div>
 
+    {# ── PROJETS ──────────────────────────────────────────────────────────── #}
+    {% if projets %}
+        {% for p in projets %}
+        {% set c = p.contrat %}
+        {% set ms = p.milestones %}
+        <div class="card" {% if not loop.first %}style="margin-top: 1rem;"{% endif %}>
+
+            {# En-tête : nom + statut (+ bouton signer si envoyé) #}
+            <div style="display: flex; justify-content: space-between;
+                        align-items: flex-start; margin-bottom: 1rem; flex-wrap: wrap; gap: 0.5rem;">
+                <div>
+                    <div class="section-title">{{ c.nom or 'Mon projet' }}</div>
+                    <div style="margin-top: 0.3rem; display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
+                        <span class="badge badge-{{ c.statut }}">{{ c.statut }}</span>
+                        {% if c.signed_at %}
+                        <span style="font-size: 0.72rem; color: var(--green);">
+                            ✓ Signé le {{ c.signed_at[:10] }}
+                        </span>
+                        {% endif %}
+                    </div>
+                </div>
+                {% if c.statut == 'envoyé' %}
+                <form method="POST" action="/portail/contrat/{{ c.id }}/signer">
+                    <button type="submit" class="btn btn-primary" style="font-size: 0.85rem;">
+                        ✍ Signer le contrat
+                    </button>
+                </form>
+                {% endif %}
+            </div>
+
+            {# Timeline des milestones #}
+            {% if ms %}
             <div class="timeline">
-                {% for m in milestones %}
+                {% for m in ms %}
                 {% if m.statut in ['livré', 'payé'] %}
                     {% set point_class = 'done' %}
                 {% elif m.statut == 'en cours' %}
@@ -25,34 +54,53 @@
                     {% set point_class = '' %}
                 {% endif %}
                 <div class="timeline-point {{ point_class }}">
+                    {% if m.statut == 'en cours' %}
+                    <div class="timeline-step-badge">↓ En cours</div>
+                    {% endif %}
                     <div class="timeline-dot"></div>
                     <div class="timeline-label">{{ m.titre or '—' }}</div>
                 </div>
                 {% endfor %}
             </div>
 
-            {# namespace() = permet de modifier une variable dans une boucle Jinja2.
-               Sans ça, les variables créées dans un {% for %} ne sortent pas de la boucle. #}
-            {% set ns = namespace(faits=0) %}
-            {% for m in milestones %}
-                {% if m.statut in ['livré', 'payé'] %}
-                    {% set ns.faits = ns.faits + 1 %}
-                {% endif %}
-            {% endfor %}
-            {% set pct = (ns.faits / milestones|length * 100)|int %}
-
             <div style="margin-top: 0.4rem; font-size: 0.75rem; color: var(--muted); text-align: right;">
-                {{ ns.faits }} / {{ milestones|length }} complétés
+                {{ p.faits }} / {{ ms|length }} complétés
+                {% if p.total > 0 %} · Total : <strong style="color: var(--green);">{{ p.total | int }}$</strong>{% endif %}
             </div>
+            {% else %}
+            <div class="empty-state">Milestones à venir.</div>
+            {% endif %}
+
+            {# Détails scope + timeline (collapsibles) #}
+            {% if c.scope or c.timeline %}
+            <details class="collapsible" style="margin-top: 0.8rem;">
+                <summary style="font-size: 0.8rem;">Détails du projet</summary>
+                <div class="collapsible-body">
+                    {% if c.scope %}
+                    <div style="margin-bottom: 0.6rem;">
+                        <div class="text-muted" style="font-size: 0.72rem; margin-bottom: 0.2rem;">DESCRIPTION</div>
+                        <div style="font-size: 0.85rem; white-space: pre-wrap;">{{ c.scope }}</div>
+                    </div>
+                    {% endif %}
+                    {% if c.timeline %}
+                    <div>
+                        <div class="text-muted" style="font-size: 0.72rem; margin-bottom: 0.2rem;">ÉCHÉANCIER</div>
+                        <div style="font-size: 0.85rem;">{{ c.timeline }}</div>
+                    </div>
+                    {% endif %}
+                </div>
+            </details>
+            {% endif %}
 
         </div>
+        {% endfor %}
     {% else %}
         <div class="card">
-            <div class="empty-state">Aucun milestone pour le moment. Naomie les ajoutera bientôt.</div>
+            <div class="empty-state">Aucun projet pour le moment. Naomie les ajoutera bientôt.</div>
         </div>
     {% endif %}
 
-    {# Fichiers partagés par Naomie — seulement si la liste est non vide #}
+    {# ── FICHIERS PARTAGÉS ────────────────────────────────────────────────── #}
     {% if fichiers %}
     <div class="card" style="margin-top: 1rem;">
         <div class="section-title" style="margin-bottom: 1rem;">Fichiers partagés</div>
@@ -76,32 +124,5 @@
     </div>
     {% endif %}
 
-    {# Troisième carte : détails du contrat — scope, timeline, total #}
-    {% if contrat and (contrat.scope or contrat.timeline) %}
-    <div class="card" style="margin-top: 1rem;">
-        <div class="section-title" style="margin-bottom: 1rem;">Détails du projet</div>
-
-        {% if contrat.scope %}
-        <div style="margin-bottom: 0.8rem;">
-            <div class="text-muted" style="font-size: 0.75rem; margin-bottom: 0.3rem;">DESCRIPTION</div>
-            <div style="font-size: 0.88rem; white-space: pre-wrap;">{{ contrat.scope }}</div>
-        </div>
-        {% endif %}
-
-        {% if contrat.timeline %}
-        <div style="margin-bottom: 0.8rem;">
-            <div class="text-muted" style="font-size: 0.75rem; margin-bottom: 0.3rem;">ÉCHÉANCIER</div>
-            <div style="font-size: 0.88rem;">{{ contrat.timeline }}</div>
-        </div>
-        {% endif %}
-
-        {% if milestones %}
-        <div style="text-align: right; padding-top: 0.5rem; border-top: 1px solid var(--border);
-                    font-size: 0.9rem; color: var(--green);">
-            Total : <strong>{{ total_contrat | int }}$</strong>
-        </div>
-        {% endif %}
-    </div>
-    {% endif %}
 </div>
 {% endblock %}

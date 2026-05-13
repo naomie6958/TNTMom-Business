@@ -9,25 +9,35 @@
         <div class="text-muted" style="font-size: 0.75rem; margin-bottom: 0.3rem;">
             <a href="/clients/{{ client.id }}">← {{ client.nom }}</a>
         </div>
-        <h1 class="page-title">Contrat <span>{{ client.nom }}</span></h1>
+        <h1 class="page-title">{{ contrat.nom if contrat and contrat.nom else 'Nouveau projet' }}</h1>
         {% if contrat %}
-            <div class="page-sub">Dernière modification : {{ contrat.created_at[:10] }}</div>
+            <div class="page-sub">{{ client.nom }} · modifié le {{ contrat.created_at[:10] }}</div>
         {% endif %}
     </div>
     {% if contrat %}
         <div class="flex gap-sm items-center">
             <span class="badge badge-{{ contrat.statut }}">{{ contrat.statut }}</span>
-            <a href="/clients/{{ client.id }}/contrat/print" target="_blank" class="btn btn-secondary">
+            <a href="/clients/{{ client.id }}/contrat/{{ contrat.id }}/print" target="_blank" class="btn btn-secondary">
                 Aperçu / Imprimer
             </a>
         </div>
     {% endif %}
 </div>
 
-<form method="POST" action="/clients/{{ client.id }}/contrat" id="contrat-form">
+<form method="POST" action="/clients/{{ client.id }}/contrat/{{ contrat.id }}" id="contrat-form">
+
+    {# ── NOM DU PROJET ───────────────────────────────────────────────────── #}
+    <div class="card">
+        <div class="card-title">Nom du projet</div>
+        <div class="form-group">
+            <input type="text" name="nom" placeholder="ex: Site vitrine + SEO local"
+                   value="{{ contrat.nom if contrat and contrat.nom else '' }}"
+                   style="font-size: 1rem;">
+        </div>
+    </div>
 
     {# ── PARTIES ─────────────────────────────────────────────────────────── #}
-    <div class="card">
+    <div class="card mt-md">
         <div class="card-title">Parties</div>
         <div style="font-size: 0.85rem; color: var(--muted); line-height: 1.8;">
             <strong style="color: var(--text);">Prestataire :</strong> Naomie McMahon Tanguay, opérant sous TNTMom · tntm.ca<br>

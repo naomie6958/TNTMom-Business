@@ -106,6 +106,18 @@ def init_db():
             FOREIGN KEY(client_id) REFERENCES clients(id) ON DELETE CASCADE
         );
 
+        -- Messages envoyés par le client depuis son portail vers Naomie.
+        -- lu = 0 tant que Naomie n'a pas ouvert la fiche client.
+        CREATE TABLE IF NOT EXISTS messages_client (
+            id         INTEGER PRIMARY KEY AUTOINCREMENT,
+            client_id  INTEGER NOT NULL,
+            sujet      TEXT,
+            message    TEXT NOT NULL,
+            lu         INTEGER DEFAULT 0,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY(client_id) REFERENCES clients(id) ON DELETE CASCADE
+        );
+
     ''')
     conn.commit()
     conn.close()
@@ -142,6 +154,18 @@ def migrate_db():
         )
     if existing:
         conn.commit()
+
+    try:
+        conn.execute("ALTER TABLE contrats ADD COLUMN nom TEXT")
+        conn.commit()
+    except Exception:
+        pass
+
+    try:
+        conn.execute("ALTER TABLE contrats ADD COLUMN signed_at TEXT")
+        conn.commit()
+    except Exception:
+        pass
 
     # Traduit les anciens statuts anglais des milestones en français dans tous les contrats.
     # Les valeurs 'pending' et 'en_cours' viennent de la Phase 1 — on les remplace une fois.

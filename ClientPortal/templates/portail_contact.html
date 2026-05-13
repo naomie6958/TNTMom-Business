@@ -1,0 +1,58 @@
+{% extends "base_portail.html" %}
+
+{% block title %}Contacter Naomie{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1 class="page-title">Contacter Naomie</h1>
+        <div class="page-sub">Pose tes questions, laisse un message.</div>
+    </div>
+</div>
+
+<div style="max-width: 600px;">
+
+    <div class="card">
+        <div class="section-title" style="margin-bottom: 1.2rem;">Envoyer un message</div>
+        <form method="POST" action="/portail/contact">
+
+            <div class="form-group" style="margin-bottom: 1rem;">
+                <label for="sujet">Sujet</label>
+                <select name="sujet" id="sujet"
+                        style="width: 100%; background: var(--surface2);
+                               border: 1px solid var(--border); border-radius: var(--radius);
+                               padding: 0.55rem 0.75rem; color: var(--text); font-size: 0.88rem;">
+                    <option value="">— Choisir —</option>
+                    <option value="Question sur mon projet">Question sur mon projet</option>
+                    <option value="Révision / feedback">Révision / feedback</option>
+                    <option value="Facturation">Facturation</option>
+                    <option value="Délai / livraison">Délai / livraison</option>
+                    <option value="Autre">Autre</option>
+                </select>
+            </div>
+
+            <div class="form-group" style="margin-bottom: 1.2rem;">
+                <label for="message">Message <span style="color: var(--red);">*</span></label>
+                <textarea name="message" id="message" rows="6" required
+                          placeholder="Écris ton message ici…"
+                          style="width: 100%; resize: vertical;"></textarea>
+            </div>
+
+            <button type="submit" class="btn btn-primary">Envoyer</button>
+        </form>
+    </div>
+
+    <div class="card" style="margin-top: 1rem;">
+        <div class="section-title" style="margin-bottom: 0.6rem;">Infos de contact</div>
+        <div style="font-size: 0.85rem; color: var(--muted); margin-bottom: 0.8rem;">
+            Naomie répond généralement sous 24–48 h, du lundi au vendredi.
+        </div>
+        <div style="font-size: 0.85rem;">
+            Courriel :
+            <a href="mailto:naomiemt@tntm.ca"
+               style="color: var(--accent); text-decoration: none;">naomiemt@tntm.ca</a>
+        </div>
+    </div>
+
+</div>
+{% endblock %}

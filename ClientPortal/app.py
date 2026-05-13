@@ -181,12 +181,23 @@ def client_fiche(client_id):
         (client_id,)
     ).fetchall()
 
-    conn.close()
+    messages = conn.execute(
+        'SELECT * FROM messages_client WHERE client_id = ? ORDER BY created_at DESC',
+        (client_id,)
+    ).fetchall()
 
-    # Parse le JSON des milestones pour l'affichage dans le template
-    milestones = []
-    if contrat and contrat['milestones']:
-        milestones = json.loads(contrat['milestones'])
+    contrats_all = conn.execute(
+        'SELECT * FROM contrats WHERE client_id = ? ORDER BY created_at ASC',
+        (client_id,)
+    ).fetchall()
+
+    # Auto-marque les messages comme lus dès que Naomie ouvre la fiche
+    conn.execute(
+        'UPDATE messages_client SET lu = 1 WHERE client_id = ? AND lu = 0',
+        (client_id,)
+    )
+    conn.commit()
+    conn.close()
 
     # Pareil pour les consultations — parse le JSON de chaque consultation
     consultations_parsed = []
@@ -200,8 +211,17 @@ def client_fiche(client_id):
     if questionnaire and questionnaire['reponses']:
         questionnaire_rep = json.loads(questionnaire['reponses'])
 
-    # Prix total du contrat calculé depuis les milestones
-    total_contrat = sum(float(m.get('prix', 0)) for m in milestones) if milestones else 0
+    # Construit la liste enrichie des projets (tous les contrats)
+    projets = []
+    for c in contrats_all:
+        m = json.loads(c['milestones']) if c['milestones'] else []
+        total = sum(float(x.get('prix', 0)) for x in m)
+        projets.append({'contrat': dict(c), 'milestones': m, 'total': total})
+
+    # Garde contrat (le dernier) pour les sections qui n'ont pas encore migré
+    contrat = contrats_all[-1] if contrats_all else None
+    milestones = projets[-1]['milestones'] if projets else []
+    total_contrat = projets[-1]['total'] if projets else 0
 
     return render_template('client_fiche.html',
                            client=client,
@@ -209,9 +229,11 @@ def client_fiche(client_id):
                            contrat=contrat,
                            milestones=milestones,
                            total_contrat=total_contrat,
+                           projets=projets,
                            questionnaire=questionnaire,
                            questionnaire_rep=questionnaire_rep,
                            fichiers=fichiers,
+                           messages=messages,
                            name=session['user_name'])
 
 
@@ -326,9 +348,32 @@ def delete_consultation(consult_id):
 
 # ─── CONTRATS ─────────────────────────────────────────────────────────────────
 
-@app.route('/clients/<int:client_id>/contrat', methods=['GET', 'POST'])
+@app.route('/clients/<int:client_id>/contrat')
 @login_required
 def contrat(client_id):
+    conn = get_db()
+    existing = conn.execute(
+        'SELECT id FROM contrats WHERE client_id = ? ORDER BY created_at DESC LIMIT 1',
+        (client_id,)
+    ).fetchone()
+    conn.close()
+    if existing:
+        return redirect(f'/clients/{client_id}/contrat/{existing["id"]}')
+    # Aucun contrat — on en crée un vide et on redirige vers l'édition
+    conn = get_db()
+    cursor = conn.execute(
+        'INSERT INTO contrats (client_id, scope, milestones, statut, nom) VALUES (?,?,?,?,?)',
+        (client_id, '', '[]', 'draft', 'Projet principal')
+    )
+    contrat_id = cursor.lastrowid
+    conn.commit()
+    conn.close()
+    return redirect(f'/clients/{client_id}/contrat/{contrat_id}')
+
+
+@app.route('/clients/<int:client_id>/contrat/<int:contrat_id>', methods=['GET', 'POST'])
+@login_required
+def contrat_edit(client_id, contrat_id):
     conn = get_db()
     client = conn.execute(
         'SELECT * FROM clients WHERE id = ?', (client_id,)
@@ -339,20 +384,27 @@ def contrat(client_id):
         return redirect('/dashboard')
 
     existing = conn.execute(
-        'SELECT * FROM contrats WHERE client_id = ? ORDER BY created_at DESC LIMIT 1',
-        (client_id,)
+        'SELECT * FROM contrats WHERE id = ? AND client_id = ?', (contrat_id, client_id)
     ).fetchone()
 
+    if not existing:
+        conn.close()
+        return redirect(f'/clients/{client_id}')
+
     if request.method == 'POST':
-        # milestones_json est construit côté client par le JS de contrat.html
-        # et soumis dans un champ <input type="hidden"> — voir le template
         raw = request.form.get('milestones_json', '[]')
         try:
             milestones = json.loads(raw)
         except json.JSONDecodeError:
             milestones = []
 
-        fields = (
+        conn.execute('''
+            UPDATE contrats
+            SET nom=?, scope=?, milestones=?, conditions_paiement=?,
+                politique_revisions=?, hors_scope=?, timeline=?, statut=?
+            WHERE id=?
+        ''', (
+            request.form.get('nom', '').strip() or 'Projet sans titre',
             request.form.get('scope', ''),
             json.dumps(milestones, ensure_ascii=False),
             request.form.get('conditions_paiement', ''),
@@ -360,35 +412,14 @@ def contrat(client_id):
             request.form.get('hors_scope', ''),
             request.form.get('timeline', ''),
             request.form.get('statut', 'draft'),
-        )
-
-        if existing:
-            # UPDATE : le contrat existe déjà pour ce client
-            conn.execute('''
-                UPDATE contrats
-                SET scope=?, milestones=?, conditions_paiement=?,
-                    politique_revisions=?, hors_scope=?, timeline=?, statut=?
-                WHERE id=?
-            ''', fields + (existing['id'],))
-        else:
-            # INSERT : premier contrat pour ce client
-            conn.execute('''
-                INSERT INTO contrats
-                    (client_id, scope, milestones, conditions_paiement,
-                     politique_revisions, hors_scope, timeline, statut)
-                VALUES (?,?,?,?,?,?,?,?)
-            ''', (client_id,) + fields)
-
+            contrat_id,
+        ))
         conn.commit()
         conn.close()
-        flash('Contrat sauvegardé.', 'success')
+        flash('Projet sauvegardé.', 'success')
         return redirect(f'/clients/{client_id}')
 
-    # Pré-remplir le form avec les données existantes
-    milestones = []
-    if existing and existing['milestones']:
-        milestones = json.loads(existing['milestones'])
-
+    milestones = json.loads(existing['milestones']) if existing['milestones'] else []
     conn.close()
     return render_template('contrat.html',
                            client=client,
@@ -442,14 +473,28 @@ def questionnaire_client(token):
                            soumis=bool(deja_soumis))
 
 
-@app.route('/clients/<int:client_id>/contrat/print')
+@app.route('/clients/<int:client_id>/projet/new', methods=['POST'])
 @login_required
-def contrat_print(client_id):
+def projet_new(client_id):
+    nom = request.form.get('nom', '').strip() or 'Nouveau projet'
+    conn = get_db()
+    cursor = conn.execute(
+        'INSERT INTO contrats (client_id, scope, milestones, statut, nom) VALUES (?,?,?,?,?)',
+        (client_id, '', '[]', 'draft', nom)
+    )
+    contrat_id = cursor.lastrowid
+    conn.commit()
+    conn.close()
+    return redirect(f'/clients/{client_id}/contrat/{contrat_id}')
+
+
+@app.route('/clients/<int:client_id>/contrat/<int:contrat_id>/print')
+@login_required
+def contrat_print(client_id, contrat_id):
     conn = get_db()
     client = conn.execute('SELECT * FROM clients WHERE id = ?', (client_id,)).fetchone()
     contrat = conn.execute(
-        'SELECT * FROM contrats WHERE client_id = ? ORDER BY created_at DESC LIMIT 1',
-        (client_id,)
+        'SELECT * FROM contrats WHERE id = ? AND client_id = ?', (contrat_id, client_id)
     ).fetchone()
     conn.close()
     if not client or not contrat:
@@ -463,25 +508,21 @@ def contrat_print(client_id):
 
 # ─── MILESTONES ───────────────────────────────────────────────────────────────
 
-@app.route('/clients/<int:client_id>/milestone/<int:index>/toggle', methods=['POST'])
+@app.route('/clients/<int:client_id>/contrat/<int:contrat_id>/milestone/<int:index>/toggle', methods=['POST'])
 @login_required
-def toggle_milestone(client_id, index):
+def toggle_milestone(client_id, contrat_id, index):
     conn = get_db()
     contrat = conn.execute(
-        'SELECT * FROM contrats WHERE client_id = ? ORDER BY created_at DESC LIMIT 1',
-        (client_id,)
+        'SELECT * FROM contrats WHERE id = ? AND client_id = ?', (contrat_id, client_id)
     ).fetchone()
 
     if not contrat or not contrat['milestones']:
         conn.close()
         return redirect(f'/clients/{client_id}')
 
-    # On charge le JSON, modifie l'élément à l'index voulu, et resauvegarde.
-    # L'index vient de l'URL — c'est la position du milestone dans le tableau.
     milestones = json.loads(contrat['milestones'])
 
     if 0 <= index < len(milestones):
-        # Cycle complet en français — chaque clic avance au statut suivant
         cycle = {
             'en attente': 'en cours',
             'en cours':   'livré',
@@ -674,10 +715,10 @@ def portail_dashboard():
         'SELECT * FROM clients WHERE id = ?', (session['client_id'],)
     ).fetchone()
 
-    contrat = conn.execute(
-        'SELECT * FROM contrats WHERE client_id = ? ORDER BY created_at DESC LIMIT 1',
+    contrats_all = conn.execute(
+        'SELECT * FROM contrats WHERE client_id = ? ORDER BY created_at ASC',
         (session['client_id'],)
-    ).fetchone()
+    ).fetchall()
 
     fichiers = conn.execute(
         'SELECT * FROM fichiers WHERE client_id = ? ORDER BY uploaded_at DESC',
@@ -686,19 +727,72 @@ def portail_dashboard():
 
     conn.close()
 
-    milestones = []
-    if contrat and contrat['milestones']:
-        milestones = json.loads(contrat['milestones'])
-
-    # float() convertit le prix string en nombre — même logique que client_fiche
-    total_contrat = sum(float(m.get('prix', 0)) for m in milestones) if milestones else 0
+    # Construit une liste de projets enrichis pour le template
+    projets = []
+    for c in contrats_all:
+        m = json.loads(c['milestones']) if c['milestones'] else []
+        total = sum(float(x.get('prix', 0)) for x in m)
+        faits = sum(1 for x in m if x.get('statut') in ['livré', 'payé'])
+        projets.append({
+            'contrat': dict(c),
+            'milestones': m,
+            'total': total,
+            'faits': faits,
+        })
 
     return render_template('portail_dashboard.html',
                             client=client,
-                            contrat=contrat,
-                            milestones=milestones,
-                            total_contrat=total_contrat,
+                            projets=projets,
                             fichiers=fichiers)
+
+
+@app.route('/portail/contrat/<int:contrat_id>/signer', methods=['POST'])
+@client_login_required
+def portail_signer(contrat_id):
+    conn = get_db()
+    contrat = conn.execute(
+        'SELECT * FROM contrats WHERE id = ? AND client_id = ?',
+        (contrat_id, session['client_id'])
+    ).fetchone()
+
+    if contrat and contrat['statut'] == 'envoyé':
+        now = datetime.datetime.now().isoformat(timespec='seconds')
+        conn.execute(
+            "UPDATE contrats SET statut='signé', signed_at=? WHERE id=?",
+            (now, contrat_id)
+        )
+        conn.commit()
+        flash('Contrat signé. Merci !', 'success')
+    conn.close()
+    return redirect('/portail/dashboard')
+
+
+@app.route('/portail/contact', methods=['GET', 'POST'])
+@client_login_required
+def portail_contact():
+    conn = get_db()
+    client = conn.execute(
+        'SELECT * FROM clients WHERE id = ?', (session['client_id'],)
+    ).fetchone()
+
+    if request.method == 'POST':
+        sujet   = request.form.get('sujet', '').strip()
+        message = request.form.get('message', '').strip()
+        if message:
+            conn.execute(
+                'INSERT INTO messages_client (client_id, sujet, message) VALUES (?,?,?)',
+                (session['client_id'], sujet, message)
+            )
+            conn.commit()
+            conn.close()
+            flash('Message envoyé. Naomie te reviendra sous peu !', 'success')
+        else:
+            conn.close()
+            flash('Le message ne peut pas être vide.', 'error')
+        return redirect('/portail/contact')
+
+    conn.close()
+    return render_template('portail_contact.html', client=client)
 
 
 if __name__ == '__main__':

@@ -854,6 +854,20 @@ select option { background: var(--surface2); }
 .timeline-point.done .timeline-label  { color: var(--green); }
 .timeline-point.active .timeline-label { color: var(--accent); }
 
+/* Flotte au-dessus du dot actif sans déplacer la ligne horizontale */
+.timeline-step-badge {
+    position: absolute;
+    top: -1.35rem;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 0.58rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--accent);
+    white-space: nowrap;
+}
+
 /* Bouton transparent qui enveloppe le dot dans la vue admin — le dot garde tous ses styles */
 .timeline-dot-btn {
     background: none;

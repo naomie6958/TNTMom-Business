@@ -288,25 +288,54 @@
             {% endif %}
         </div>
 
-        {# ── CONTRAT ──────────────────────────────────────────────────── #}
+        {# ── PROJETS ──────────────────────────────────────────────────── #}
         <div class="card">
             <div class="section-header">
-                <div class="section-title">Contrat</div>
-                <a href="/clients/{{ client.id }}/contrat" class="btn btn-secondary">
-                    {% if contrat %}Modifier{% else %}Créer{% endif %}
-                </a>
+                <div class="section-title">Projets</div>
+                <form method="POST" action="/clients/{{ client.id }}/projet/new"
+                      style="display: inline;">
+                    <input type="text" name="nom" placeholder="Nom du projet"
+                           style="font-size: 0.8rem; width: 140px; margin-right: 0.4rem;
+                                  background: var(--surface2); border: 1px solid var(--border);
+                                  border-radius: var(--radius); padding: 0.3rem 0.5rem;
+                                  color: var(--text);">
+                    <button type="submit" class="btn btn-primary" style="font-size: 0.8rem;">
+                        + Nouveau projet
+                    </button>
+                </form>
             </div>
 
-            {% if contrat %}
-                <div class="flex gap-sm items-center" style="margin-bottom: 0.8rem; flex-wrap: wrap;">
-                    <span class="badge badge-{{ contrat.statut }}">{{ contrat.statut }}</span>
-                    <span class="text-muted">Créé le {{ contrat.created_at[:10] }}</span>
-                </div>
+            {% if projets %}
+                {% for p in projets %}
+                {% set c = p.contrat %}
+                {% set ms = p.milestones %}
+                <div style="border: 1px solid var(--border); border-radius: var(--radius);
+                            padding: 0.9rem 1rem; margin-bottom: 0.8rem;">
 
-                {% if milestones %}
-                    {# Timeline interactive — cliquer un dot cycle le statut : en attente → en cours → livré → payé #}
-                    <div class="timeline" style="margin-bottom: 1rem;">
-                        {% for m in milestones %}
+                    {# En-tête du projet #}
+                    <div style="display: flex; justify-content: space-between;
+                                align-items: center; margin-bottom: 0.6rem; flex-wrap: wrap; gap: 0.4rem;">
+                        <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
+                            <strong style="font-size: 0.9rem;">{{ c.nom or 'Projet sans titre' }}</strong>
+                            <span class="badge badge-{{ c.statut }}">{{ c.statut }}</span>
+                            {% if c.signed_at %}
+                            <span style="font-size: 0.7rem; color: var(--green);">
+                                ✓ Signé le {{ c.signed_at[:10] }}
+                            </span>
+                            {% endif %}
+                        </div>
+                        <div style="display: flex; gap: 0.4rem; align-items: center;">
+                            <a href="/clients/{{ client.id }}/contrat/{{ c.id }}/print"
+                               target="_blank" class="btn btn-ghost" style="font-size: 0.75rem;">⎙</a>
+                            <a href="/clients/{{ client.id }}/contrat/{{ c.id }}"
+                               class="btn btn-secondary" style="font-size: 0.78rem;">Modifier</a>
+                        </div>
+                    </div>
+
+                    {# Timeline des milestones #}
+                    {% if ms %}
+                    <div class="timeline" style="margin-bottom: 0.6rem;">
+                        {% for m in ms %}
                         {% if m.statut in ['livré', 'payé'] %}
                             {% set point_class = 'done' %}
                         {% elif m.statut == 'en cours' %}
@@ -315,39 +344,38 @@
                             {% set point_class = '' %}
                         {% endif %}
                         <div class="timeline-point {{ point_class }}">
-                            {# Chaque dot est un bouton de formulaire — POST pour modifier des données #}
                             <form method="POST"
-                                  action="/clients/{{ client.id }}/milestone/{{ loop.index0 }}/toggle">
+                                  action="/clients/{{ client.id }}/contrat/{{ c.id }}/milestone/{{ loop.index0 }}/toggle">
                                 <button type="submit" class="timeline-dot-btn"
-                                        title="Cliquer pour avancer : en attente → en cours → livré → payé">
+                                        title="Cliquer pour avancer le statut">
                                     <div class="timeline-dot"></div>
                                 </button>
                             </form>
                             <div class="timeline-label">{{ m.titre or '—' }}</div>
                             <span class="badge badge-{{ m.statut | replace(' ', '-') }}"
-                                  style="margin-top: 0.3rem; font-size: 0.62rem;">{{ m.statut }}</span>
+                                  style="margin-top: 0.3rem; font-size: 0.6rem;">{{ m.statut }}</span>
                             {% if m.prix %}
-                            <div style="font-size: 0.68rem; color: var(--green); margin-top: 0.2rem;">
+                            <div style="font-size: 0.66rem; color: var(--green); margin-top: 0.15rem;">
                                 {{ m.prix }}$
                             </div>
                             {% endif %}
                         </div>
                         {% endfor %}
                     </div>
-                    <div style="text-align: right; font-size: 0.88rem; color: var(--green);
-                                padding-top: 0.4rem; border-top: 1px solid var(--border);">
-                        Total : <strong>{{ total_contrat | int }}$</strong>
+                    <div style="text-align: right; font-size: 0.82rem; color: var(--green);
+                                padding-top: 0.3rem; border-top: 1px solid var(--border);">
+                        Total : <strong>{{ p.total | int }}$</strong>
                     </div>
-                {% endif %}
+                    {% endif %}
 
-                {% if contrat.scope %}
-                    <div class="text-muted" style="font-size: 0.82rem; margin-top: 0.5rem;
-                                                    white-space: pre-wrap;">{{ contrat.scope[:200] }}{% if contrat.scope | length > 200 %}…{% endif %}</div>
-                {% endif %}
-            {% else %}
-                <div class="empty-state">
-                    Aucun contrat pour ce client.
+                    {% if c.scope %}
+                    <div class="text-muted" style="font-size: 0.78rem; margin-top: 0.5rem;
+                                white-space: pre-wrap;">{{ c.scope[:150] }}{% if c.scope | length > 150 %}…{% endif %}</div>
+                    {% endif %}
                 </div>
+                {% endfor %}
+            {% else %}
+                <div class="empty-state">Aucun projet pour ce client.</div>
             {% endif %}
         </div>
 
@@ -405,6 +433,34 @@
                 <div class="empty-state">Aucun fichier partagé.</div>
             {% endif %}
         </div>
+
+        {# ── MESSAGES CLIENT ──────────────────────────────────────────── #}
+        {% if messages %}
+        <div class="card">
+            <div class="section-header">
+                <div class="section-title">Messages du client</div>
+                <span class="badge badge-actif" style="font-size: 0.68rem;">
+                    {{ messages | length }}
+                </span>
+            </div>
+            {% for msg in messages %}
+            <div style="padding: 0.7rem 0; border-bottom: 1px solid var(--border);
+                        {% if not loop.last %}{% endif %}">
+                <div style="display: flex; justify-content: space-between;
+                            align-items: baseline; margin-bottom: 0.3rem;">
+                    <div style="font-size: 0.78rem; font-weight: 600; color: var(--text);">
+                        {% if msg.sujet %}{{ msg.sujet }}{% else %}Sans sujet{% endif %}
+                    </div>
+                    <div style="font-size: 0.7rem; color: var(--muted);">
+                        {{ msg.created_at[:16] | replace('T', ' ') }}
+                    </div>
+                </div>
+                <div style="font-size: 0.84rem; color: var(--muted);
+                            white-space: pre-wrap; line-height: 1.5;">{{ msg.message }}</div>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
 
     </div>
 </div>

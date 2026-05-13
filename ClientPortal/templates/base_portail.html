@@ -21,7 +21,8 @@
                {% if request.path == '/portail/dashboard' %}class="active"{% endif %}>
                 ◈ Mon projet
             </a>
-            <a href="mailto:naomiemt@tntm.ca">
+            <a href="/portail/contact"
+               {% if request.path == '/portail/contact' %}class="active"{% endif %}>
                 ◈ Contacter Naomie
             </a>
         </nav>
