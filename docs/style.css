@@ -5,7 +5,7 @@
 header {
     display: flex;
     justify-content: space-between;
-    align-items: justify;
+    align-items: center;
     max-width: 1100px;
     padding: 0 2rem;
     margin: 0 auto;
@@ -59,7 +59,8 @@ nav a {
     transition: all 0.2s;
 }
 
-nav a:hover {
+nav a:hover,
+nav a.active {
     transform: scale(1.05);
     box-shadow: 0 0 16px rgba(135, 206, 235, 0.6), 0 0 6px rgba(135, 206, 235, 0.3);
     border-color: #87CEEB;
@@ -267,9 +268,6 @@ p {
 .projet-card:hover {
     transform: translateY(-6px);
     background-color: #1a1a3e;
-    background-image: url('images/TNTM-PC.jpg');
-    background-size: cover;
-    background-position: center;
     border-color: #ff2d78;
     box-shadow: 0 0 18px rgba(255, 45, 120, 0.5);
 }
@@ -359,8 +357,22 @@ form {
     box-shadow: 0 0 18px rgba(62, 207, 142, 0.5);
 }
 
-.about-card {
-    margin: 25px;
+/* Carte sans lien — projet en cours */
+.projet-card--wip {
+    cursor: default;
+}
+
+.wip-badge {
+    display: inline-block;
+    margin-bottom: 0.4rem;
+    font-family: 'Orbitron', sans-serif;
+    font-size: 0.6rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: rgba(217, 79, 189, 0.7);
+    border: 1px solid rgba(217, 79, 189, 0.3);
+    border-radius: 4px;
+    padding: 0.15rem 0.5rem;
 }
 
 /* Carte "À venir" */

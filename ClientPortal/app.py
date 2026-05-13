@@ -182,6 +182,11 @@ def client_fiche(client_id):
         d['reponses_parsed'] = json.loads(c['reponses']) if c['reponses'] else {}
         consultations_parsed.append(d)
 
+    # Parse les réponses du questionnaire client pour affichage clé/valeur
+    questionnaire_rep = {}
+    if questionnaire and questionnaire['reponses']:
+        questionnaire_rep = json.loads(questionnaire['reponses'])
+
     # Prix total du contrat calculé depuis les milestones
     total_contrat = sum(float(m.get('prix', 0)) for m in milestones) if milestones else 0
 
@@ -192,6 +197,7 @@ def client_fiche(client_id):
                            milestones=milestones,
                            total_contrat=total_contrat,
                            questionnaire=questionnaire,
+                           questionnaire_rep=questionnaire_rep,
                            name=session['user_name'])
 
 
@@ -227,6 +233,7 @@ def delete_client(client_id):
     conn.execute('DELETE FROM clients WHERE id = ?', (client_id,))
     conn.commit()
     conn.close()
+    flash('Client supprimé.', 'success')
     return redirect('/dashboard')
 
 

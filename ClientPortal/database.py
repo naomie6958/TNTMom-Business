@@ -9,7 +9,7 @@ load_dotenv()
 
 # SQLite = base de données dans un seul fichier .db, pas de serveur séparé.
 # Parfait pour une app mono-utilisateur ou petit trafic.
-DB_PATH = 'portal.db'
+DB_PATH = os.path.join(os.path.dirname(__file__), 'portal.db')
 
 
 def get_db():

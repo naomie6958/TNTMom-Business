@@ -113,10 +113,9 @@
 
             {# ── SUPPRIMER ─────────────────────────────────────────────── #}
             <div style="margin-top: 0.8rem;">
-                <form method="POST" action="/clients/{{ client.id }}/delete"
-                      onsubmit="return confirm('Supprimer {{ client.nom }} et toutes ses données?')">
-                    {# confirm() est une boîte de dialogue JS native — évite les suppressions accidentelles #}
-                    <button type="submit" class="btn btn-danger" style="width: 100%; font-size: 0.78rem;">
+                <form id="delete-client-form" method="POST" action="/clients/{{ client.id }}/delete">
+                    <button type="button" class="btn btn-danger" style="width: 100%; font-size: 0.78rem;"
+                            onclick="openDeleteModal('delete-client-form', 'Supprimer {{ client.nom }} et toutes ses données ?')">
                         ✕ Supprimer ce client
                     </button>
                 </form>
@@ -142,11 +141,17 @@
                 <details class="collapsible" style="margin-top: 0.8rem;">
                     <summary>Voir les réponses</summary>
                     <div class="collapsible-body">
-                        {% set rep = questionnaire.reponses | tojson | from_json %}
-                        {# Note: on utilise un filtre Jinja2 custom plus bas,
-                           ou on parse dans app.py — ici on affiche le JSON brut proprement #}
-                        {% set rep = questionnaire.reponses %}
-                        <pre style="font-size: 0.78rem; color: var(--muted); white-space: pre-wrap; overflow-x: auto;">{{ rep }}</pre>
+                        {% set r = questionnaire_rep %}
+                        {% if r.activite %}<div class="q-row"><div class="q-label">Ce qu'ils font</div><div class="q-value">{{ r.activite }}</div></div>{% endif %}
+                        {% if r.clientele %}<div class="q-row"><div class="q-label">Clientèle cible</div><div class="q-value">{{ r.clientele }}</div></div>{% endif %}
+                        {% if r.pourquoi_maintenant %}<div class="q-row"><div class="q-label">Pourquoi maintenant</div><div class="q-value">{{ r.pourquoi_maintenant }}</div></div>{% endif %}
+                        {% if r.type_projet %}<div class="q-row"><div class="q-label">Type de projet</div><div class="q-value">{{ r.type_projet }}</div></div>{% endif %}
+                        {% if r.vision %}<div class="q-row"><div class="q-label">Vision esthétique</div><div class="q-value">{{ r.vision }}</div></div>{% endif %}
+                        {% if r.budget %}<div class="q-row"><div class="q-label">Budget</div><div class="q-value">{{ r.budget }}</div></div>{% endif %}
+                        {% if r.deadline %}<div class="q-row"><div class="q-label">Deadline</div><div class="q-value">{{ r.deadline }}</div></div>{% endif %}
+                        {% if r.assets %}<div class="q-row"><div class="q-label">Assets existants</div><div class="q-value">{{ r.assets }}</div></div>{% endif %}
+                        {% if r.acces_technique %}<div class="q-row"><div class="q-label">Accès technique</div><div class="q-value">{{ r.acces_technique }}</div></div>{% endif %}
+                        {% if r.implication %}<div class="q-row"><div class="q-label">Niveau d'implication</div><div class="q-value">{{ r.implication }}</div></div>{% endif %}
                     </div>
                 </details>
             {% else %}
@@ -180,11 +185,12 @@
                 <details class="consult-item" {% if loop.first %}open{% endif %}>
                     <summary>
                         <span>Consultation du {{ c.date }}</span>
-                        <form method="POST" action="/consultations/{{ c.id }}/delete"
-                              style="display:inline;"
-                              onsubmit="return confirm('Supprimer cette consultation?')">
-                            <button type="submit" class="btn btn-ghost" style="font-size: 0.75rem; color: var(--red);"
-                                    onclick="event.stopPropagation()">
+                        <form id="delete-consult-{{ c.id }}" method="POST"
+                              action="/consultations/{{ c.id }}/delete" style="display:inline;">
+                            <button type="button" class="btn btn-ghost"
+                                    style="font-size: 0.75rem; color: var(--red);"
+                                    onclick="event.stopPropagation();
+                                             openDeleteModal('delete-consult-{{ c.id }}', 'Supprimer cette consultation ?')">
                                 ✕
                             </button>
                         </form>
@@ -344,12 +350,45 @@
 {% endblock %}
 
 {% block scripts %}
+
+{# ── MODAL DE CONFIRMATION ────────────────────────────────────────────────── #}
+<div id="confirm-modal"
+     style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.65);
+            z-index:1000; align-items:center; justify-content:center;">
+    <div style="background:var(--surface); border:1px solid var(--border);
+                border-radius:var(--radius-lg); padding:2rem; max-width:380px; width:90%;">
+        <h3 style="font-size:1.3rem; margin-bottom:0.6rem;">Confirmer la suppression</h3>
+        <p id="confirm-msg" style="color:var(--muted); font-size:0.88rem; margin-bottom:1.5rem;"></p>
+        <div style="display:flex; gap:0.8rem; justify-content:flex-end;">
+            <button class="btn btn-secondary" onclick="closeModal()">Annuler</button>
+            <button class="btn btn-danger" id="confirm-btn">Supprimer</button>
+        </div>
+    </div>
+</div>
+
 <script>
+    function openDeleteModal(formId, message) {
+        document.getElementById('confirm-msg').textContent = message;
+        // Quand on clique "Supprimer", on soumet le bon formulaire par son id
+        document.getElementById('confirm-btn').onclick = () => {
+            document.getElementById(formId).submit();
+        };
+        const modal = document.getElementById('confirm-modal');
+        modal.style.display = 'flex';
+    }
+
+    function closeModal() {
+        document.getElementById('confirm-modal').style.display = 'none';
+    }
+
+    // Ferme le modal si on clique sur le fond sombre (pas sur la carte)
+    document.getElementById('confirm-modal').addEventListener('click', function(e) {
+        if (e.target === this) closeModal();
+    });
+
     function copyQLink(token) {
-        // Construit l'URL complète avec le domaine actuel
         const url = window.location.origin + '/q/' + token;
         navigator.clipboard.writeText(url).then(() => {
-            // Feedback visuel temporaire
             const btn = event.target;
             btn.textContent = '✓ Copié!';
             setTimeout(() => btn.textContent = 'Copier le lien', 2000);

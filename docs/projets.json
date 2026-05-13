@@ -2,7 +2,7 @@
     { "nom": "Python Lab", "description": "Apprentissage et formation Python", "link": "" },
     { "nom": "Scheduler TNTM", "description": "Programmation et prototypes", "link": "nao-scheduler.html" },
     { "nom": "Sobriety Tracker", "description": "Programmation et prototypes", "link": "sobriety-tracker.html" },
-    { "nom": "Client Portal", "description": "Back-office freelance — gestion clients, contrats & consultations", "link": "" },
+    { "nom": "Client Portal", "description": "Back-office freelance — gestion clients, contrats & consultations", "link": "https://tntmom.pythonanywhere.com/" },
     { "nom": "Family Dashboard", "description": "App familiale — planning, tâches, assistant IA & jeux éducatifs", "link": "" },
     { "nom": "À venir", "description": "...", "link": "" }
 ]

@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Connexion — TNTMom ClientPortal</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="icon" href="{{ url_for('static', filename='images/favicon.svg') }}" type="image/svg+xml">
 </head>
 <body>
 
@@ -54,6 +55,13 @@
                 Connexion →
             </button>
         </form>
+
+        <div style="text-align:center; margin-top:1.5rem; font-size:0.75rem; color:var(--muted);">
+            Client ?
+            <a href="/portail/login" style="color:var(--accent2); margin-left:0.3rem;">
+                Accès portail →
+            </a>
+        </div>
 
     </div>
 </div>
