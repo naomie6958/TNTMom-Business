@@ -1,6 +1,7 @@
-from flask import Flask, render_template, request, redirect, session, jsonify, flash
+from flask import Flask, render_template, request, redirect, session, jsonify, flash, send_from_directory
 from database import init_db, seed_db, migrate_db, get_db
 from werkzeug.security import check_password_hash, generate_password_hash
+from werkzeug.utils import secure_filename
 from dotenv import load_dotenv
 from functools import wraps
 import datetime
@@ -15,6 +16,13 @@ app = Flask(__name__)
 # Si elle change, toutes les sessions actives sont invalidées.
 # En prod elle vient du .env — jamais hardcodée dans le code.
 app.secret_key = os.getenv('SECRET_KEY', 'dev-only-change-me')
+
+# Limite la taille des uploads à 16 MB — au-delà Flask retourne une erreur 413
+app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024
+
+# Dossier de stockage des fichiers uploadés — en dehors de static/ pour ne pas
+# être servi directement. Flask contrôle qui peut télécharger quoi.
+UPLOAD_ROOT = os.path.join(os.path.dirname(__file__), 'uploads')
 
 # On initialise et peuple la DB au démarrage de l'app
 init_db()
@@ -168,6 +176,11 @@ def client_fiche(client_id):
         (client_id,)
     ).fetchone()
 
+    fichiers = conn.execute(
+        'SELECT * FROM fichiers WHERE client_id = ? ORDER BY uploaded_at DESC',
+        (client_id,)
+    ).fetchall()
+
     conn.close()
 
     # Parse le JSON des milestones pour l'affichage dans le template
@@ -198,6 +211,7 @@ def client_fiche(client_id):
                            total_contrat=total_contrat,
                            questionnaire=questionnaire,
                            questionnaire_rep=questionnaire_rep,
+                           fichiers=fichiers,
                            name=session['user_name'])
 
 
@@ -481,6 +495,102 @@ def toggle_milestone(client_id, index):
     return redirect(f'/clients/{client_id}')
 
 
+# ─── FICHIERS ─────────────────────────────────────────────────────────────────
+
+@app.route('/clients/<int:client_id>/fichiers/upload', methods=['POST'])
+@login_required
+def upload_fichier(client_id):
+    fichier = request.files.get('fichier')
+    if not fichier or fichier.filename == '':
+        flash('Aucun fichier sélectionné.', 'error')
+        return redirect(f'/clients/{client_id}')
+
+    nom_original = fichier.filename
+    # secure_filename retire les / et caractères dangereux — évite les path traversal
+    nom_secure = secure_filename(nom_original)
+    if not nom_secure:
+        flash('Nom de fichier invalide.', 'error')
+        return redirect(f'/clients/{client_id}')
+
+    # UUID en préfixe = nom unique sur le disque même si deux clients uploadent le même nom
+    nom_stocke = f"{uuid.uuid4().hex}_{nom_secure}"
+
+    dossier = os.path.join(UPLOAD_ROOT, str(client_id))
+    os.makedirs(dossier, exist_ok=True)   # crée le dossier du client s'il n'existe pas
+
+    chemin = os.path.join(dossier, nom_stocke)
+    fichier.save(chemin)
+    taille = os.path.getsize(chemin)
+
+    conn = get_db()
+    conn.execute(
+        'INSERT INTO fichiers (client_id, nom_original, nom_fichier, taille) VALUES (?,?,?,?)',
+        (client_id, nom_original, nom_stocke, taille)
+    )
+    conn.commit()
+    conn.close()
+    flash(f'"{nom_original}" uploadé.', 'success')
+    return redirect(f'/clients/{client_id}')
+
+
+@app.route('/clients/<int:client_id>/fichiers/<int:fichier_id>/download')
+@login_required
+def telecharger_fichier_admin(client_id, fichier_id):
+    conn = get_db()
+    f = conn.execute(
+        'SELECT * FROM fichiers WHERE id = ? AND client_id = ?', (fichier_id, client_id)
+    ).fetchone()
+    conn.close()
+
+    if not f:
+        return redirect(f'/clients/{client_id}')
+
+    dossier = os.path.join(UPLOAD_ROOT, str(client_id))
+    # as_attachment=True = force le téléchargement (pas d'affichage dans le navigateur)
+    # download_name = nom montré à l'utilisateur (le nom original, pas le nom uuid interne)
+    return send_from_directory(dossier, f['nom_fichier'],
+                               as_attachment=True, download_name=f['nom_original'])
+
+
+@app.route('/clients/<int:client_id>/fichiers/<int:fichier_id>/delete', methods=['POST'])
+@login_required
+def delete_fichier(client_id, fichier_id):
+    conn = get_db()
+    f = conn.execute(
+        'SELECT * FROM fichiers WHERE id = ? AND client_id = ?', (fichier_id, client_id)
+    ).fetchone()
+
+    if f:
+        chemin = os.path.join(UPLOAD_ROOT, str(client_id), f['nom_fichier'])
+        if os.path.exists(chemin):
+            os.remove(chemin)  # on supprime le fichier physique avant l'entrée DB
+        conn.execute('DELETE FROM fichiers WHERE id = ?', (fichier_id,))
+        conn.commit()
+    conn.close()
+    flash('Fichier supprimé.', 'success')
+    return redirect(f'/clients/{client_id}')
+
+
+@app.route('/portail/fichiers/<int:fichier_id>')
+@client_login_required
+def telecharger_fichier_client(fichier_id):
+    conn = get_db()
+    # On vérifie que le fichier appartient bien AU client connecté — un client
+    # ne peut pas deviner l'id d'un fichier d'un autre client et le télécharger
+    f = conn.execute(
+        'SELECT * FROM fichiers WHERE id = ? AND client_id = ?',
+        (fichier_id, session['client_id'])
+    ).fetchone()
+    conn.close()
+
+    if not f:
+        return redirect('/portail/dashboard')
+
+    dossier = os.path.join(UPLOAD_ROOT, str(session['client_id']))
+    return send_from_directory(dossier, f['nom_fichier'],
+                               as_attachment=True, download_name=f['nom_original'])
+
+
 # ─── ACCÈS PORTAIL CLIENT ─────────────────────────────────────────────────────
 
 @app.route('/clients/<int:client_id>/set-password', methods=['POST'])
@@ -562,6 +672,12 @@ def portail_dashboard():
         'SELECT * FROM contrats WHERE client_id = ? ORDER BY created_at DESC LIMIT 1',
         (session['client_id'],)
     ).fetchone()
+
+    fichiers = conn.execute(
+        'SELECT * FROM fichiers WHERE client_id = ? ORDER BY uploaded_at DESC',
+        (session['client_id'],)
+    ).fetchall()
+
     conn.close()
 
     milestones = []
@@ -575,7 +691,8 @@ def portail_dashboard():
                             client=client,
                             contrat=contrat,
                             milestones=milestones,
-                            total_contrat=total_contrat)
+                            total_contrat=total_contrat,
+                            fichiers=fichiers)
 
 
 if __name__ == '__main__':

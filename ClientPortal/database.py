@@ -92,6 +92,19 @@ def init_db():
             FOREIGN KEY(client_id) REFERENCES clients(id) ON DELETE CASCADE
         );
 
+        -- Fichiers uploadés par Naomie et visibles par le client dans son portail.
+        -- nom_original = ce que l'utilisateur voit (ex: "devis-v2.pdf")
+        -- nom_fichier  = ce qui est stocké sur le disque (uuid + nom sécurisé, évite les collisions)
+        CREATE TABLE IF NOT EXISTS fichiers (
+            id           INTEGER PRIMARY KEY AUTOINCREMENT,
+            client_id    INTEGER NOT NULL,
+            nom_original TEXT NOT NULL,
+            nom_fichier  TEXT NOT NULL,
+            taille       INTEGER,   -- en bytes
+            uploaded_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY(client_id) REFERENCES clients(id) ON DELETE CASCADE
+        );
+
     ''')
     conn.commit()
     conn.close()

@@ -40,7 +40,31 @@
         </div>
     {% endif %}
 
-    {# Deuxième carte : détails du contrat — scope, timeline, total #}
+    {# Fichiers partagés par Naomie — seulement si la liste est non vide #}
+    {% if fichiers %}
+    <div class="card" style="margin-top: 1rem;">
+        <div class="section-title" style="margin-bottom: 1rem;">Fichiers partagés</div>
+        {% for f in fichiers %}
+        <div style="display: flex; justify-content: space-between; align-items: center;
+                    padding: 0.6rem 0; border-bottom: 1px solid var(--border);">
+            <div>
+                <div style="font-size: 0.88rem;">{{ f.nom_original }}</div>
+                <div class="text-muted" style="font-size: 0.75rem;">
+                    {% if f.taille > 1048576 %}{{ (f.taille / 1048576) | round(1) }} MB
+                    {% elif f.taille > 1024 %}{{ (f.taille / 1024) | int }} KB
+                    {% else %}{{ f.taille }} B{% endif %}
+                </div>
+            </div>
+            <a href="/portail/fichiers/{{ f.id }}"
+               class="btn btn-secondary" style="font-size: 0.82rem;">
+                ↓ Télécharger
+            </a>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    {# Troisième carte : détails du contrat — scope, timeline, total #}
     {% if contrat and (contrat.scope or contrat.timeline) %}
     <div class="card" style="margin-top: 1rem;">
         <div class="section-title" style="margin-bottom: 1rem;">Détails du projet</div>

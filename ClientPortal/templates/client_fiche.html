@@ -344,6 +344,61 @@
             {% endif %}
         </div>
 
+        {# ── FICHIERS PARTAGÉS ────────────────────────────────────────── #}
+        <div class="card">
+            <div class="section-header">
+                <div class="section-title">Fichiers partagés</div>
+            </div>
+
+            {# enctype="multipart/form-data" est obligatoire pour les uploads de fichiers #}
+            <form method="POST" action="/clients/{{ client.id }}/fichiers/upload"
+                  enctype="multipart/form-data" style="margin-bottom: 0.8rem;">
+                <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
+                    <input type="file" name="fichier" required
+                           style="font-size: 0.82rem; flex: 1; min-width: 0;
+                                  background: var(--surface2); border: 1px solid var(--border);
+                                  border-radius: var(--radius); padding: 0.4rem 0.6rem; color: var(--text);">
+                    <button type="submit" class="btn btn-primary" style="white-space: nowrap;">
+                        ↑ Uploader
+                    </button>
+                </div>
+            </form>
+
+            {% if fichiers %}
+                {% for f in fichiers %}
+                <div style="display: flex; justify-content: space-between; align-items: center;
+                            padding: 0.5rem 0; border-bottom: 1px solid var(--border);
+                            font-size: 0.85rem;">
+                    <div>
+                        <div>{{ f.nom_original }}</div>
+                        <div class="text-muted" style="font-size: 0.75rem;">
+                            {# Affiche la taille en MB, KB ou B selon la taille #}
+                            {% if f.taille > 1048576 %}{{ (f.taille / 1048576) | round(1) }} MB
+                            {% elif f.taille > 1024 %}{{ (f.taille / 1024) | int }} KB
+                            {% else %}{{ f.taille }} B{% endif %}
+                            · {{ f.uploaded_at[:10] }}
+                        </div>
+                    </div>
+                    <div style="display: flex; gap: 0.4rem; align-items: center;">
+                        <a href="/clients/{{ client.id }}/fichiers/{{ f.id }}/download"
+                           class="btn btn-secondary" style="font-size: 0.78rem;">↓</a>
+                        <form id="delete-fichier-{{ f.id }}" method="POST"
+                              action="/clients/{{ client.id }}/fichiers/{{ f.id }}/delete">
+                            <button type="button" class="btn btn-ghost"
+                                    style="font-size: 0.75rem; color: var(--red);"
+                                    onclick="openDeleteModal('delete-fichier-{{ f.id }}',
+                                             'Supprimer &quot;{{ f.nom_original }}&quot; ?')">
+                                ✕
+                            </button>
+                        </form>
+                    </div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="empty-state">Aucun fichier partagé.</div>
+            {% endif %}
+        </div>
+
     </div>
 </div>
 
