@@ -541,7 +541,7 @@ footer {
     </div>
 
     <div class="callout" style="margin-top:1rem;">
-      <strong>Verdict (mis à jour · 10 Mai 2026) :</strong> Full stack avancé en production. Family Dashboard quasi-complet — auth Flask, 9 tables SQLite, rôles parent/enfant, horaire heure par heure, todos, épicerie, Claude AI intégré, mode bilingue FR/EN/bilingue, thèmes visuels par utilisateur, jeux éducatifs. Widget NerdyTrapMom archivé — ses fonctionnalités ont été absorbées dans le Dashboard. T'es solidement en Phase 2 avec un projet client en vue.
+      <strong>Verdict (mis à jour · 12 Mai 2026) :</strong> Full stack avancé en production. Family Dashboard quasi-complet ✓. ClientPortal Phase 2 complète ✓ — back-office Flask/SQLite avec auth admin + portail client live sur PythonAnywhere (tntmom.pythonanywhere.com). Werkzeug password hashing, sessions séparées admin/client, toggle milestones, flash messages, déploiement cloud maîtrisé. Premier compte client actif : Annie McMahon. T'es prête pour un client payant.
     </div>
   </div>
 
@@ -583,6 +583,8 @@ footer {
           </div>
           <div class="phase-focus">Facturer pour la première fois · scope petit, processus propre</div>
           <div class="milestones">
+            <div class="milestone check"><strong>Back-office ClientPortal</strong> — auth admin + portail client + toggle milestones + déploiement PythonAnywhere <em>· 12 Mai 2026</em></div>
+            <div class="milestone check"><strong>Premier compte client actif</strong> — Annie McMahon, dashboard live sur tntmom.pythonanywhere.com <em>· Mai 2026</em></div>
             <div class="milestone"><strong>Portfolio renforcé</strong> — 3 projets publics distincts : TNT Mom, Scheduler, app Flask</div>
             <div class="milestone"><strong>Modèle de contrat simple</strong> — scope écrit, milestones définis, conditions de paiement</div>
             <div class="milestone"><strong>Premier client 0$</strong> — projet ami/famille, pour le processus, pas pour l'argent</div>
@@ -763,7 +765,7 @@ footer {
     </div>
 
     <div class="callout green">
-      <strong>Mise à jour 10 Mai 2026 — Phase 2 en cours :</strong> Phase 1 complète ✓. Widget NerdyTrapMom archivé — fonctionnalités absorbées dans le Family Dashboard ✓. Family Dashboard quasi-complet — auth, horaire, todos, épicerie, Claude AI, bilingue, thèmes, jeux ✓. Repo restructuré proprement (FlaskLab + CéduleTNTM archivés, TNTM_Master organisé en sous-dossiers). Prochaine priorité — sécurité (passwords + secret key) puis déploiement + client foodtruck.
+      <strong>Mise à jour 12 Mai 2026 — Phase 2 ClientPortal complète :</strong> Phase 1 complète ✓. Family Dashboard quasi-complet ✓. ClientPortal Phase 2 buildée et déployée ✓ — back-office Flask/SQLite, auth admin + portail client, werkzeug password hashing, sessions séparées, toggle milestones, flash messages, show/hide password, remember me, déploiement PythonAnywhere (tntmom.pythonanywhere.com), premier compte client actif (Annie McMahon). Prochaine priorité — client foodtruck + LinkedIn.
     </div>
 
     <div class="milestones" style="font-size:.78rem;">
@@ -774,7 +776,9 @@ footer {
       <div class="milestone check"><strong>Dans 30 jours</strong> — TNT Mom site complet + app Flask live en production = portfolio crédible <em>· les deux ✓</em></div>
       <div class="milestone check"><strong>Mai 2026</strong> — Family Dashboard · auth, horaire, todos, épicerie, Claude AI, bilingue, thèmes, jeux ✓</div>
       <div class="milestone check"><strong>Mai 2026</strong> — Repo restructuré · FlaskLab + CéduleTNTM archivés · TNTM_Master organisé ✓</div>
-      <div class="milestone"><strong>Mai–Juin 2026</strong> — Sécurité (password hashing + secret key) + déploiement Family Dashboard</div>
+      <div class="milestone check"><strong>12 Mai 2026</strong> — ClientPortal Phase 2 · portail client + auth + milestones + déploiement PythonAnywhere ✓</div>
+      <div class="milestone check"><strong>12 Mai 2026</strong> — Sécurité ClientPortal · werkzeug password hashing + secret key .env ✓</div>
+      <div class="milestone"><strong>Mai–Juin 2026</strong> — Password hashing + déploiement Family Dashboard</div>
       <div class="milestone"><strong>Juin 2026</strong> — Client foodtruck · scope écrit · livraison site vitrine</div>
       <div class="milestone"><strong>Juin 2026</strong> — LinkedIn mis à jour avec portfolio complet</div>
     </div>
@@ -841,8 +845,8 @@ footer {
       </div>
       <div class="compare-cell actuel">
         <div class="compare-cat">Déploiement cloud</div>
-        <div class="compare-val">App trop complexe pour le free tier Render tel quel. Prochaine étape : password hashing + secret key .env, puis déploiement. Pas urgent — usage local pour l'instant.</div>
-        <span class="delta delta-track">→ Reporté volontairement</span>
+        <div class="compare-val win"><strong>✓ ClientPortal live sur PythonAnywhere (tntmom.pythonanywhere.com).</strong> WSGI config, os.chdir(), dotenv, uWSGI reload — maîtrisé. Family Dashboard : déploiement prévu après password hashing.</div>
+        <span class="delta delta-ahead">↑ Premier déploiement cloud réussi</span>
       </div>
 
       <!-- SECTION : STACK -->
@@ -961,7 +965,7 @@ footer {
   </div>
 
   <footer>
-    <span>TNT Mom · Plan d'affaires An 1 · Mis à jour 10 Mai 2026</span>
+    <span>TNT Mom · Plan d'affaires An 1 · Mis à jour 12 Mai 2026</span>
     <span>Bootstrap · 54.99$ de démarrage · API Anthropic · Milestones fonctionnels</span>
     <a href="/dashboard" class="nav-btn">← Dashboard</a>
     <a href="/roadmap" class="nav-btn">Feuille de route →</a>
