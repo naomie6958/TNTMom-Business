@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, session, jsonify
+from flask import Flask, render_template, request, redirect, session, jsonify, flash
 from database import init_db, seed_db, migrate_db, get_db
 from werkzeug.security import check_password_hash, generate_password_hash
 from dotenv import load_dotenv
@@ -214,6 +214,7 @@ def edit_client(client_id):
     ))
     conn.commit()
     conn.close()
+    flash('Client mis à jour.', 'success')
     return redirect(f'/clients/{client_id}')
 
 
@@ -359,6 +360,7 @@ def contrat(client_id):
 
         conn.commit()
         conn.close()
+        flash('Contrat sauvegardé.', 'success')
         return redirect(f'/clients/{client_id}')
 
     # Pré-remplir le form avec les données existantes
@@ -468,6 +470,7 @@ def toggle_milestone(client_id, index):
     )
     conn.commit()
     conn.close()
+    flash('Statut du milestone mis à jour.', 'success')
     return redirect(f'/clients/{client_id}')
 
 
@@ -491,7 +494,7 @@ def set_client_password(client_id):
     )
     conn.commit()
     conn.close()
-
+    flash('Mot de passe mis à jour.', 'success')
     return redirect(f'/clients/{client_id}')
 
 
@@ -558,9 +561,14 @@ def portail_dashboard():
     if contrat and contrat['milestones']:
         milestones = json.loads(contrat['milestones'])
 
+    # float() convertit le prix string en nombre — même logique que client_fiche
+    total_contrat = sum(float(m.get('prix', 0)) for m in milestones) if milestones else 0
+
     return render_template('portail_dashboard.html',
                             client=client,
-                            milestones=milestones)
+                            contrat=contrat,
+                            milestones=milestones,
+                            total_contrat=total_contrat)
 
 
 if __name__ == '__main__':

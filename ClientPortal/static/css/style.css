@@ -697,3 +697,27 @@ select option { background: var(--surface2); }
     .form-grid .span-2 { grid-column: span 1; }
     .milestone-row { grid-template-columns: 1fr 1fr; gap: 0.4rem; }
 }
+
+/* ── FLASH MESSAGES ─────────────────────────────────────────────────────── */
+.flash-container {
+    margin-bottom: 1.2rem;
+}
+
+.flash {
+    padding: 0.7rem 1rem;
+    border-radius: var(--radius);
+    font-size: 0.85rem;
+    margin-bottom: 0.5rem;
+}
+
+.flash-success {
+    background: rgba(80, 200, 120, 0.15);
+    border: 1px solid var(--green);
+    color: var(--green);
+}
+
+.flash-error {
+    background: rgba(220, 80, 80, 0.15);
+    border: 1px solid var(--red);
+    color: var(--red);
+}

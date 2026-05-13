@@ -44,6 +44,17 @@
 
     {# ── CONTENU PRINCIPAL ───────────────────────────────────────────────── #}
     <main class="main">
+        {# get_flashed_messages() récupère les messages stockés par flash() dans la session.
+           Ils sont automatiquement effacés après affichage — une seule fois, puis disparus. #}
+        {% with messages = get_flashed_messages(with_categories=True) %}
+            {% if messages %}
+                <div class="flash-container">
+                    {% for category, message in messages %}
+                        <div class="flash flash-{{ category }}">{{ message }}</div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
         {% block content %}{% endblock %}
     </main>
 

@@ -42,5 +42,33 @@
             <div class="empty-state">Aucun milestone pour le moment. Naomie les ajoutera bientôt.</div>
         </div>
     {% endif %}
+
+    {# Deuxième carte : détails du contrat — scope, timeline, total #}
+    {% if contrat and (contrat.scope or contrat.timeline) %}
+    <div class="card" style="margin-top: 1rem;">
+        <div class="section-title" style="margin-bottom: 1rem;">Détails du projet</div>
+
+        {% if contrat.scope %}
+        <div style="margin-bottom: 0.8rem;">
+            <div class="text-muted" style="font-size: 0.75rem; margin-bottom: 0.3rem;">DESCRIPTION</div>
+            <div style="font-size: 0.88rem; white-space: pre-wrap;">{{ contrat.scope }}</div>
+        </div>
+        {% endif %}
+
+        {% if contrat.timeline %}
+        <div style="margin-bottom: 0.8rem;">
+            <div class="text-muted" style="font-size: 0.75rem; margin-bottom: 0.3rem;">ÉCHÉANCIER</div>
+            <div style="font-size: 0.88rem;">{{ contrat.timeline }}</div>
+        </div>
+        {% endif %}
+
+        {% if milestones %}
+        <div style="text-align: right; padding-top: 0.5rem; border-top: 1px solid var(--border);
+                    font-size: 0.9rem; color: var(--green);">
+            Total : <strong>{{ total_contrat | int }}$</strong>
+        </div>
+        {% endif %}
+    </div>
+    {% endif %}
 </div>
 {% endblock %}
