@@ -155,7 +155,7 @@ const initialMilestones = {{ milestones | tojson }};
 // On garde les milestones dans un tableau JS — plus facile à manipuler que le DOM.
 let milestones = initialMilestones.length > 0
     ? initialMilestones
-    : [{ titre: '', livrable: '', prix: '', statut: 'pending' }];
+    : [{ titre: '', livrable: '', prix: '', statut: 'en attente' }];
 
 // ── RENDER ───────────────────────────────────────────────────────────────────
 function render() {
@@ -177,8 +177,8 @@ function render() {
                    value="${esc(m.prix)}"
                    oninput="milestones[${i}].prix = this.value; updateTotal()">
             <select onchange="milestones[${i}].statut = this.value">
-                <option value="pending"    ${m.statut === 'pending'    ? 'selected' : ''}>En attente</option>
-                <option value="en_cours"   ${m.statut === 'en_cours'   ? 'selected' : ''}>En cours</option>
+                <option value="en attente" ${m.statut === 'en attente' ? 'selected' : ''}>En attente</option>
+                <option value="en cours"   ${m.statut === 'en cours'   ? 'selected' : ''}>En cours</option>
                 <option value="livré"      ${m.statut === 'livré'      ? 'selected' : ''}>Livré</option>
                 <option value="payé"       ${m.statut === 'payé'       ? 'selected' : ''}>Payé ✓</option>
             </select>
@@ -199,7 +199,7 @@ function esc(str) {
 }
 
 function addMilestone() {
-    milestones.push({ titre: '', livrable: '', prix: '', statut: 'pending' });
+    milestones.push({ titre: '', livrable: '', prix: '', statut: 'en attente' });
     render();
 }
 

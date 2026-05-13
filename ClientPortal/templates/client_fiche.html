@@ -304,32 +304,39 @@
                 </div>
 
                 {% if milestones %}
-                    <div style="margin-bottom: 0.5rem;">
+                    {# Timeline interactive — cliquer un dot cycle le statut : en attente → en cours → livré → payé #}
+                    <div class="timeline" style="margin-bottom: 1rem;">
                         {% for m in milestones %}
-                        <div style="display: flex; justify-content: space-between; align-items: center;
-                                    padding: 0.4rem 0; border-bottom: 1px solid var(--border);
-                                    font-size: 0.85rem;">
-                            <span>{{ m.titre or '—' }}</span>
-                            <div style="display: flex; align-items: center; gap: 0.6rem;">
-                                <span style="color: var(--green); font-size: 0.88rem;">
-                                    {{ m.prix | default(0) }}$
-                                </span>
-                                {# loop.index0 = index du milestone dans le tableau, commence à 0 #}
-                                {# On soumet via un form POST — jamais GET pour une action qui modifie des données #}
-                                <form method="POST"
-                                      action="/clients/{{ client.id }}/milestone/{{ loop.index0 }}/toggle">
-                                    <button type="submit" class="btn btn-ghost" style="font-size: 0.75rem;
-                                            color: {% if m.statut == 'complété' %}var(--green){% else %}var(--muted){% endif %};">
-                                        {% if m.statut == 'complété' %}✓ complété{% else %}○ en cours{% endif %}
-                                    </button>
-                                </form>
+                        {% if m.statut in ['livré', 'payé'] %}
+                            {% set point_class = 'done' %}
+                        {% elif m.statut == 'en cours' %}
+                            {% set point_class = 'active' %}
+                        {% else %}
+                            {% set point_class = '' %}
+                        {% endif %}
+                        <div class="timeline-point {{ point_class }}">
+                            {# Chaque dot est un bouton de formulaire — POST pour modifier des données #}
+                            <form method="POST"
+                                  action="/clients/{{ client.id }}/milestone/{{ loop.index0 }}/toggle">
+                                <button type="submit" class="timeline-dot-btn"
+                                        title="Cliquer pour avancer : en attente → en cours → livré → payé">
+                                    <div class="timeline-dot"></div>
+                                </button>
+                            </form>
+                            <div class="timeline-label">{{ m.titre or '—' }}</div>
+                            <span class="badge badge-{{ m.statut | replace(' ', '-') }}"
+                                  style="margin-top: 0.3rem; font-size: 0.62rem;">{{ m.statut }}</span>
+                            {% if m.prix %}
+                            <div style="font-size: 0.68rem; color: var(--green); margin-top: 0.2rem;">
+                                {{ m.prix }}$
                             </div>
+                            {% endif %}
                         </div>
                         {% endfor %}
-                        <div style="text-align: right; padding-top: 0.5rem;
-                                    font-size: 0.9rem; color: var(--green);">
-                            Total : <strong>{{ total_contrat | int }}$</strong>
-                        </div>
+                    </div>
+                    <div style="text-align: right; font-size: 0.88rem; color: var(--green);
+                                padding-top: 0.4rem; border-top: 1px solid var(--border);">
+                        Total : <strong>{{ total_contrat | int }}$</strong>
                     </div>
                 {% endif %}
 

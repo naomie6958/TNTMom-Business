@@ -1,6 +1,7 @@
 import sqlite3
 import os
 import uuid
+import json
 from dotenv import load_dotenv
 from werkzeug.security import generate_password_hash
 
@@ -141,6 +142,29 @@ def migrate_db():
         )
     if existing:
         conn.commit()
+
+    # Traduit les anciens statuts anglais des milestones en français dans tous les contrats.
+    # Les valeurs 'pending' et 'en_cours' viennent de la Phase 1 — on les remplace une fois.
+    statut_map = {'pending': 'en attente', 'en_cours': 'en cours'}
+    contrats = conn.execute(
+        'SELECT id, milestones FROM contrats WHERE milestones IS NOT NULL'
+    ).fetchall()
+    for contrat in contrats:
+        try:
+            milestones = json.loads(contrat['milestones'])
+            changed = False
+            for m in milestones:
+                if m.get('statut') in statut_map:
+                    m['statut'] = statut_map[m['statut']]
+                    changed = True
+            if changed:
+                conn.execute(
+                    'UPDATE contrats SET milestones = ? WHERE id = ?',
+                    (json.dumps(milestones, ensure_ascii=False), contrat['id'])
+                )
+        except (json.JSONDecodeError, KeyError):
+            pass
+    conn.commit()
 
     conn.close()
 

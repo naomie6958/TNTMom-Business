@@ -481,9 +481,15 @@ def toggle_milestone(client_id, index):
     milestones = json.loads(contrat['milestones'])
 
     if 0 <= index < len(milestones):
-        actuel = milestones[index].get('statut', 'en cours')
-        # Bascule entre les deux statuts possibles
-        milestones[index]['statut'] = 'complété' if actuel != 'complété' else 'en cours'
+        # Cycle complet en français — chaque clic avance au statut suivant
+        cycle = {
+            'en attente': 'en cours',
+            'en cours':   'livré',
+            'livré':      'payé',
+            'payé':       'en attente',
+        }
+        actuel = milestones[index].get('statut', 'en attente')
+        milestones[index]['statut'] = cycle.get(actuel, 'en cours')
 
     conn.execute(
         'UPDATE contrats SET milestones = ? WHERE id = ?',

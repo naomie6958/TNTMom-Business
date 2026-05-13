@@ -19,7 +19,7 @@
                 {% for m in milestones %}
                 {% if m.statut in ['livré', 'payé'] %}
                     {% set point_class = 'done' %}
-                {% elif m.statut == 'en_cours' %}
+                {% elif m.statut == 'en cours' %}
                     {% set point_class = 'active' %}
                 {% else %}
                     {% set point_class = '' %}

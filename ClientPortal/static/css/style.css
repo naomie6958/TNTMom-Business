@@ -226,9 +226,13 @@ a:hover { color: var(--accent); }
 .badge-actif     { background: rgba(62, 207, 142, 0.15);  color: var(--green);   }
 .badge-completé  { background: rgba(200, 150, 62, 0.15);  color: var(--gold);    }
 .badge-archivé   { background: rgba(110, 110, 154, 0.15); color: var(--muted);   }
-.badge-draft     { background: rgba(110, 110, 154, 0.15); color: var(--muted);   }
-.badge-envoyé    { background: rgba(135, 206, 235, 0.15); color: var(--accent2); }
-.badge-signé     { background: rgba(62, 207, 142, 0.15);  color: var(--green);   }
+.badge-draft      { background: rgba(110, 110, 154, 0.15); color: var(--muted);   }
+.badge-envoyé     { background: rgba(135, 206, 235, 0.15); color: var(--accent2); }
+.badge-signé      { background: rgba(62, 207, 142, 0.15);  color: var(--green);   }
+.badge-en-attente { background: rgba(110, 110, 154, 0.15); color: var(--muted);   }
+.badge-en-cours   { background: rgba(217, 79, 189, 0.15);  color: var(--accent);  }
+.badge-livré      { background: rgba(135, 206, 235, 0.15); color: var(--accent2); }
+.badge-payé       { background: rgba(62, 207, 142, 0.15);  color: var(--green);   }
 
 /* ── BOUTONS ─────────────────────────────────────────────────────────────── */
 .btn {
@@ -849,3 +853,24 @@ select option { background: var(--surface2); }
 
 .timeline-point.done .timeline-label  { color: var(--green); }
 .timeline-point.active .timeline-label { color: var(--accent); }
+
+/* Bouton transparent qui enveloppe le dot dans la vue admin — le dot garde tous ses styles */
+.timeline-dot-btn {
+    background: none;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 0.6rem;
+}
+
+/* Le dot lui-même n'a plus besoin de margin quand il est dans le bouton */
+.timeline-dot-btn .timeline-dot { margin-bottom: 0; }
+
+/* Feedback visuel au survol */
+.timeline-dot-btn:hover .timeline-dot {
+    transform: scale(1.3);
+    border-color: var(--accent2);
+}
