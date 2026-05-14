@@ -44,7 +44,7 @@
 
             {# Timeline des milestones #}
             {% if ms %}
-            <div class="timeline">
+            <div class="timeline-scroll"><div class="timeline">
                 {% for m in ms %}
                 {% if m.statut in ['livré', 'payé'] %}
                     {% set point_class = 'done' %}
@@ -61,7 +61,7 @@
                     <div class="timeline-label">{{ m.titre or '—' }}</div>
                 </div>
                 {% endfor %}
-            </div>
+            </div></div>
 
             <div style="margin-top: 0.4rem; font-size: 0.75rem; color: var(--muted); text-align: right;">
                 {{ p.faits }} / {{ ms|length }} complétés

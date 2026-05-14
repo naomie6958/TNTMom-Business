@@ -293,9 +293,10 @@
             <div class="section-header">
                 <div class="section-title">Projets</div>
                 <form method="POST" action="/clients/{{ client.id }}/projet/new"
-                      style="display: inline;">
+                      class="flex gap-sm items-center projet-new-form" style="flex-wrap: wrap;">
                     <input type="text" name="nom" placeholder="Nom du projet"
-                           style="font-size: 0.8rem; width: 140px; margin-right: 0.4rem;
+                           class="projet-new-input"
+                           style="font-size: 0.8rem; width: 140px;
                                   background: var(--surface2); border: 1px solid var(--border);
                                   border-radius: var(--radius); padding: 0.3rem 0.5rem;
                                   color: var(--text);">
@@ -334,7 +335,7 @@
 
                     {# Timeline des milestones #}
                     {% if ms %}
-                    <div class="timeline" style="margin-bottom: 0.6rem;">
+                    <div class="timeline-scroll"><div class="timeline" style="margin-bottom: 0.6rem;">
                         {% for m in ms %}
                         {% if m.statut in ['livré', 'payé'] %}
                             {% set point_class = 'done' %}
@@ -363,6 +364,7 @@
                         </div>
                         {% endfor %}
                     </div>
+                    </div></div>
                     <div style="text-align: right; font-size: 0.82rem; color: var(--green);
                                 padding-top: 0.3rem; border-top: 1px solid var(--border);">
                         Total : <strong>{{ p.total | int }}$</strong>
