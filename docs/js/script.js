@@ -15,7 +15,7 @@ document.querySelectorAll('nav a').forEach(link => {
     }
 })
 
-fetch('projets.json')
+fetch('data/projets.json')
     .then(response => response.json())
     .then(projets => {
         const galerie = document.querySelector('#galerie');

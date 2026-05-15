@@ -865,6 +865,21 @@ select option { background: var(--surface2); }
     margin-bottom: 0.15rem;
 }
 
+.bmc-btn {
+    display: inline-block;
+    background: #FFDD00;
+    color: #111;
+    padding: 5px 12px;
+    border-radius: 20px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-decoration: none;
+    transition: opacity 0.2s;
+    margin-top: 0.75rem;
+    white-space: nowrap;
+}
+.bmc-btn:hover { opacity: 0.85; }
+
 .chat-thread {
     border: 1px solid var(--border);
     border-radius: var(--radius);
