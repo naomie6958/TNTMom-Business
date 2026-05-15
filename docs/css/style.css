@@ -117,6 +117,7 @@ nav a.active {
         display: flex;
         max-height: 400px;
         clip-path: inset(-10px -10px 0 -10px);
+        padding-top: 10px;
         padding-bottom: 8px;
     }
 
