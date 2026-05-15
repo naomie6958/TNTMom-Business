@@ -1,14 +1,16 @@
 ﻿* {
     box-sizing: border-box;
+    margin: 0;
+    padding: 0;
 }
 
 .sticky-header {
     position: sticky;
     top: 0;
     z-index: 100;
-    background: rgba(15, 15, 20, 0.88);
-    backdrop-filter: blur(12px);
+    background: #0f0f14;
     border-bottom: 1px solid rgba(135, 206, 235, 0.1);
+    width: 100%;
 }
 
 header {
