@@ -409,6 +409,7 @@ input[type="text"],
 input[type="email"],
 input[type="password"],
 input[type="number"],
+input[type="date"],
 select,
 textarea {
     background: var(--surface2);
@@ -563,6 +564,13 @@ select option { background: var(--surface2); }
     border-color: transparent;
     font-size: 0.82rem;
     padding: 0.35rem 0.5rem;
+    color: var(--text);
+}
+
+/* Couleur du texte et du picker natif pour input[type=date] */
+input[type="date"]::-webkit-calendar-picker-indicator {
+    filter: invert(0.7);
+    cursor: pointer;
 }
 
 .milestone-row input:focus,
