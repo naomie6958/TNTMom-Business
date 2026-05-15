@@ -8,10 +8,52 @@ import datetime
 import json
 import os
 import uuid
+import smtplib
+from email.mime.text import MIMEText
 
 load_dotenv()
 
 app = Flask(__name__)
+
+
+def send_notification_email(subject, body):
+    """Envoie un courriel de notification via Gmail SMTP. Silencieux si non configuré."""
+    gmail_user = os.getenv('GMAIL_USER')
+    gmail_pass = os.getenv('GMAIL_APP_PASSWORD')
+    if not gmail_user or not gmail_pass:
+        return
+    try:
+        msg = MIMEText(body, 'plain', 'utf-8')
+        msg['Subject'] = subject
+        msg['From']    = gmail_user
+        msg['To']      = 'naomiemt@tntm.ca'
+        with smtplib.SMTP('smtp.gmail.com', 587) as server:
+            server.starttls()
+            server.login(gmail_user, gmail_pass)
+            server.send_message(msg)
+    except Exception:
+        pass  # Ne jamais bloquer l'app si l'email échoue
+
+
+def _compute_deadlines(milestones):
+    """Calcule deadline[i] = milieu entre date[i] et date[i+1]. Modifie la liste en place."""
+    for i, m in enumerate(milestones):
+        if i < len(milestones) - 1:
+            d1 = m.get('date', '')
+            d2 = milestones[i + 1].get('date', '')
+            if d1 and d2:
+                try:
+                    dt1 = datetime.datetime.strptime(d1, '%Y-%m-%d')
+                    dt2 = datetime.datetime.strptime(d2, '%Y-%m-%d')
+                    mid = dt1 + (dt2 - dt1) / 2
+                    m['deadline'] = mid.strftime('%Y-%m-%d')
+                except Exception:
+                    m['deadline'] = ''
+            else:
+                m['deadline'] = ''
+        else:
+            m['deadline'] = ''
+    return milestones
 
 
 def group_messages(messages):
@@ -37,6 +79,18 @@ def group_messages(messages):
 # En prod elle vient du .env — jamais hardcodée dans le code.
 app.secret_key = os.getenv('SECRET_KEY', 'dev-only-change-me')
 
+_MOIS = ['jan', 'fév', 'mar', 'avr', 'mai', 'juin', 'juil', 'août', 'sep', 'oct', 'nov', 'déc']
+
+@app.template_filter('fmt_date')
+def fmt_date(s):
+    if not s:
+        return ''
+    try:
+        dt = datetime.datetime.strptime(s, '%Y-%m-%d')
+        return f"{dt.day} {_MOIS[dt.month - 1]}"
+    except Exception:
+        return s
+
 # Limite la taille des uploads à 16 MB — au-delà Flask retourne une erreur 413
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024
 
@@ -55,6 +109,14 @@ seed_db()
 # Un décorateur "enveloppe" une fonction pour lui ajouter du comportement.
 # @login_required appliqué à une route = la route vérifie la session avant d'agir.
 # Sans ça, on devrait copier le même if dans chaque route — pas DRY.
+
+@app.context_processor
+def inject_user():
+    return {
+        'name': session.get('user_name', ''),
+        'client_nom': session.get('client_nom', ''),
+    }
+
 
 def login_required(f):
     @wraps(f)  # @wraps préserve le nom et la docstring de la fonction originale
@@ -129,11 +191,17 @@ def dashboard():
         'actifs':    sum(1 for c in clients if c['statut'] == 'actif'),
         'completes': sum(1 for c in clients if c['statut'] == 'complété'),
     }
+
+    unread_rows = conn.execute(
+        'SELECT client_id, COUNT(*) as cnt FROM messages_client WHERE lu = 0 GROUP BY client_id'
+    ).fetchall()
+    unread_counts = {row['client_id']: row['cnt'] for row in unread_rows}
     conn.close()
 
     return render_template('admin_dashboard.html',
                            clients=clients,
                            stats=stats,
+                           unread_counts=unread_counts,
                            name=session['user_name'])
 
 
@@ -206,10 +274,23 @@ def client_fiche(client_id):
         (client_id,)
     ).fetchall()
 
+    factures = conn.execute(
+        'SELECT * FROM factures WHERE client_id = ? ORDER BY date_emission DESC',
+        (client_id,)
+    ).fetchall()
+
     contrats_all = conn.execute(
         'SELECT * FROM contrats WHERE client_id = ? ORDER BY created_at ASC',
         (client_id,)
     ).fetchall()
+
+    form_reponses_raw = conn.execute('''
+        SELECT fr.*, f.titre AS form_titre
+        FROM formulaire_reponses fr
+        JOIN formulaires f ON fr.formulaire_id = f.id
+        WHERE fr.client_id = ?
+        ORDER BY fr.submitted_at DESC
+    ''', (client_id,)).fetchall()
 
     # Auto-marque les messages comme lus dès que Naomie ouvre la fiche
     conn.execute(
@@ -231,10 +312,34 @@ def client_fiche(client_id):
     if questionnaire and questionnaire['reponses']:
         questionnaire_rep = json.loads(questionnaire['reponses'])
 
+    # Parse les réponses des formulaires soumis par ce client
+    # On enrichit chaque soumission avec les titres de questions pour affichage lisible
+    conn2 = get_db()
+    form_reponses = []
+    for fr in form_reponses_raw:
+        d = dict(fr)
+        try:
+            raw = json.loads(fr['reponses'])
+        except Exception:
+            raw = {}
+        questions = conn2.execute(
+            'SELECT id, titre, type FROM formulaire_questions WHERE formulaire_id = ? ORDER BY ordre',
+            (fr['formulaire_id'],)
+        ).fetchall()
+        reponses_lisibles = []
+        for q in questions:
+            key = f'q_{q["id"]}'
+            val = raw.get(key, '')
+            if val:
+                reponses_lisibles.append({'question': q['titre'], 'reponse': val, 'type': q['type']})
+        d['reponses_lisibles'] = reponses_lisibles
+        form_reponses.append(d)
+    conn2.close()
+
     # Construit la liste enrichie des projets (tous les contrats)
     projets = []
     for c in contrats_all:
-        m = json.loads(c['milestones']) if c['milestones'] else []
+        m = _compute_deadlines(json.loads(c['milestones']) if c['milestones'] else [])
         total = sum(float(x.get('prix', 0)) for x in m)
         projets.append({'contrat': dict(c), 'milestones': m, 'total': total})
 
@@ -255,6 +360,8 @@ def client_fiche(client_id):
                            fichiers=fichiers,
                            messages=messages,
                            msg_threads=group_messages(messages),
+                           factures=factures,
+                           form_reponses=form_reponses,
                            name=session['user_name'])
 
 
@@ -278,6 +385,18 @@ def edit_client(client_id):
     conn.commit()
     conn.close()
     flash('Client mis à jour.', 'success')
+    return redirect(f'/clients/{client_id}')
+
+
+@app.route('/clients/<int:client_id>/statut', methods=['POST'])
+@login_required
+def client_statut(client_id):
+    statut = request.form.get('statut', 'prospect')
+    conn = get_db()
+    conn.execute('UPDATE clients SET statut = ? WHERE id = ?', (statut, client_id))
+    conn.commit()
+    conn.close()
+    flash(f'Statut mis à jour : {statut}.', 'success')
     return redirect(f'/clients/{client_id}')
 
 
@@ -509,6 +628,18 @@ def projet_new(client_id):
     return redirect(f'/clients/{client_id}/contrat/{contrat_id}')
 
 
+@app.route('/clients/<int:client_id>/contrat/<int:contrat_id>/delete', methods=['POST'])
+@login_required
+def contrat_delete(client_id, contrat_id):
+    conn = get_db()
+    conn.execute('DELETE FROM factures WHERE contrat_id = ?', (contrat_id,))
+    conn.execute('DELETE FROM contrats WHERE id = ? AND client_id = ?', (contrat_id, client_id))
+    conn.commit()
+    conn.close()
+    flash('Projet supprimé.', 'success')
+    return redirect(f'/clients/{client_id}')
+
+
 @app.route('/clients/<int:client_id>/contrat/<int:contrat_id>/print')
 @login_required
 def contrat_print(client_id, contrat_id):
@@ -565,6 +696,26 @@ def toggle_milestone(client_id, contrat_id, index):
                 return redirect(f'/clients/{client_id}')
 
         milestones[index]['statut'] = nouveau
+
+        # Auto-créer une facture quand le milestone passe à 'livré'
+        if nouveau == 'livré':
+            m = milestones[index]
+            montant = float(m.get('prix', 0) or 0)
+            titre   = m.get('titre', f'Milestone {index + 1}')
+            deja    = conn.execute(
+                'SELECT id FROM factures WHERE contrat_id = ? AND milestone_titre = ?',
+                (contrat_id, titre)
+            ).fetchone()
+            if not deja and montant > 0:
+                count = conn.execute('SELECT COUNT(*) FROM factures').fetchone()[0]
+                numero = f"{datetime.date.today().year}-{str(count + 1).zfill(3)}"
+                conn.execute(
+                    '''INSERT INTO factures
+                       (client_id, contrat_id, numero, milestone_titre, montant, date_emission)
+                       VALUES (?, ?, ?, ?, ?, ?)''',
+                    (client_id, contrat_id, numero, titre, montant,
+                     datetime.date.today().isoformat())
+                )
 
     conn.execute(
         'UPDATE contrats SET milestones = ? WHERE id = ?',
@@ -767,7 +918,7 @@ def portail_dashboard():
     # Construit une liste de projets enrichis pour le template
     projets = []
     for c in contrats_all:
-        m = json.loads(c['milestones']) if c['milestones'] else []
+        m = _compute_deadlines(json.loads(c['milestones']) if c['milestones'] else [])
         total = sum(float(x.get('prix', 0)) for x in m)
         faits = sum(1 for x in m if x.get('statut') in ['livré', 'payé'])
         projets.append({
@@ -798,6 +949,24 @@ def repondre_message(client_id, message_id):
         conn.close()
         flash('Réponse envoyée.', 'success')
     return redirect(f'/clients/{client_id}')
+
+
+@app.route('/portail/contrat/<int:contrat_id>/print')
+@client_login_required
+def portail_contrat_print(contrat_id):
+    conn = get_db()
+    contrat = conn.execute(
+        'SELECT * FROM contrats WHERE id = ? AND client_id = ?',
+        (contrat_id, session['client_id'])
+    ).fetchone()
+    client = conn.execute('SELECT * FROM clients WHERE id = ?', (session['client_id'],)).fetchone()
+    conn.close()
+    if not contrat or contrat['statut'] != 'signé':
+        return redirect('/portail/dashboard')
+    milestones = json.loads(contrat['milestones']) if contrat['milestones'] else []
+    total = sum(float(m.get('prix', 0)) for m in milestones)
+    return render_template('contrat_print.html', client=client, contrat=contrat,
+                           milestones=milestones, total=total)
 
 
 @app.route('/portail/contrat/<int:contrat_id>/signer', methods=['POST'])
@@ -839,6 +1008,10 @@ def portail_contact():
             )
             conn.commit()
             conn.close()
+            send_notification_email(
+                f'[ClientPortal] Nouveau message de {session["client_nom"]}',
+                f'Client : {session["client_nom"]}\nSujet : {sujet or "(aucun)"}\n\n{message}'
+            )
             flash('Message envoyé. Naomie te reviendra sous peu !', 'success')
         else:
             conn.close()
@@ -852,6 +1025,397 @@ def portail_contact():
     conn.close()
     return render_template('portail_contact.html', client=client,
                            threads=group_messages(historique))
+
+
+# ─── FACTURES ADMIN ──────────────────────────────────────────────────────────
+
+@app.route('/clients/<int:client_id>/factures/new', methods=['POST'])
+@login_required
+def facture_new(client_id):
+    conn = get_db()
+    montant = float(request.form.get('montant', 0) or 0)
+    count   = conn.execute('SELECT COUNT(*) FROM factures').fetchone()[0]
+    numero  = f"{datetime.date.today().year}-{str(count + 1).zfill(3)}"
+    contrat_id = request.form.get('contrat_id') or None
+    conn.execute(
+        '''INSERT INTO factures
+           (client_id, contrat_id, numero, milestone_titre, description, montant, date_emission)
+           VALUES (?, ?, ?, ?, ?, ?, ?)''',
+        (client_id, contrat_id, numero,
+         request.form.get('milestone_titre', '').strip(),
+         request.form.get('description', '').strip(),
+         montant, datetime.date.today().isoformat())
+    )
+    conn.commit()
+    conn.close()
+    flash('Facture créée.', 'success')
+    return redirect(f'/clients/{client_id}')
+
+
+@app.route('/clients/<int:client_id>/factures/<int:facture_id>/marquer-payee', methods=['POST'])
+@login_required
+def facture_marquer_payee(client_id, facture_id):
+    conn = get_db()
+    facture = conn.execute(
+        'SELECT * FROM factures WHERE id = ? AND client_id = ?', (facture_id, client_id)
+    ).fetchone()
+
+    if facture:
+        conn.execute(
+            "UPDATE factures SET statut = 'payée', date_paiement = ? WHERE id = ?",
+            (datetime.date.today().isoformat(), facture_id)
+        )
+
+        # Sync le milestone correspondant → 'payé'
+        if facture['contrat_id'] and facture['milestone_titre']:
+            contrat = conn.execute(
+                'SELECT * FROM contrats WHERE id = ?', (facture['contrat_id'],)
+            ).fetchone()
+            if contrat and contrat['milestones']:
+                milestones = json.loads(contrat['milestones'])
+                changed = False
+                for m in milestones:
+                    if m.get('titre') == facture['milestone_titre'] and m.get('statut') == 'livré':
+                        m['statut'] = 'payé'
+                        changed = True
+                if changed:
+                    conn.execute(
+                        'UPDATE contrats SET milestones = ? WHERE id = ?',
+                        (json.dumps(milestones, ensure_ascii=False), facture['contrat_id'])
+                    )
+
+        conn.commit()
+
+    conn.close()
+    flash('Facture marquée comme payée — milestone mis à jour.', 'success')
+    return redirect(f'/clients/{client_id}')
+
+
+@app.route('/clients/<int:client_id>/factures/<int:facture_id>/delete', methods=['POST'])
+@login_required
+def facture_delete(client_id, facture_id):
+    conn = get_db()
+    conn.execute('DELETE FROM factures WHERE id = ? AND client_id = ?', (facture_id, client_id))
+    conn.commit()
+    conn.close()
+    flash('Facture supprimée.', 'success')
+    return redirect(f'/clients/{client_id}')
+
+
+@app.route('/clients/<int:client_id>/factures/<int:facture_id>/envoyer', methods=['POST'])
+@login_required
+def facture_envoyer(client_id, facture_id):
+    conn = get_db()
+    client  = conn.execute('SELECT * FROM clients WHERE id = ?', (client_id,)).fetchone()
+    facture = conn.execute(
+        'SELECT * FROM factures WHERE id = ? AND client_id = ?', (facture_id, client_id)
+    ).fetchone()
+    if not client or not facture:
+        conn.close()
+        return jsonify({'error': 'Introuvable'}), 404
+    if not client['email']:
+        conn.close()
+        return jsonify({'error': 'Ce client n\'a pas d\'adresse courriel.'}), 400
+    contrat_nom = '—'
+    if facture['contrat_id']:
+        c = conn.execute('SELECT nom FROM contrats WHERE id = ?', (facture['contrat_id'],)).fetchone()
+        if c and c['nom']:
+            contrat_nom = c['nom']
+    conn.close()
+
+    montant     = f"{facture['montant']:,.2f} $".replace(',', ' ')
+    description = facture['milestone_titre'] or facture['description'] or '—'
+    html = f"""<!DOCTYPE html><html><body style="font-family:Arial,sans-serif;color:#222;max-width:600px;margin:0 auto;padding:2rem;">
+<h2 style="color:#111;border-bottom:2px solid #d946ef;padding-bottom:.5rem;">Facture {facture['numero'] or ''}</h2>
+<p>Bonjour {client['nom']},</p>
+<p>Veuillez trouver ci-dessous le détail de votre facture.</p>
+<table style="width:100%;border-collapse:collapse;margin:1.5rem 0;font-size:.95rem;">
+<tr style="background:#f5f5f5;"><td style="padding:.6rem;border:1px solid #ddd;font-weight:bold;">Projet</td><td style="padding:.6rem;border:1px solid #ddd;">{contrat_nom}</td></tr>
+<tr><td style="padding:.6rem;border:1px solid #ddd;font-weight:bold;">Description</td><td style="padding:.6rem;border:1px solid #ddd;">{description}</td></tr>
+<tr style="background:#f5f5f5;"><td style="padding:.6rem;border:1px solid #ddd;font-weight:bold;">Montant</td><td style="padding:.6rem;border:1px solid #ddd;font-size:1.1rem;color:#d946ef;font-weight:bold;">{montant}</td></tr>
+<tr><td style="padding:.6rem;border:1px solid #ddd;font-weight:bold;">Date d'émission</td><td style="padding:.6rem;border:1px solid #ddd;">{facture['date_emission'] or '—'}</td></tr>
+<tr style="background:#f5f5f5;"><td style="padding:.6rem;border:1px solid #ddd;font-weight:bold;">Statut</td><td style="padding:.6rem;border:1px solid #ddd;">{facture['statut']}</td></tr>
+</table>
+<p>Pour toute question, répondez à ce courriel ou écrivez à <a href="mailto:naomiemt@tntm.ca">naomiemt@tntm.ca</a>.</p>
+<p>Merci pour votre confiance !</p>
+<p style="margin-top:2rem;color:#888;font-size:.85rem;">— Naomie McMahon · <a href="https://tntm.ca" style="color:#d946ef;">tntm.ca</a></p>
+</body></html>"""
+
+    gmail_user = os.getenv('GMAIL_USER')
+    gmail_pass = os.getenv('GMAIL_APP_PASSWORD')
+    if not gmail_user or not gmail_pass:
+        return jsonify({'error': 'SMTP non configuré'}), 500
+    try:
+        msg = MIMEText(html, 'html', 'utf-8')
+        msg['Subject'] = f'Facture {facture["numero"] or ""} – {contrat_nom}'
+        msg['From']    = f'Naomie McMahon <{gmail_user}>'
+        msg['To']      = client['email']
+        msg['Reply-To'] = 'naomiemt@tntm.ca'
+        with smtplib.SMTP('smtp.gmail.com', 587) as server:
+            server.starttls()
+            server.login(gmail_user, gmail_pass)
+            server.send_message(msg)
+        return jsonify({'ok': True})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/clients/<int:client_id>/factures/<int:facture_id>/print')
+@login_required
+def facture_print(client_id, facture_id):
+    conn = get_db()
+    facture = conn.execute(
+        'SELECT * FROM factures WHERE id = ? AND client_id = ?', (facture_id, client_id)
+    ).fetchone()
+    client = conn.execute('SELECT * FROM clients WHERE id = ?', (client_id,)).fetchone()
+    conn.close()
+    if not facture:
+        return redirect(f'/clients/{client_id}')
+    return render_template('facture_print.html', facture=facture, client=client)
+
+
+# ─── FACTURES PORTAIL CLIENT ──────────────────────────────────────────────────
+
+@app.route('/portail/factures')
+@client_login_required
+def portail_factures():
+    conn = get_db()
+    client   = conn.execute('SELECT * FROM clients WHERE id = ?', (session['client_id'],)).fetchone()
+    factures = conn.execute(
+        'SELECT * FROM factures WHERE client_id = ? ORDER BY date_emission DESC',
+        (session['client_id'],)
+    ).fetchall()
+    conn.close()
+    return render_template('portail_factures.html', client=client, factures=factures)
+
+
+@app.route('/portail/factures/<int:facture_id>/print')
+@client_login_required
+def portail_facture_print(facture_id):
+    conn = get_db()
+    facture = conn.execute(
+        'SELECT * FROM factures WHERE id = ? AND client_id = ?',
+        (facture_id, session['client_id'])
+    ).fetchone()
+    client = conn.execute('SELECT * FROM clients WHERE id = ?', (session['client_id'],)).fetchone()
+    conn.close()
+    if not facture:
+        return redirect('/portail/factures')
+    return render_template('facture_print.html', facture=facture, client=client)
+
+
+# ── FORMULAIRES CUSTOM ────────────────────────────────────────────────────────
+
+@app.route('/formulaires')
+@login_required
+def formulaires():
+    conn = get_db()
+    rows = conn.execute('''
+        SELECT f.*,
+               (SELECT COUNT(*) FROM formulaire_questions WHERE formulaire_id = f.id) AS nb_questions
+        FROM formulaires f ORDER BY f.created_at DESC
+    ''').fetchall()
+    conn.close()
+    return render_template('formulaires.html', formulaires=rows)
+
+
+@app.route('/formulaires/new', methods=['POST'])
+@login_required
+def formulaire_new():
+    titre = request.form.get('titre', '').strip()
+    desc  = request.form.get('description', '').strip()
+    if not titre:
+        flash('Le titre est requis.', 'error')
+        return redirect('/formulaires')
+    conn = get_db()
+    cur = conn.execute('INSERT INTO formulaires (titre, description) VALUES (?, ?)', (titre, desc or None))
+    conn.commit()
+    fid = cur.lastrowid
+    conn.close()
+    return redirect(f'/formulaires/{fid}')
+
+
+@app.route('/formulaires/<int:fid>')
+@login_required
+def formulaire_edit(fid):
+    conn = get_db()
+    f = conn.execute('SELECT * FROM formulaires WHERE id = ?', (fid,)).fetchone()
+    if not f:
+        conn.close()
+        flash('Formulaire introuvable.', 'error')
+        return redirect('/formulaires')
+    questions = conn.execute(
+        'SELECT * FROM formulaire_questions WHERE formulaire_id = ? ORDER BY ordre', (fid,)
+    ).fetchall()
+    conn.close()
+    return render_template('formulaire_edit.html', formulaire=f, questions=questions)
+
+
+@app.route('/formulaires/<int:fid>/edit', methods=['POST'])
+@login_required
+def formulaire_update(fid):
+    titre = request.form.get('titre', '').strip()
+    desc  = request.form.get('description', '').strip()
+    conn = get_db()
+    conn.execute('UPDATE formulaires SET titre = ?, description = ? WHERE id = ?', (titre, desc or None, fid))
+    conn.commit()
+    conn.close()
+    flash('Formulaire mis à jour.', 'success')
+    return redirect(f'/formulaires/{fid}')
+
+
+@app.route('/formulaires/<int:fid>/delete', methods=['POST'])
+@login_required
+def formulaire_delete(fid):
+    conn = get_db()
+    conn.execute('DELETE FROM formulaires WHERE id = ?', (fid,))
+    conn.commit()
+    conn.close()
+    flash('Formulaire supprimé.', 'success')
+    return redirect('/formulaires')
+
+
+@app.route('/formulaires/<int:fid>/questions/add', methods=['POST'])
+@login_required
+def formulaire_question_add(fid):
+    titre     = request.form.get('titre', '').strip()
+    type_     = request.form.get('type', 'texte')
+    sous_titre = request.form.get('sous_titre', '').strip()
+    options   = request.form.get('options', '').strip()
+    requis    = 1 if request.form.get('requis') else 0
+    if not titre and type_ != 'section':
+        flash('Le titre de la question est requis.', 'error')
+        return redirect(f'/formulaires/{fid}')
+    conn = get_db()
+    max_ordre = conn.execute(
+        'SELECT COALESCE(MAX(ordre), -1) FROM formulaire_questions WHERE formulaire_id = ?', (fid,)
+    ).fetchone()[0]
+    conn.execute(
+        'INSERT INTO formulaire_questions (formulaire_id, ordre, titre, sous_titre, type, options, requis) VALUES (?, ?, ?, ?, ?, ?, ?)',
+        (fid, max_ordre + 1, titre or '—', sous_titre or None, type_, options or None, requis)
+    )
+    conn.commit()
+    conn.close()
+    return redirect(f'/formulaires/{fid}')
+
+
+@app.route('/formulaires/<int:fid>/questions/<int:qid>/edit', methods=['POST'])
+@login_required
+def formulaire_question_edit(fid, qid):
+    titre      = request.form.get('titre', '').strip()
+    sous_titre = request.form.get('sous_titre', '').strip()
+    type_      = request.form.get('type', 'texte')
+    options    = request.form.get('options', '').strip()
+    requis     = 1 if request.form.get('requis') else 0
+    conn = get_db()
+    conn.execute(
+        'UPDATE formulaire_questions SET titre=?, sous_titre=?, type=?, options=?, requis=? WHERE id=? AND formulaire_id=?',
+        (titre, sous_titre or None, type_, options or None, requis, qid, fid)
+    )
+    conn.commit()
+    conn.close()
+    return redirect(f'/formulaires/{fid}')
+
+
+@app.route('/formulaires/<int:fid>/questions/<int:qid>/delete', methods=['POST'])
+@login_required
+def formulaire_question_delete(fid, qid):
+    conn = get_db()
+    conn.execute('DELETE FROM formulaire_questions WHERE id = ? AND formulaire_id = ?', (qid, fid))
+    conn.commit()
+    conn.close()
+    return redirect(f'/formulaires/{fid}')
+
+
+@app.route('/formulaires/<int:fid>/questions/reorder', methods=['POST'])
+@login_required
+def formulaire_questions_reorder(fid):
+    data  = request.get_json(silent=True) or {}
+    ordre = data.get('ordre', [])
+    conn  = get_db()
+    for i, qid in enumerate(ordre):
+        conn.execute(
+            'UPDATE formulaire_questions SET ordre = ? WHERE id = ? AND formulaire_id = ?', (i, qid, fid)
+        )
+    conn.commit()
+    conn.close()
+    return {'ok': True}
+
+
+# ── FORMULAIRES PORTAIL CLIENT ────────────────────────────────────────────────
+
+@app.route('/portail/formulaires')
+@client_login_required
+def portail_formulaires():
+    conn = get_db()
+    client = conn.execute('SELECT * FROM clients WHERE id = ?', (session['client_id'],)).fetchone()
+    formulaires = conn.execute(
+        'SELECT * FROM formulaires WHERE actif = 1 ORDER BY created_at DESC'
+    ).fetchall()
+    # Pour chaque formulaire, vérifie si ce client l'a déjà rempli
+    deja_remplis = {
+        row['formulaire_id']
+        for row in conn.execute(
+            'SELECT formulaire_id FROM formulaire_reponses WHERE client_id = ?',
+            (session['client_id'],)
+        ).fetchall()
+    }
+    conn.close()
+    return render_template('portail_formulaires.html',
+                           client=client,
+                           formulaires=formulaires,
+                           deja_remplis=deja_remplis)
+
+
+@app.route('/portail/formulaires/<int:fid>')
+@client_login_required
+def portail_formulaire_fill(fid):
+    conn = get_db()
+    client = conn.execute('SELECT * FROM clients WHERE id = ?', (session['client_id'],)).fetchone()
+    f = conn.execute('SELECT * FROM formulaires WHERE id = ? AND actif = 1', (fid,)).fetchone()
+    if not f:
+        conn.close()
+        return redirect('/portail/formulaires')
+    questions = conn.execute(
+        'SELECT * FROM formulaire_questions WHERE formulaire_id = ? ORDER BY ordre', (fid,)
+    ).fetchall()
+    deja = conn.execute(
+        'SELECT id FROM formulaire_reponses WHERE formulaire_id = ? AND client_id = ?',
+        (fid, session['client_id'])
+    ).fetchone()
+    conn.close()
+    if deja:
+        flash('Tu as déjà rempli ce formulaire.', 'success')
+        return redirect('/portail/formulaires')
+    return render_template('portail_formulaire_fill.html',
+                           client=client, formulaire=f, questions=questions)
+
+
+@app.route('/portail/formulaires/<int:fid>/submit', methods=['POST'])
+@client_login_required
+def portail_formulaire_submit(fid):
+    conn = get_db()
+    deja = conn.execute(
+        'SELECT id FROM formulaire_reponses WHERE formulaire_id = ? AND client_id = ?',
+        (fid, session['client_id'])
+    ).fetchone()
+    if not deja:
+        reponses = {k: v for k, v in request.form.items() if k != 'csrf_token'}
+        conn.execute(
+            'INSERT INTO formulaire_reponses (formulaire_id, client_id, reponses) VALUES (?,?,?)',
+            (fid, session['client_id'], json.dumps(reponses, ensure_ascii=False))
+        )
+        conn.commit()
+        client = conn.execute('SELECT nom FROM clients WHERE id = ?', (session['client_id'],)).fetchone()
+        formulaire = conn.execute('SELECT titre FROM formulaires WHERE id = ?', (fid,)).fetchone()
+        if client and formulaire:
+            send_notification_email(
+                f'[ClientPortal] Formulaire rempli par {client["nom"]}',
+                f'{client["nom"]} a rempli le formulaire : {formulaire["titre"]}'
+            )
+    conn.close()
+    flash('Formulaire envoyé, merci !', 'success')
+    return redirect('/portail/formulaires')
 
 
 if __name__ == '__main__':

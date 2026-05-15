@@ -1,0 +1,41 @@
+{% extends "base_portail.html" %}
+
+{% block title %}Formulaires{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1 class="page-title"><span class="client-nom" style="font-size:inherit; display:inline-block; animation-delay:0.4s;">Formulaires</span></h1>
+        <div class="page-sub">Questionnaires à remplir pour ton projet.</div>
+    </div>
+</div>
+
+{% if formulaires %}
+    {% for f in formulaires %}
+    <div class="card" {% if not loop.first %}style="margin-top: 0.8rem;"{% endif %}>
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem; flex-wrap: wrap;">
+            <div style="flex: 1; min-width: 0;">
+                <div class="section-title" style="margin-bottom: 0.25rem;">{{ f.titre }}</div>
+                {% if f.description %}
+                <div class="text-muted" style="font-size: 0.82rem;">{{ f.description }}</div>
+                {% endif %}
+            </div>
+            <div style="flex-shrink: 0;">
+                {% if f.id in deja_remplis %}
+                    <span class="badge badge-actif">✓ Rempli</span>
+                {% else %}
+                    <a href="/portail/formulaires/{{ f.id }}" class="btn btn-primary" style="font-size: 0.85rem;">
+                        Remplir →
+                    </a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+{% else %}
+    <div class="card">
+        <div class="empty-state">Aucun formulaire disponible pour l'instant.</div>
+    </div>
+{% endif %}
+
+{% endblock %}

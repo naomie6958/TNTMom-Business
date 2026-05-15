@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Facture {{ facture.numero }} — TNTMom</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Mono:wght@400;500&display=swap');
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'DM Mono', monospace;
+            font-size: 10pt;
+            color: #1a1a2e;
+            background: #fff;
+            padding: 3rem 4rem;
+        }
+
+        /* ── EN-TÊTE ─────────────────────────────────────────────────────── */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 3rem;
+            padding-bottom: 1.5rem;
+            border-bottom: 3px solid #1a1a2e;
+        }
+
+        .logo {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 2.2rem;
+            letter-spacing: 0.08em;
+            color: #1a1a2e;
+        }
+
+        .logo-sub {
+            font-size: 8pt;
+            color: #666;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            margin-top: 0.2rem;
+        }
+
+        .facture-meta {
+            text-align: right;
+        }
+
+        .facture-titre {
+            font-size: 1.4rem;
+            font-weight: 700;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            color: #1a1a2e;
+        }
+
+        .facture-numero {
+            font-size: 0.85rem;
+            color: #555;
+            margin-top: 0.2rem;
+        }
+
+        .facture-date {
+            font-size: 0.8rem;
+            color: #777;
+            margin-top: 0.1rem;
+        }
+
+        /* ── PARTIES ──────────────────────────────────────────────────────── */
+        .parties {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 3rem;
+            margin-bottom: 2.5rem;
+        }
+
+        .partie-label {
+            font-size: 7.5pt;
+            text-transform: uppercase;
+            letter-spacing: 0.12em;
+            color: #999;
+            margin-bottom: 0.5rem;
+        }
+
+        .partie-nom {
+            font-size: 11pt;
+            font-weight: 600;
+            margin-bottom: 0.2rem;
+        }
+
+        .partie-detail {
+            font-size: 9pt;
+            color: #555;
+            line-height: 1.6;
+        }
+
+        /* ── TABLEAU ──────────────────────────────────────────────────────── */
+        .table-section { margin-bottom: 2rem; }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        thead th {
+            font-size: 7.5pt;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: #fff;
+            background: #1a1a2e;
+            padding: 0.6rem 0.8rem;
+            text-align: left;
+        }
+
+        thead th:last-child { text-align: right; }
+
+        tbody td {
+            padding: 0.8rem;
+            border-bottom: 1px solid #e8e8f0;
+            font-size: 9.5pt;
+            vertical-align: top;
+        }
+
+        tbody td:last-child { text-align: right; font-weight: 600; }
+
+        /* ── TOTAUX ───────────────────────────────────────────────────────── */
+        .totaux {
+            display: flex;
+            justify-content: flex-end;
+            margin-top: 0.5rem;
+        }
+
+        .totaux-inner {
+            width: 260px;
+        }
+
+        .total-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.4rem 0;
+            font-size: 9.5pt;
+            border-bottom: 1px solid #e8e8f0;
+        }
+
+        .total-final {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.7rem 0 0.4rem;
+            font-size: 12pt;
+            font-weight: 700;
+        }
+
+        /* ── STATUT ───────────────────────────────────────────────────────── */
+        .statut-banner {
+            margin: 2rem 0;
+            padding: 0.8rem 1.2rem;
+            border-radius: 6px;
+            font-size: 9pt;
+            font-weight: 600;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+        }
+
+        .statut-envoyee {
+            background: #fff8e1;
+            border-left: 4px solid #f0a500;
+            color: #7a5800;
+        }
+
+        .statut-payee {
+            background: #e8f5e9;
+            border-left: 4px solid #2e7d32;
+            color: #1b5e20;
+        }
+
+        /* ── CONDITIONS ───────────────────────────────────────────────────── */
+        .conditions {
+            margin-top: 2.5rem;
+            padding-top: 1.5rem;
+            border-top: 1px solid #e8e8f0;
+            font-size: 8pt;
+            color: #888;
+            line-height: 1.8;
+        }
+
+        /* ── PIED DE PAGE ─────────────────────────────────────────────────── */
+        .footer {
+            margin-top: 3rem;
+            padding-top: 1rem;
+            border-top: 1px solid #e8e8f0;
+            font-size: 7.5pt;
+            color: #aaa;
+            text-align: center;
+        }
+
+        @media print {
+            body { padding: 1.5rem 2.5rem; }
+            .no-print { display: none !important; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="no-print" style="margin-bottom:1.5rem;">
+    <button onclick="window.print()"
+            style="font-family:'DM Mono',monospace; font-size:0.85rem; padding:0.5rem 1.2rem;
+                   background:#1a1a2e; color:#fff; border:none; border-radius:6px; cursor:pointer;">
+        🖨 Imprimer / Sauvegarder PDF
+    </button>
+</div>
+
+<!-- EN-TÊTE -->
+<div class="header">
+    <div>
+        <div class="logo">TNTMom</div>
+        <div class="logo-sub">The Nerdy Trap Mom · Développement web freelance</div>
+        <div style="margin-top:0.6rem; font-size:8.5pt; color:#555;">
+            naomiemt@tntm.ca
+        </div>
+    </div>
+    <div class="facture-meta">
+        <div class="facture-titre">Facture</div>
+        <div class="facture-numero">N° {{ facture.numero }}</div>
+        <div class="facture-date">Émise le : {{ facture.date_emission }}</div>
+        {% if facture.date_paiement %}
+        <div class="facture-date">Payée le : {{ facture.date_paiement }}</div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- PARTIES -->
+<div class="parties">
+    <div>
+        <div class="partie-label">De</div>
+        <div class="partie-nom">Naomie McMahon</div>
+        <div class="partie-detail">
+            TNTMom<br>
+            naomiemt@tntm.ca<br>
+            tntm.ca
+        </div>
+    </div>
+    <div>
+        <div class="partie-label">Facturé à</div>
+        <div class="partie-nom">{{ client.nom }}</div>
+        <div class="partie-detail">
+            {% if client.entreprise %}{{ client.entreprise }}<br>{% endif %}
+            {% if client.email %}{{ client.email }}{% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- STATUT -->
+{% if facture.statut == 'payée' %}
+<div class="statut-banner statut-payee">✓ Payée le {{ facture.date_paiement }}</div>
+{% else %}
+<div class="statut-banner statut-envoyee">⏳ En attente de paiement</div>
+{% endif %}
+
+<!-- TABLEAU ITEMS -->
+<div class="table-section">
+    <table>
+        <thead>
+            <tr>
+                <th>Description</th>
+                <th style="text-align:right;">Montant</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>
+                    <strong>{{ facture.milestone_titre or 'Prestation' }}</strong>
+                    {% if facture.description %}
+                    <br><span style="font-size:8.5pt; color:#777;">{{ facture.description }}</span>
+                    {% endif %}
+                </td>
+                <td>{{ "%.2f"|format(facture.montant) }} $</td>
+            </tr>
+        </tbody>
+    </table>
+</div>
+
+<!-- TOTAUX -->
+<div class="totaux">
+    <div class="totaux-inner">
+        <div class="total-final">
+            <span>Total</span>
+            <span>{{ "%.2f"|format(facture.montant) }} $</span>
+        </div>
+        <div style="font-size:7.5pt; color:#aaa; text-align:right; margin-top:0.3rem;">
+            Freelance · Pas de TPS/TVQ applicable (seuil non atteint)
+        </div>
+    </div>
+</div>
+
+<!-- CONDITIONS -->
+<div class="conditions">
+    Paiement par virement Interac à <strong>naomiemt@tntm.ca</strong> dans les 5 jours ouvrables suivant la réception de cette facture.
+    La propriété intellectuelle des livrables est transférée uniquement après paiement complet.
+</div>
+
+<!-- PIED DE PAGE -->
+<div class="footer">
+    TNTMom · tntm.ca · naomiemt@tntm.ca — Merci pour ta confiance !
+</div>
+
+</body>
+</html>

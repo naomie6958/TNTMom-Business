@@ -7,7 +7,7 @@
 {# ── EN-TÊTE ─────────────────────────────────────────────────────────────── #}
 <div class="page-header">
     <div>
-        <h1 class="page-title">Mes <span>clients</span></h1>
+        <h1 class="page-title">Mes <span class="client-nom" style="font-size:inherit; display:inline-block; animation-delay:0.4s;">clients</span></h1>
         <div class="page-sub">{{ stats.total }} client{{ 's' if stats.total != 1 }} enregistré{{ 's' if stats.total != 1 }}</div>
     </div>
 </div>
@@ -89,6 +89,9 @@
                 <tr onclick="window.location='/clients/{{ client.id }}'">
                     <td>
                         <strong>{{ client.nom }}</strong>
+                        {% if unread_counts.get(client.id, 0) > 0 %}
+                            <span class="badge-unread">{{ unread_counts[client.id] }} ✉</span>
+                        {% endif %}
                         {% if client.email %}
                             <div class="text-muted">{{ client.email }}</div>
                         {% endif %}

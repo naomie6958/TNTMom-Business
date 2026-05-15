@@ -5,127 +5,119 @@
 {% block content %}
 
 {# ── EN-TÊTE ─────────────────────────────────────────────────────────────── #}
-<div class="page-header">
-    <div>
+<div class="page-header" style="align-items: flex-start; gap: 1rem;">
+    <div style="flex: 1; min-width: 0;">
         <div class="text-muted" style="font-size: 0.75rem; margin-bottom: 0.3rem;">
             <a href="/dashboard">← Dashboard</a>
         </div>
-        <h1 class="page-title">{{ client.nom }}</h1>
-        {% if client.entreprise %}
-            <div class="page-sub">{{ client.entreprise }}{% if client.secteur %} · {{ client.secteur }}{% endif %}</div>
-        {% endif %}
+        <h1 class="page-title"><span class="client-nom" style="font-size:inherit; display:inline-block; animation-delay:0.6s;">{{ client.nom }}</span></h1>
+        <div style="display: flex; flex-wrap: wrap; gap: 0.2rem 1rem; margin-top: 0.15rem; font-size: 0.82rem; color: var(--muted);">
+            {% if client.entreprise %}<span>{{ client.entreprise }}{% if client.secteur %} · {{ client.secteur }}{% endif %}</span>{% endif %}
+            {% if client.email %}<span>✉ {{ client.email }}</span>{% endif %}
+        </div>
     </div>
-    <div class="flex gap-sm items-center">
-        <span class="badge badge-{{ client.statut }}">{{ client.statut }}</span>
+    <div style="display: flex; flex-direction: column; gap: 0.45rem; align-items: flex-end; flex-shrink: 0; padding-top: 0.2rem;">
+        {# Sélecteur de statut — soumet automatiquement au changement #}
+        <form method="POST" action="/clients/{{ client.id }}/statut">
+            <select name="statut" onchange="this.form.submit()"
+                    style="font-size: 0.78rem; background: var(--surface2); border: 1px solid var(--border);
+                           border-radius: var(--radius); padding: 0.28rem 0.55rem; color: var(--text); cursor: pointer;">
+                <option value="prospect" {% if client.statut == 'prospect' %}selected{% endif %}>Prospect</option>
+                <option value="actif"    {% if client.statut == 'actif'    %}selected{% endif %}>Actif</option>
+                <option value="complété" {% if client.statut == 'complété' %}selected{% endif %}>Complété</option>
+                <option value="archivé"  {% if client.statut == 'archivé'  %}selected{% endif %}>Archivé</option>
+            </select>
+        </form>
+        <div style="display: flex; gap: 0.4rem; align-items: center;">
+            <button class="btn btn-ghost" style="font-size: 0.75rem; padding: 3px 8px;"
+                    onclick="toggleInfoSection('portail-section')">
+                {% if client.password %}
+                    <span class="badge badge-actif" style="font-size: 0.7rem; pointer-events: none;">🔑 Portail actif</span>
+                {% else %}
+                    <span class="badge" style="font-size: 0.7rem; background: var(--surface2); color: var(--muted); pointer-events: none;">🔑 Accès portail</span>
+                {% endif %}
+            </button>
+            <button class="btn btn-secondary" style="font-size: 0.78rem;"
+                    onclick="toggleInfoSection('modifier-section')">✎ Modifier</button>
+            <form id="delete-client-form" method="POST" action="/clients/{{ client.id }}/delete">
+                <button type="button" class="btn btn-danger" style="font-size: 0.78rem;"
+                        onclick="openDeleteModal('delete-client-form', 'Supprimer {{ client.nom }} et toutes ses données ?')">✕</button>
+            </form>
+        </div>
     </div>
 </div>
 
-{# ── LAYOUT DEUX COLONNES ─────────────────────────────────────────────────── #}
-<div class="fiche-layout">
+{# ── NOTES (si présentes) ─────────────────────────────────────────────────── #}
+{% if client.notes %}
+<div style="font-size: 0.82rem; color: var(--muted); white-space: pre-wrap;
+            background: var(--surface); border: 1px solid var(--border);
+            border-radius: var(--radius-lg); padding: 0.6rem 1rem; margin-bottom: 0.8rem;">{{ client.notes }}</div>
+{% endif %}
 
-    {# ── COLONNE GAUCHE : infos + actions ──────────────────────────────── #}
-    <div>
-
-        {# ── INFOS CLIENT ──────────────────────────────────────────────── #}
-        <div class="client-info-card">
-            <div class="info-row">Courriel : <span>{{ client.email or '—' }}</span></div>
-            <div class="info-row">Entreprise : <span>{{ client.entreprise or '—' }}</span></div>
-            <div class="info-row">Secteur : <span>{{ client.secteur or '—' }}</span></div>
-            {% if client.notes %}
-                <hr class="divider">
-                <div class="text-muted" style="font-size: 0.82rem; white-space: pre-wrap;">{{ client.notes }}</div>
-            {% endif %}
-
-            <hr class="divider">
-
-            {# ── ÉDITER LE CLIENT ──────────────────────────────────────── #}
-            <details class="collapsible">
-                <summary style="font-size: 0.8rem;">✎ Modifier</summary>
-                <div class="collapsible-body">
-                    <form method="POST" action="/clients/{{ client.id }}/edit">
-                        <div class="form-group" style="margin-bottom: 0.7rem;">
-                            <label>Nom</label>
-                            <input type="text" name="nom" value="{{ client.nom }}" required>
-                        </div>
-                        <div class="form-group" style="margin-bottom: 0.7rem;">
-                            <label>Courriel</label>
-                            <input type="email" name="email" value="{{ client.email or '' }}">
-                        </div>
-                        <div class="form-group" style="margin-bottom: 0.7rem;">
-                            <label>Entreprise</label>
-                            <input type="text" name="entreprise" value="{{ client.entreprise or '' }}">
-                        </div>
-                        <div class="form-group" style="margin-bottom: 0.7rem;">
-                            <label>Secteur</label>
-                            <input type="text" name="secteur" value="{{ client.secteur or '' }}">
-                        </div>
-                        <div class="form-group" style="margin-bottom: 0.7rem;">
-                            <label>Statut</label>
-                            <select name="statut">
-                                {# selected = pré-sélectionne la valeur actuelle #}
-                                <option value="prospect"  {% if client.statut == 'prospect'  %}selected{% endif %}>Prospect</option>
-                                <option value="actif"     {% if client.statut == 'actif'     %}selected{% endif %}>Actif</option>
-                                <option value="complété"  {% if client.statut == 'complété'  %}selected{% endif %}>Complété</option>
-                                <option value="archivé"   {% if client.statut == 'archivé'   %}selected{% endif %}>Archivé</option>
-                            </select>
-                        </div>
-                        <div class="form-group" style="margin-bottom: 0.9rem;">
-                            <label>Notes</label>
-                            <textarea name="notes" rows="3">{{ client.notes or '' }}</textarea>
-                        </div>
-                        <button type="submit" class="btn btn-primary" style="width: 100%;">Sauvegarder</button>
-                    </form>
-                </div>
-            </details>
-
-            {# ── ACCÈS PORTAIL CLIENT ──────────────────────────────────── #}
-            {# client.password est NULL si aucun compte n'a encore été créé #}
-            <details class="collapsible" style="margin-top: 0.5rem;">
-                <summary style="font-size: 0.8rem;">
-                    🔑 Accès portail
-                    {% if client.password %}
-                        <span class="badge badge-actif" style="margin-left: 0.4rem; font-size: 0.7rem;">Actif</span>
-                    {% else %}
-                        <span class="badge" style="margin-left: 0.4rem; font-size: 0.7rem; background: var(--surface2); color: var(--muted);">Aucun</span>
-                    {% endif %}
-                </summary>
-                <div class="collapsible-body">
-                    <div class="text-muted" style="font-size: 0.8rem; margin-bottom: 0.7rem;">
-                        {% if client.password %}
-                            Compte actif. Tu peux changer le mot de passe ici.
-                        {% else %}
-                            Crée un mot de passe pour donner accès au portail client.
-                        {% endif %}
-                    </div>
-                    <form method="POST" action="/clients/{{ client.id }}/set-password">
-                        <div class="form-group" style="margin-bottom: 0.7rem;">
-                            <label>{{ 'Nouveau mot de passe' if client.password else 'Mot de passe' }}</label>
-                            {# autocomplete="new-password" = dit au navigateur de ne pas proposer l'ancien mot de passe #}
-                            <input type="password" name="password" required
-                                   autocomplete="new-password" placeholder="Minimum 6 caractères">
-                        </div>
-                        <button type="submit" class="btn btn-primary" style="width: 100%;">
-                            {{ 'Changer le mot de passe' if client.password else 'Créer le compte' }}
-                        </button>
-                    </form>
-                </div>
-            </details>
-
-            {# ── SUPPRIMER ─────────────────────────────────────────────── #}
-            <div style="margin-top: 0.8rem;">
-                <form id="delete-client-form" method="POST" action="/clients/{{ client.id }}/delete">
-                    <button type="button" class="btn btn-danger" style="width: 100%; font-size: 0.78rem;"
-                            onclick="openDeleteModal('delete-client-form', 'Supprimer {{ client.nom }} et toutes ses données ?')">
-                        ✕ Supprimer ce client
-                    </button>
-                </form>
+{# ── FORMULAIRE MODIFIER ──────────────────────────────────────────────────── #}
+<div id="modifier-section" class="card" style="display: none; margin-bottom: 0.8rem;">
+    <form method="POST" action="/clients/{{ client.id }}/edit">
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 0.6rem; margin-bottom: 0.6rem;">
+            <div class="form-group">
+                <label>Nom</label>
+                <input type="text" name="nom" value="{{ client.nom }}" required>
+            </div>
+            <div class="form-group">
+                <label>Courriel</label>
+                <input type="email" name="email" value="{{ client.email or '' }}">
+            </div>
+            <div class="form-group">
+                <label>Entreprise</label>
+                <input type="text" name="entreprise" value="{{ client.entreprise or '' }}">
+            </div>
+            <div class="form-group">
+                <label>Secteur</label>
+                <input type="text" name="secteur" value="{{ client.secteur or '' }}">
             </div>
         </div>
+        <div class="form-group" style="margin-bottom: 0.6rem;">
+            <label>Notes</label>
+            <textarea name="notes" rows="2">{{ client.notes or '' }}</textarea>
+        </div>
+        {# Statut caché — géré via le sélecteur dans l'en-tête #}
+        <input type="hidden" name="statut" value="{{ client.statut }}">
+        <div style="display: flex; gap: 0.5rem;">
+            <button type="submit" class="btn btn-primary" style="font-size: 0.82rem;">Sauvegarder</button>
+            <button type="button" class="btn btn-secondary" style="font-size: 0.82rem;"
+                    onclick="toggleInfoSection('modifier-section')">Annuler</button>
+        </div>
+    </form>
+</div>
 
+{# ── ACCÈS PORTAIL ────────────────────────────────────────────────────────── #}
+<div id="portail-section" class="card" style="display: none; margin-bottom: 0.8rem;">
+    <div class="text-muted" style="font-size: 0.82rem; margin-bottom: 0.8rem;">
+        {% if client.password %}
+            Compte portail actif — tu peux changer le mot de passe ici.
+        {% else %}
+            Crée un mot de passe pour donner accès au portail client.
+        {% endif %}
     </div>
+    <form method="POST" action="/clients/{{ client.id }}/set-password">
+        <div style="display: flex; gap: 0.6rem; align-items: flex-end; flex-wrap: wrap;">
+            <div class="form-group" style="flex: 1; min-width: 180px;">
+                <label>{{ 'Nouveau mot de passe' if client.password else 'Mot de passe' }}</label>
+                <input type="password" name="password" required
+                       autocomplete="new-password" placeholder="Minimum 6 caractères">
+            </div>
+            <div style="display: flex; gap: 0.5rem; padding-bottom: 0.05rem;">
+                <button type="submit" class="btn btn-primary" style="font-size: 0.82rem;">
+                    {{ 'Changer' if client.password else 'Créer le compte' }}
+                </button>
+                <button type="button" class="btn btn-secondary" style="font-size: 0.82rem;"
+                        onclick="toggleInfoSection('portail-section')">Annuler</button>
+            </div>
+        </div>
+    </form>
+</div>
 
-    {# ── COLONNE DROITE : historique ───────────────────────────────────── #}
-    <div class="fiche-right">
+{# ── CONTENU PRINCIPAL ───────────────────────────────────────────────────── #}
+<div class="fiche-content">
 
         {# ── QUESTIONNAIRE CLIENT (lien à envoyer) ──────────────────────── #}
         <div class="card">
@@ -292,94 +284,104 @@
         <div class="card">
             <div class="section-header">
                 <div class="section-title">Projets</div>
-                <form method="POST" action="/clients/{{ client.id }}/projet/new"
-                      class="flex gap-sm items-center projet-new-form" style="flex-wrap: wrap;">
-                    <input type="text" name="nom" placeholder="Nom du projet"
-                           class="projet-new-input"
-                           style="font-size: 0.8rem; width: 140px;
-                                  background: var(--surface2); border: 1px solid var(--border);
-                                  border-radius: var(--radius); padding: 0.3rem 0.5rem;
-                                  color: var(--text);">
-                    <button type="submit" class="btn btn-primary" style="font-size: 0.8rem;">
-                        + Nouveau projet
-                    </button>
-                </form>
             </div>
 
             {% if projets %}
                 {% for p in projets %}
                 {% set c = p.contrat %}
                 {% set ms = p.milestones %}
-                <div style="border: 1px solid var(--border); border-radius: var(--radius);
-                            padding: 0.9rem 1rem; margin-bottom: 0.8rem;">
-
-                    {# En-tête du projet #}
-                    <div style="display: flex; justify-content: space-between;
-                                align-items: center; margin-bottom: 0.6rem; flex-wrap: wrap; gap: 0.4rem;">
+                <details class="collapsible" style="margin-bottom: 0.5rem;">
+                    <summary style="display: flex; justify-content: space-between;
+                                    align-items: center; flex-wrap: wrap; gap: 0.4rem; list-style: none;">
                         <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
                             <strong style="font-size: 0.9rem;">{{ c.nom or 'Projet sans titre' }}</strong>
                             <span class="badge badge-{{ c.statut }}">{{ c.statut }}</span>
                             {% if c.signed_at %}
-                            <span style="font-size: 0.7rem; color: var(--green);">
-                                ✓ Signé le {{ c.signed_at[:10] }}
-                            </span>
+                            <span style="font-size: 0.7rem; color: var(--green);">✓ Signé le {{ c.signed_at[:10] }}</span>
                             {% endif %}
                         </div>
                         <div style="display: flex; gap: 0.4rem; align-items: center;">
                             <a href="/clients/{{ client.id }}/contrat/{{ c.id }}/print"
-                               target="_blank" class="btn btn-ghost" style="font-size: 0.75rem;">⎙</a>
+                               target="_blank" class="btn btn-ghost" style="font-size: 0.75rem;"
+                               onclick="event.stopPropagation()">⎙</a>
                             <a href="/clients/{{ client.id }}/contrat/{{ c.id }}"
-                               class="btn btn-secondary" style="font-size: 0.78rem;">Modifier</a>
-                        </div>
-                    </div>
-
-                    {# Timeline des milestones #}
-                    {% if ms %}
-                    <div class="timeline-scroll"><div class="timeline" style="margin-bottom: 0.6rem;">
-                        {% for m in ms %}
-                        {% if m.statut in ['livré', 'payé'] %}
-                            {% set point_class = 'done' %}
-                        {% elif m.statut == 'en cours' %}
-                            {% set point_class = 'active' %}
-                        {% else %}
-                            {% set point_class = '' %}
-                        {% endif %}
-                        <div class="timeline-point {{ point_class }}">
-                            <form method="POST"
-                                  action="/clients/{{ client.id }}/contrat/{{ c.id }}/milestone/{{ loop.index0 }}/toggle">
-                                <button type="submit" class="timeline-dot-btn"
-                                        data-toggle-url="/clients/{{ client.id }}/contrat/{{ c.id }}/milestone/{{ loop.index0 }}/toggle"
-                                        title="Cliquer pour avancer le statut">
-                                    <div class="timeline-dot"></div>
+                               class="btn btn-secondary" style="font-size: 0.78rem;"
+                               onclick="event.stopPropagation()">Modifier</a>
+                            <form id="delete-projet-{{ c.id }}" method="POST"
+                                  action="/clients/{{ client.id }}/contrat/{{ c.id }}/delete">
+                                <button type="button" class="btn btn-danger" style="font-size: 0.75rem; padding: 3px 8px;"
+                                        onclick="event.stopPropagation(); openDeleteModal('delete-projet-{{ c.id }}', 'Supprimer le projet « {{ c.nom or "Projet sans titre" }} » ? Ses factures associées seront aussi supprimées.')">
+                                    ✕
                                 </button>
                             </form>
-                            <div class="timeline-label">{{ m.titre or '—' }}</div>
-                            <span class="badge badge-{{ m.statut | replace(' ', '-') }}"
-                                  style="margin-top: 0.3rem; font-size: 0.6rem;">{{ m.statut }}</span>
-                            {% if m.prix %}
-                            <div style="font-size: 0.66rem; color: var(--green); margin-top: 0.15rem;">
-                                {{ m.prix }}$
-                            </div>
-                            {% endif %}
                         </div>
-                        {% endfor %}
+                    </summary>
+                    <div class="collapsible-body">
+                        {% if ms %}
+                        <div class="timeline-scroll">
+                            <div class="timeline" style="margin-bottom: 0.6rem;">
+                                {% for m in ms %}
+                                {% if m.statut in ['livré', 'payé'] %}
+                                    {% set point_class = 'done' %}
+                                {% elif m.statut == 'en cours' %}
+                                    {% set point_class = 'active' %}
+                                {% else %}
+                                    {% set point_class = '' %}
+                                {% endif %}
+                                <div class="timeline-point {{ point_class }}">
+                                    <div class="timeline-above">
+                                        <div class="timeline-label">{{ m.titre or '—' }}</div>
+                                    </div>
+                                    <form method="POST"
+                                          action="/clients/{{ client.id }}/contrat/{{ c.id }}/milestone/{{ loop.index0 }}/toggle">
+                                        <button type="submit" class="timeline-dot-btn"
+                                                data-toggle-url="/clients/{{ client.id }}/contrat/{{ c.id }}/milestone/{{ loop.index0 }}/toggle"
+                                                title="Cliquer pour avancer le statut">
+                                            <div class="timeline-dot"></div>
+                                        </button>
+                                    </form>
+                                    <span class="badge badge-{{ m.statut | replace(' ', '-') }}"
+                                          style="margin-top: 0.3rem; font-size: 0.6rem;">{{ m.statut }}</span>
+                                    {% if m.prix %}
+                                    <div style="font-size: 0.66rem; color: var(--green); margin-top: 0.15rem;">{{ m.prix }}$</div>
+                                    {% endif %}
+                                    {% if not loop.last and m.deadline %}
+                                    <div class="timeline-deadline-at-mid">
+                                        <div class="deadline-vline"></div>
+                                        <span class="deadline-date-label">{{ m.deadline | fmt_date }}</span>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        <div style="text-align: right; font-size: 0.82rem; color: var(--green);
+                                    padding-top: 0.3rem; border-top: 1px solid var(--border);">
+                            Total : <strong>{{ p.total | int }}$</strong>
+                        </div>
+                        {% else %}
+                        <div class="empty-state">Aucun milestone.</div>
+                        {% endif %}
                     </div>
-                    </div></div>
-                    <div style="text-align: right; font-size: 0.82rem; color: var(--green);
-                                padding-top: 0.3rem; border-top: 1px solid var(--border);">
-                        Total : <strong>{{ p.total | int }}$</strong>
-                    </div>
-                    {% endif %}
-
-                    {% if c.scope %}
-                    <div class="text-muted" style="font-size: 0.78rem; margin-top: 0.5rem;
-                                white-space: pre-wrap;">{{ c.scope[:150] }}{% if c.scope | length > 150 %}…{% endif %}</div>
-                    {% endif %}
-                </div>
+                </details>
                 {% endfor %}
             {% else %}
                 <div class="empty-state">Aucun projet pour ce client.</div>
             {% endif %}
+        </div>
+
+        {# ── NOUVEAU PROJET ───────────────────────────────────────────── #}
+        <div class="card" style="margin-top: 0.5rem;">
+            <form method="POST" action="/clients/{{ client.id }}/projet/new"
+                  style="display: flex; gap: 0.7rem; align-items: center; flex-wrap: wrap;">
+                <input type="text" name="nom" placeholder="Nom du nouveau projet"
+                       style="flex: 1; min-width: 180px; font-size: 0.85rem;
+                              background: var(--surface2); border: 1px solid var(--border);
+                              border-radius: var(--radius); padding: 0.45rem 0.7rem; color: var(--text);">
+                <button type="submit" class="btn btn-primary" style="font-size: 0.85rem; white-space: nowrap;">
+                    + Nouveau projet
+                </button>
+            </form>
         </div>
 
         {# ── FICHIERS PARTAGÉS ────────────────────────────────────────── #}
@@ -449,7 +451,7 @@
 
             {% for subject, msgs in msg_threads %}
             {% set last = msgs[-1] %}
-            <details class="chat-thread" open>
+            <details class="chat-thread">
                 <summary>
                     <span>{{ subject }}</span>
                     <span style="font-size: 0.65rem; color: var(--muted); font-weight: 400;">
@@ -500,7 +502,149 @@
         </div>
         {% endif %}
 
-    </div>
+        {# ── FACTURES ──────────────────────────────────────────────────── #}
+        <div class="card" style="margin-top: 1rem;">
+            <div class="section-header">
+                <div class="section-title">Factures</div>
+                {% if factures %}
+                <span class="badge badge-actif" style="font-size: 0.68rem;">{{ factures | length }}</span>
+                {% endif %}
+            </div>
+
+            {# Lookup dict contrat_id → nom pour affichage dans le tableau #}
+            {% set contrat_noms = {} %}
+            {% for p in projets %}{% if contrat_noms.update({p.contrat.id: p.contrat.nom or 'Projet sans titre'}) %}{% endif %}{% endfor %}
+
+            {# Tableau des factures existantes #}
+            {% if factures %}
+            <table style="width:100%; border-collapse:collapse; font-size:0.82rem; margin-bottom:1rem;">
+                <thead>
+                    <tr style="color:var(--muted); font-size:0.72rem; text-transform:uppercase; letter-spacing:0.05em;">
+                        <th style="text-align:left; padding:0.4rem 0; border-bottom:1px solid var(--border);">N°</th>
+                        <th style="text-align:left; padding:0.4rem 0; border-bottom:1px solid var(--border);">Projet</th>
+                        <th style="text-align:left; padding:0.4rem 0; border-bottom:1px solid var(--border);">Milestone</th>
+                        <th style="text-align:right; padding:0.4rem 0; border-bottom:1px solid var(--border);">Montant</th>
+                        <th style="text-align:center; padding:0.4rem 0; border-bottom:1px solid var(--border);">Statut</th>
+                        <th style="text-align:right; padding:0.4rem 0; border-bottom:1px solid var(--border);"></th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for f in factures %}
+                <tr>
+                    <td style="padding:0.5rem 0; border-bottom:1px solid var(--border); color:var(--muted);">{{ f.numero }}</td>
+                    <td style="padding:0.5rem 0.3rem; border-bottom:1px solid var(--border); color:var(--muted); font-size:0.78rem;">
+                        {{ contrat_noms.get(f.contrat_id, '—') if f.contrat_id else '—' }}
+                    </td>
+                    <td style="padding:0.5rem 0.5rem; border-bottom:1px solid var(--border);">{{ f.milestone_titre or f.description or '—' }}</td>
+                    <td style="padding:0.5rem 0; border-bottom:1px solid var(--border); text-align:right; color:var(--green); font-weight:600;">{{ f.montant | int }}$</td>
+                    <td style="padding:0.5rem 0; border-bottom:1px solid var(--border); text-align:center;">
+                        <span class="badge badge-{{ 'actif' if f.statut == 'payée' else 'envoyé' }}">{{ f.statut }}</span>
+                    </td>
+                    <td style="padding:0.5rem 0; border-bottom:1px solid var(--border); text-align:right;">
+                        <div style="display:flex; gap:0.4rem; justify-content:flex-end;">
+                            <a href="/clients/{{ client.id }}/factures/{{ f.id }}/print"
+                               target="_blank" class="btn btn-secondary" style="font-size:0.72rem; padding:2px 8px;">
+                                🖨 Imprimer
+                            </a>
+                            {% if client.email %}
+                            <button onclick="envoyerFacture({{ client.id }}, {{ f.id }}, '{{ client.email }}')"
+                                    class="btn btn-secondary" style="font-size:0.72rem; padding:2px 8px;">
+                                ✉ Envoyer
+                            </button>
+                            {% endif %}
+                            {% if f.statut != 'payée' %}
+                            <form method="POST" action="/clients/{{ client.id }}/factures/{{ f.id }}/marquer-payee">
+                                <button type="submit" class="btn btn-primary" style="font-size:0.72rem; padding:2px 8px;">
+                                    ✓ Payée
+                                </button>
+                            </form>
+                            {% else %}
+                            <span style="font-size:0.72rem; color:var(--muted);">{{ f.date_paiement }}</span>
+                            {% endif %}
+                            <form id="delete-facture-{{ f.id }}" method="POST"
+                                  action="/clients/{{ client.id }}/factures/{{ f.id }}/delete">
+                                <button type="button" class="btn btn-danger"
+                                        style="font-size:0.72rem; padding:2px 8px;"
+                                        onclick="openDeleteModal('delete-facture-{{ f.id }}', 'Supprimer la facture {{ f.numero }} — {{ f.milestone_titre or f.description or "sans titre" }} ({{ f.montant | int }}$) ?')">
+                                    ✕
+                                </button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <div class="empty-state" style="margin-bottom:1rem;">Aucune facture pour ce client.</div>
+            {% endif %}
+
+            {# Créer une facture manuelle #}
+            <details class="collapsible">
+                <summary style="font-size:0.8rem;">+ Créer une facture manuelle</summary>
+                <div class="collapsible-body">
+                    <form method="POST" action="/clients/{{ client.id }}/factures/new">
+                        {% if projets %}
+                        <div class="form-group" style="margin-bottom:0.7rem;">
+                            <label>Projet associé</label>
+                            <select name="contrat_id">
+                                <option value="">— Aucun projet —</option>
+                                {% for p in projets %}
+                                <option value="{{ p.contrat.id }}">{{ p.contrat.nom or 'Projet sans titre' }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        {% endif %}
+                        <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.7rem; margin-bottom:0.7rem;">
+                            <div class="form-group">
+                                <label>Milestone / titre</label>
+                                <input type="text" name="milestone_titre" placeholder="ex: V1 — Design">
+                            </div>
+                            <div class="form-group">
+                                <label>Montant ($)</label>
+                                <input type="number" name="montant" placeholder="500" min="0" step="0.01" required>
+                            </div>
+                        </div>
+                        <div class="form-group" style="margin-bottom:0.7rem;">
+                            <label>Description (optionnel)</label>
+                            <textarea name="description" rows="2" placeholder="Détails supplémentaires…"></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-primary" style="font-size:0.82rem;">Créer</button>
+                    </form>
+                </div>
+            </details>
+        </div>
+
+        {# ── FORMULAIRES SOUMIS ───────────────────────────────────────────── #}
+        {% if form_reponses %}
+        <div class="card">
+            <div class="section-header">
+                <div class="section-title">Formulaires soumis</div>
+                <span class="badge badge-actif" style="font-size: 0.68rem;">{{ form_reponses | length }}</span>
+            </div>
+            {% for fr in form_reponses %}
+            <details class="collapsible" style="margin-bottom: 0.5rem;">
+                <summary style="display: flex; justify-content: space-between; align-items: center; gap: 0.5rem; list-style: none;">
+                    <span style="font-weight: 500; font-size: 0.88rem;">{{ fr.form_titre }}</span>
+                    <span class="text-muted" style="font-size: 0.72rem; flex-shrink: 0;">{{ fr.submitted_at[:10] }}</span>
+                </summary>
+                <div class="collapsible-body">
+                    {% if fr.reponses_lisibles %}
+                        {% for r in fr.reponses_lisibles %}
+                        <div class="q-row">
+                            <div class="q-label">{{ r.question }}</div>
+                            <div class="q-value" style="white-space: pre-wrap;">{{ r.reponse }}</div>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="text-muted" style="font-size: 0.82rem;">Aucune réponse enregistrée.</div>
+                    {% endif %}
+                </div>
+            </details>
+            {% endfor %}
+        </div>
+        {% endif %}
+
 </div>
 
 {% endblock %}
@@ -508,13 +652,27 @@
 {% block scripts %}
 
 {# ── MODAL DE CONFIRMATION ────────────────────────────────────────────────── #}
+<style>
+@keyframes modal-in {
+    from { opacity: 0; transform: scale(0.94) translateY(-8px); }
+    to   { opacity: 1; transform: scale(1) translateY(0); }
+}
+#confirm-modal-card { animation: modal-in 0.18s ease-out; }
+</style>
+
 <div id="confirm-modal"
-     style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.65);
-            z-index:1000; align-items:center; justify-content:center;">
-    <div style="background:var(--surface); border:1px solid var(--border);
-                border-radius:var(--radius-lg); padding:2rem; max-width:380px; width:90%;">
-        <h3 style="font-size:1.3rem; margin-bottom:0.6rem;">Confirmer la suppression</h3>
-        <p id="confirm-msg" style="color:var(--muted); font-size:0.88rem; margin-bottom:1.5rem;"></p>
+     style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.7);
+            z-index:1000; align-items:center; justify-content:center; backdrop-filter:blur(3px);">
+    <div id="confirm-modal-card"
+         style="background:var(--surface); border:1px solid rgba(217,79,189,0.25);
+                border-radius:var(--radius-lg); padding:2rem; max-width:400px; width:90%;
+                box-shadow:0 24px 60px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.04);">
+        <div style="display:flex; align-items:center; gap:0.75rem; margin-bottom:0.75rem;">
+            <span style="font-size:1.4rem; line-height:1;">⚠️</span>
+            <h3 style="font-size:1.1rem; color:var(--text);">Confirmer la suppression</h3>
+        </div>
+        <p id="confirm-msg" style="color:var(--muted); font-size:0.85rem; margin-bottom:1.75rem;
+                                    line-height:1.5; padding-left:2.15rem;"></p>
         <div style="display:flex; gap:0.8rem; justify-content:flex-end;">
             <button class="btn btn-secondary" onclick="closeModal()">Annuler</button>
             <button class="btn btn-danger" id="confirm-btn">Supprimer</button>
@@ -523,6 +681,11 @@
 </div>
 
 <script>
+    function toggleInfoSection(id) {
+        const el = document.getElementById(id);
+        el.style.display = el.style.display === 'none' ? 'block' : 'none';
+    }
+
     function openDeleteModal(formId, message) {
         document.getElementById('confirm-msg').textContent = message;
         // Quand on clique "Supprimer", on soumet le bon formulaire par son id
@@ -606,5 +769,29 @@
             }
         });
     });
+
+    // ── Envoi facture par courriel ────────────────────────────────────────────
+    async function envoyerFacture(clientId, factureId, email) {
+        if (!confirm(`Envoyer la facture à ${email} ?`)) return;
+        const r = await fetch(`/clients/${clientId}/factures/${factureId}/envoyer`, { method: 'POST' });
+        const d = await r.json();
+        showFicheToast(d.ok ? `✉ Facture envoyée à ${email} !` : (d.error || 'Erreur'), d.ok);
+    }
+
+    function showFicheToast(msg, ok = true) {
+        let el = document.getElementById('fiche-toast');
+        if (!el) {
+            el = document.createElement('div');
+            el.id = 'fiche-toast';
+            el.style.cssText = 'position:fixed;bottom:1.5rem;right:1.5rem;padding:.75rem 1.25rem;border-radius:10px;font-size:.85rem;font-weight:600;z-index:9999;transition:opacity .3s;';
+            document.body.appendChild(el);
+        }
+        el.textContent = msg;
+        el.style.background = ok ? '#065f46' : '#7f1d1d';
+        el.style.color = ok ? '#6ee7b7' : '#fca5a5';
+        el.style.opacity = '1';
+        clearTimeout(el._t);
+        el._t = setTimeout(() => el.style.opacity = '0', 3000);
+    }
 </script>
 {% endblock %}

@@ -1,0 +1,64 @@
+{% extends "base_portail.html" %}
+
+{% block title %}Mes factures{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1 class="page-title">Mes <span class="client-nom" style="font-size:inherit; display:inline-block; animation-delay:0.5s;">factures</span></h1>
+        <div class="page-sub">Historique de tes factures et reçus.</div>
+    </div>
+</div>
+
+{% if factures %}
+<div class="card">
+    <table style="width:100%; border-collapse:collapse; font-size:0.85rem;">
+        <thead>
+            <tr style="color:var(--muted); font-size:0.72rem; text-transform:uppercase; letter-spacing:0.05em;">
+                <th style="text-align:left; padding:0.5rem 0; border-bottom:1px solid var(--border);">N°</th>
+                <th style="text-align:left; padding:0.5rem 0.5rem; border-bottom:1px solid var(--border);">Description</th>
+                <th style="text-align:right; padding:0.5rem 0; border-bottom:1px solid var(--border);">Montant</th>
+                <th style="text-align:center; padding:0.5rem 0; border-bottom:1px solid var(--border);">Statut</th>
+                <th style="text-align:right; padding:0.5rem 0; border-bottom:1px solid var(--border);"></th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for f in factures %}
+        <tr>
+            <td style="padding:0.65rem 0; border-bottom:1px solid var(--border); color:var(--muted); white-space:nowrap;">{{ f.numero }}</td>
+            <td style="padding:0.65rem 0.5rem; border-bottom:1px solid var(--border);">
+                {{ f.milestone_titre or f.description or '—' }}
+                <div style="font-size:0.72rem; color:var(--muted); margin-top:0.1rem;">{{ f.date_emission }}</div>
+            </td>
+            <td style="padding:0.65rem 0; border-bottom:1px solid var(--border); text-align:right; font-weight:600; color:var(--green);">{{ f.montant | int }}$</td>
+            <td style="padding:0.65rem 0; border-bottom:1px solid var(--border); text-align:center;">
+                <span class="badge badge-{{ 'actif' if f.statut == 'payée' else 'envoyé' }}">{{ f.statut }}</span>
+            </td>
+            <td style="padding:0.65rem 0; border-bottom:1px solid var(--border); text-align:right;">
+                <a href="/portail/factures/{{ f.id }}/print" target="_blank"
+                   class="btn btn-secondary" style="font-size:0.75rem; padding:3px 10px;">
+                    ↓ PDF
+                </a>
+            </td>
+        </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+
+    <div style="margin-top:1rem; font-size:0.8rem; color:var(--muted);">
+        Total facturé :
+        <strong style="color:var(--text);">{{ factures | sum(attribute='montant') | int }}$</strong>
+        · Payé :
+        <strong style="color:var(--green);">
+            {{ factures | selectattr('statut', 'equalto', 'payée') | sum(attribute='montant') | int }}$
+        </strong>
+    </div>
+</div>
+
+{% else %}
+<div class="card">
+    <div class="empty-state">Aucune facture pour le moment.</div>
+</div>
+{% endif %}
+
+{% endblock %}

@@ -1,0 +1,281 @@
+{% extends "base.html" %}
+
+{% block title %}{{ formulaire.titre }}{% endblock %}
+
+{% block content %}
+
+{% set type_labels = {
+    'texte':     'Texte court',
+    'paragraphe':'Paragraphe',
+    'choix':     'Choix unique',
+    'cases':     'Cases à cocher',
+    'note':      'Évaluation',
+    'date':      'Date',
+    'oui_non':   'Oui / Non',
+    'section':   'Section'
+} %}
+
+{% set type_icons = {
+    'texte':     'T',
+    'paragraphe':'¶',
+    'choix':     '◎',
+    'cases':     '☑',
+    'note':      '★',
+    'date':      '◷',
+    'oui_non':   '◐',
+    'section':   '─'
+} %}
+
+{# ── EN-TÊTE ─────────────────────────────────────────────────────────────── #}
+<div class="page-header" style="align-items: flex-start; gap: 1rem;">
+    <div style="flex: 1; min-width: 0;">
+        <div class="text-muted" style="font-size: 0.75rem; margin-bottom: 0.3rem;">
+            <a href="/formulaires">← Formulaires</a>
+        </div>
+        <h1 class="page-title">
+            <span class="client-nom" style="font-size:inherit; display:inline-block; animation-delay:0.5s;">{{ formulaire.titre }}</span>
+        </h1>
+        {% if formulaire.description %}
+        <div class="page-sub">{{ formulaire.description }}</div>
+        {% endif %}
+    </div>
+    <div style="display: flex; gap: 0.5rem; align-items: center; flex-shrink: 0; padding-top: 0.4rem;">
+        <button class="btn btn-secondary" style="font-size: 0.78rem;"
+                onclick="toggleInfoSection('edit-formulaire')">✎ Modifier le titre</button>
+        <form method="POST" action="/formulaires/{{ formulaire.id }}/delete"
+              onsubmit="return confirm('Supprimer ce formulaire et toutes ses questions ?')">
+            <button type="submit" class="btn btn-danger" style="font-size: 0.78rem;">✕</button>
+        </form>
+    </div>
+</div>
+
+{# ── MODIFIER TITRE/DESC ──────────────────────────────────────────────────── #}
+<div id="edit-formulaire" class="card" style="display: none; margin-bottom: 0.8rem;">
+    <form method="POST" action="/formulaires/{{ formulaire.id }}/edit">
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.6rem; margin-bottom: 0.6rem;">
+            <div class="form-group">
+                <label>Titre</label>
+                <input type="text" name="titre" value="{{ formulaire.titre }}" required>
+            </div>
+            <div class="form-group">
+                <label>Description</label>
+                <input type="text" name="description" value="{{ formulaire.description or '' }}">
+            </div>
+        </div>
+        <div style="display: flex; gap: 0.5rem;">
+            <button type="submit" class="btn btn-primary" style="font-size: 0.82rem;">Sauvegarder</button>
+            <button type="button" class="btn btn-secondary" style="font-size: 0.82rem;"
+                    onclick="toggleInfoSection('edit-formulaire')">Annuler</button>
+        </div>
+    </form>
+</div>
+
+{# ── LISTE DES QUESTIONS (drag-and-drop) ──────────────────────────────────── #}
+<div class="card">
+    <div class="section-header" style="margin-bottom: 1rem;">
+        <div class="section-title">Questions
+            <span class="badge" style="font-size: 0.65rem; background: var(--surface2); color: var(--muted); margin-left: 0.4rem;">
+                {{ questions | length }}
+            </span>
+        </div>
+        <div class="text-muted" style="font-size: 0.72rem;">Glisse pour réordonner</div>
+    </div>
+
+    <div id="q-list">
+        {% if questions %}
+            {% for q in questions %}
+            <div class="q-card" draggable="true" data-qid="{{ q.id }}" id="qc-{{ q.id }}">
+                <div class="q-drag-handle" title="Glisser pour réordonner">⠿</div>
+                <div class="q-body">
+                    <div class="q-header">
+                        <span class="q-type-badge q-type-{{ q.type }}">
+                            {{ type_icons.get(q.type, '?') }} {{ type_labels.get(q.type, q.type) }}
+                        </span>
+                        <span class="q-titre">{{ q.titre }}</span>
+                        {% if q.requis %}<span class="q-requis" title="Requis">✱</span>{% endif %}
+                    </div>
+                    {% if q.sous_titre %}
+                    <div class="q-sous-titre">{{ q.sous_titre }}</div>
+                    {% endif %}
+                    {% if q.options and q.type in ['choix', 'cases'] %}
+                    <div class="q-options-preview">
+                        {% for opt in q.options.split('\n') %}
+                            {% if opt.strip() %}
+                            <span>{% if q.type == 'choix' %}○{% else %}□{% endif %} {{ opt.strip() }}</span>
+                            {% endif %}
+                        {% endfor %}
+                    </div>
+                    {% elif q.type == 'note' %}
+                    <div class="q-options-preview">
+                        {% for i in range(1, 6) %}<span>★</span>{% endfor %}
+                        <span class="text-muted" style="margin-left: 0.3rem;">1 – 5</span>
+                    </div>
+                    {% elif q.type == 'oui_non' %}
+                    <div class="q-options-preview"><span>○ Oui</span><span>○ Non</span></div>
+                    {% elif q.type == 'date' %}
+                    <div class="q-options-preview"><span>◷ Sélecteur de date</span></div>
+                    {% elif q.type == 'section' %}
+                    <div style="margin-top: 0.35rem; height: 1px; background: var(--border); width: 100%;"></div>
+                    {% endif %}
+
+                    {# ── FORMULAIRE D'ÉDITION INLINE ─────────────────────── #}
+                    <div class="q-edit-form" id="qedit-{{ q.id }}">
+                        <form method="POST" action="/formulaires/{{ formulaire.id }}/questions/{{ q.id }}/edit">
+                            <div class="add-q-grid" style="margin-bottom: 0.6rem;">
+                                <div class="form-group">
+                                    <label style="font-size: 0.75rem;">Titre</label>
+                                    <input type="text" name="titre" value="{{ q.titre }}" style="font-size: 0.82rem;">
+                                </div>
+                                <div class="form-group">
+                                    <label style="font-size: 0.75rem;">Sous-titre / aide</label>
+                                    <input type="text" name="sous_titre" value="{{ q.sous_titre or '' }}" style="font-size: 0.82rem;">
+                                </div>
+                                <div class="form-group">
+                                    <label style="font-size: 0.75rem;">Type</label>
+                                    <select name="type" style="font-size: 0.82rem;" onchange="toggleOptions(this)">
+                                        {% for val, label in type_labels.items() %}
+                                        <option value="{{ val }}" {% if q.type == val %}selected{% endif %}>
+                                            {{ type_icons[val] }} {{ label }}
+                                        </option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <div class="form-group q-options-field" style="{{ 'display:none;' if q.type not in ['choix', 'cases'] else '' }}">
+                                    <label style="font-size: 0.75rem;">Options (une par ligne)</label>
+                                    <textarea name="options" rows="3" style="font-size: 0.82rem;">{{ q.options or '' }}</textarea>
+                                </div>
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;">
+                                <label style="display: flex; align-items: center; gap: 0.4rem; font-size: 0.8rem; cursor: pointer;">
+                                    <input type="checkbox" name="requis" {% if q.requis %}checked{% endif %}> Requis
+                                </label>
+                                <button type="submit" class="btn btn-primary" style="font-size: 0.78rem;">Sauvegarder</button>
+                                <button type="button" class="btn btn-secondary" style="font-size: 0.78rem;"
+                                        onclick="toggleQEdit('{{ q.id }}')">Annuler</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+                <div class="q-actions">
+                    <button class="btn btn-ghost" style="font-size: 0.78rem;"
+                            onclick="toggleQEdit('{{ q.id }}')">✎</button>
+                    <form method="POST" action="/formulaires/{{ formulaire.id }}/questions/{{ q.id }}/delete"
+                          onsubmit="return confirm('Supprimer cette question ?')">
+                        <button type="submit" class="btn btn-ghost" style="font-size: 0.75rem; color: var(--red);">✕</button>
+                    </form>
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+        <div class="empty-state" style="margin-bottom: 0;">Aucune question. Ajoutes-en une ci-dessous.</div>
+        {% endif %}
+    </div>
+</div>
+
+{# ── AJOUTER UNE QUESTION ─────────────────────────────────────────────────── #}
+<div class="card" style="margin-top: 0.5rem;">
+    <div class="section-header" style="margin-bottom: 0.9rem;">
+        <div class="section-title">+ Ajouter une question</div>
+    </div>
+    <form method="POST" action="/formulaires/{{ formulaire.id }}/questions/add" id="add-q-form">
+        <div class="add-q-grid" style="margin-bottom: 0.6rem;">
+            <div class="form-group">
+                <label>Type</label>
+                <select name="type" id="add-type" onchange="toggleAddOptions(this)">
+                    {% for val, label in type_labels.items() %}
+                    <option value="{{ val }}">{{ type_icons[val] }} {{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Titre de la question</label>
+                <input type="text" name="titre" id="add-titre" placeholder="ex: Quel est ton budget ?">
+            </div>
+            <div class="form-group">
+                <label>Sous-titre / aide (optionnel)</label>
+                <input type="text" name="sous_titre" placeholder="ex: Donne une fourchette approximative">
+            </div>
+            <div class="form-group" id="add-options-field" style="display: none;">
+                <label>Options (une par ligne)</label>
+                <textarea name="options" rows="3" placeholder="Option A&#10;Option B&#10;Option C"></textarea>
+            </div>
+        </div>
+        <div style="display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;">
+            <label style="display: flex; align-items: center; gap: 0.4rem; font-size: 0.85rem; cursor: pointer;">
+                <input type="checkbox" name="requis"> Requis
+            </label>
+            <button type="submit" class="btn btn-primary">Ajouter →</button>
+        </div>
+    </form>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // ── TOGGLE EDIT FORM ───────────────────────────────────────────────────
+    function toggleQEdit(qid) {
+        const form = document.getElementById('qedit-' + qid);
+        form.classList.toggle('open');
+    }
+
+    function toggleInfoSection(id) {
+        const el = document.getElementById(id);
+        el.style.display = el.style.display === 'none' ? 'block' : 'none';
+    }
+
+    // ── SHOW/HIDE OPTIONS TEXTAREA ─────────────────────────────────────────
+    function toggleOptions(sel) {
+        const card = sel.closest('.q-card');
+        const field = card.querySelector('.q-options-field');
+        field.style.display = ['choix', 'cases'].includes(sel.value) ? '' : 'none';
+    }
+
+    function toggleAddOptions(sel) {
+        document.getElementById('add-options-field').style.display =
+            ['choix', 'cases'].includes(sel.value) ? '' : 'none';
+    }
+
+    // ── DRAG-AND-DROP REORDER ──────────────────────────────────────────────
+    let dragSrc = null;
+
+    document.querySelectorAll('.q-card[draggable]').forEach(card => {
+        card.addEventListener('dragstart', e => {
+            dragSrc = card;
+            e.dataTransfer.effectAllowed = 'move';
+            setTimeout(() => card.classList.add('dragging'), 0);
+        });
+        card.addEventListener('dragend', () => {
+            card.classList.remove('dragging');
+            document.querySelectorAll('.q-card').forEach(c => c.classList.remove('drag-over'));
+            saveOrder();
+        });
+        card.addEventListener('dragover', e => {
+            e.preventDefault();
+            if (!dragSrc || dragSrc === card) return;
+            e.dataTransfer.dropEffect = 'move';
+            document.querySelectorAll('.q-card').forEach(c => c.classList.remove('drag-over'));
+            card.classList.add('drag-over');
+            const rect = card.getBoundingClientRect();
+            if (e.clientY < rect.top + rect.height / 2) {
+                card.before(dragSrc);
+            } else {
+                card.after(dragSrc);
+            }
+        });
+        card.addEventListener('drop', e => {
+            e.preventDefault();
+            card.classList.remove('drag-over');
+        });
+    });
+
+    function saveOrder() {
+        const ids = [...document.querySelectorAll('.q-card[data-qid]')].map(el => parseInt(el.dataset.qid));
+        fetch('/formulaires/{{ formulaire.id }}/questions/reorder', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ ordre: ids })
+        });
+    }
+</script>
+{% endblock %}

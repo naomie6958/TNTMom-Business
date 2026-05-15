@@ -406,6 +406,24 @@ form {
     padding: 0.15rem 0.5rem;
 }
 
+.projet-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+    margin-top: 0.75rem;
+}
+
+.projet-tag {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 0.6rem;
+    letter-spacing: 0.05em;
+    padding: 0.15rem 0.5rem;
+    border-radius: 4px;
+    border: 1px solid rgba(217, 79, 189, 0.35);
+    color: rgba(217, 79, 189, 0.8);
+    background: rgba(217, 79, 189, 0.06);
+}
+
 /* Carte "À venir" */
 .projet-card:last-child:not(:first-child) {
     border: 1px dashed rgba(217, 79, 189, 0.25);
@@ -422,6 +440,140 @@ form {
     box-shadow: none;
     opacity: 0.6;
 }
+
+/* ── Nouvelles cartes projets ──────────────────────────────────────────── */
+.projet-card {
+    padding: 0;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    text-align: left;
+}
+
+/* Header visuel — simule une preview avec les initiales */
+.projet-card-preview {
+    width: 100%;
+    height: 130px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
+}
+
+.projet-card-preview::before {
+    content: '◉  ◉  ◉';
+    position: absolute;
+    top: 10px;
+    left: 14px;
+    font-size: 0.45rem;
+    letter-spacing: 4px;
+    color: rgba(255,255,255,0.2);
+}
+
+.projet-card-preview--magenta {
+    background: linear-gradient(135deg, #1a0a1e 0%, #2d0f2d 50%, #1a0a1e 100%);
+    border-bottom: 1px solid rgba(217, 79, 189, 0.3);
+}
+.projet-card-preview--bleu {
+    background: linear-gradient(135deg, #0a101e 0%, #0f1e2d 50%, #0a101e 100%);
+    border-bottom: 1px solid rgba(135, 206, 235, 0.3);
+}
+.projet-card-preview--vert {
+    background: linear-gradient(135deg, #0a1e12 0%, #0f2d1a 50%, #0a1e12 100%);
+    border-bottom: 1px solid rgba(62, 207, 142, 0.3);
+}
+
+.projet-card-initiales {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 3rem;
+    font-weight: 900;
+    letter-spacing: -0.02em;
+    opacity: 0.12;
+    user-select: none;
+}
+.projet-card-preview--magenta .projet-card-initiales { color: #d94fbd; }
+.projet-card-preview--bleu    .projet-card-initiales { color: #87CEEB; }
+.projet-card-preview--vert    .projet-card-initiales { color: #3ecf8e; }
+
+/* Corps */
+.projet-card-body {
+    padding: 1rem 1.1rem 1.2rem;
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    gap: 0.45rem;
+}
+
+.projet-card-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.projet-card-header h3 {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 0.85rem;
+    color: #f0eeff;
+    margin: 0;
+}
+
+/* Badges statut */
+.projet-statut-badge {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 0.55rem;
+    letter-spacing: 0.08em;
+    padding: 0.15rem 0.55rem;
+    border-radius: 20px;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+.statut-live     { color: #3ecf8e; border: 1px solid rgba(62,207,142,0.4); background: rgba(62,207,142,0.08); }
+.statut-en-cours { color: #f9c74f; border: 1px solid rgba(249,199,79,0.4); background: rgba(249,199,79,0.08); }
+.statut-prototype{ color: rgba(245,222,179,0.5); border: 1px solid rgba(245,222,179,0.2); background: transparent; }
+
+/* Tagline */
+.projet-tagline {
+    font-family: 'Open Sans', sans-serif;
+    font-size: 0.78rem;
+    color: rgba(245, 222, 179, 0.9);
+    font-weight: 600;
+    margin: 0;
+}
+
+/* Description */
+.projet-desc {
+    font-family: 'Open Sans', sans-serif;
+    font-size: 0.78rem;
+    color: rgba(245, 222, 179, 0.55);
+    line-height: 1.55;
+    margin: 0;
+}
+
+/* Lien */
+.projet-card-link {
+    display: inline-block;
+    margin-top: auto;
+    padding-top: 0.6rem;
+    font-family: 'Orbitron', sans-serif;
+    font-size: 0.65rem;
+    letter-spacing: 0.06em;
+    color: #87CEEB;
+    text-decoration: none;
+    transition: opacity 0.2s;
+}
+.projet-card-link:hover { opacity: 0.7; }
+
+/* Couleurs bordures par variante */
+.projet-card--magenta { border-color: rgba(217,79,189,0.35); box-shadow: 0 0 14px rgba(217,79,189,0.15); }
+.projet-card--bleu    { border-color: rgba(135,206,235,0.3); box-shadow: 0 0 14px rgba(135,206,235,0.12); }
+.projet-card--vert    { border-color: rgba(62,207,142,0.3);  box-shadow: 0 0 14px rgba(62,207,142,0.1); }
+
+.projet-card--magenta:hover { border-color: #d94fbd; box-shadow: 0 0 22px rgba(217,79,189,0.35); }
+.projet-card--bleu:hover    { border-color: #87CEEB; box-shadow: 0 0 22px rgba(135,206,235,0.3); }
+.projet-card--vert:hover    { border-color: #3ecf8e; box-shadow: 0 0 22px rgba(62,207,142,0.25); }
 
 footer {
     max-width: 1100px;

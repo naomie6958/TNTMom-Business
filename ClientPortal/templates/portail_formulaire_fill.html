@@ -1,0 +1,121 @@
+{% extends "base_portail.html" %}
+
+{% block title %}{{ formulaire.titre }}{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <div class="text-muted" style="font-size: 0.75rem; margin-bottom: 0.3rem;">
+            <a href="/portail/formulaires">← Formulaires</a>
+        </div>
+        <h1 class="page-title"><span class="client-nom" style="font-size:inherit; display:inline-block;">{{ formulaire.titre }}</span></h1>
+        {% if formulaire.description %}
+        <div class="page-sub">{{ formulaire.description }}</div>
+        {% endif %}
+    </div>
+</div>
+
+<div style="max-width: 680px;">
+<div class="card">
+<form method="POST" action="/portail/formulaires/{{ formulaire.id }}/submit">
+
+    {% for q in questions %}
+
+    {% if q.type == 'section' %}
+    {# ── Séparateur de section ── #}
+    <div style="margin: 1.5rem 0 0.75rem;
+                padding-bottom: 0.5rem;
+                border-bottom: 1px solid var(--border);">
+        <div style="font-size: 0.95rem; font-weight: 600; color: var(--accent);">{{ q.titre }}</div>
+        {% if q.sous_titre %}<div class="text-muted" style="font-size: 0.8rem; margin-top: 0.15rem;">{{ q.sous_titre }}</div>{% endif %}
+    </div>
+
+    {% else %}
+    {# ── Question normale ── #}
+    <div class="form-group" style="margin-bottom: 1.1rem;">
+        <label style="font-size: 0.88rem; font-weight: 500; display: block; margin-bottom: 0.35rem;">
+            {{ q.titre }}
+            {% if q.requis %}<span style="color: var(--red);">*</span>{% endif %}
+        </label>
+        {% if q.sous_titre %}
+        <div class="text-muted" style="font-size: 0.75rem; margin-bottom: 0.4rem;">{{ q.sous_titre }}</div>
+        {% endif %}
+
+        {% if q.type == 'texte' %}
+            <input type="text" name="q_{{ q.id }}" {% if q.requis %}required{% endif %}
+                   style="width:100%; background:var(--surface2); border:1px solid var(--border);
+                          border-radius:var(--radius); padding:0.55rem 0.75rem; color:var(--text);
+                          font-size:0.88rem; box-sizing:border-box;">
+
+        {% elif q.type == 'paragraphe' %}
+            <textarea name="q_{{ q.id }}" rows="4" {% if q.requis %}required{% endif %}
+                      style="width:100%; background:var(--surface2); border:1px solid var(--border);
+                             border-radius:var(--radius); padding:0.55rem 0.75rem; color:var(--text);
+                             font-size:0.88rem; resize:vertical; box-sizing:border-box;"></textarea>
+
+        {% elif q.type == 'nombre' %}
+            <input type="number" name="q_{{ q.id }}" {% if q.requis %}required{% endif %}
+                   style="width:100%; background:var(--surface2); border:1px solid var(--border);
+                          border-radius:var(--radius); padding:0.55rem 0.75rem; color:var(--text);
+                          font-size:0.88rem; box-sizing:border-box;">
+
+        {% elif q.type == 'date' %}
+            <input type="date" name="q_{{ q.id }}" {% if q.requis %}required{% endif %}
+                   style="width:100%; background:var(--surface2); border:1px solid var(--border);
+                          border-radius:var(--radius); padding:0.55rem 0.75rem; color:var(--text);
+                          font-size:0.88rem; box-sizing:border-box;">
+
+        {% elif q.type == 'url' %}
+            <input type="url" name="q_{{ q.id }}" placeholder="https://..." {% if q.requis %}required{% endif %}
+                   style="width:100%; background:var(--surface2); border:1px solid var(--border);
+                          border-radius:var(--radius); padding:0.55rem 0.75rem; color:var(--text);
+                          font-size:0.88rem; box-sizing:border-box;">
+
+        {% elif q.type == 'choix' and q.options %}
+            {% for opt in q.options.splitlines() %}{% if opt.strip() %}
+            <label style="display:flex; align-items:center; gap:0.5rem; margin-bottom:0.4rem;
+                          font-size:0.88rem; cursor:pointer;">
+                <input type="radio" name="q_{{ q.id }}" value="{{ opt.strip() }}"
+                       {% if q.requis %}required{% endif %}>
+                {{ opt.strip() }}
+            </label>
+            {% endif %}{% endfor %}
+
+        {% elif q.type == 'cases' and q.options %}
+            {% for opt in q.options.splitlines() %}{% if opt.strip() %}
+            <label style="display:flex; align-items:center; gap:0.5rem; margin-bottom:0.4rem;
+                          font-size:0.88rem; cursor:pointer;">
+                <input type="checkbox" name="q_{{ q.id }}[]" value="{{ opt.strip() }}">
+                {{ opt.strip() }}
+            </label>
+            {% endif %}{% endfor %}
+
+        {% elif q.type == 'oui_non' %}
+            <label style="display:flex; align-items:center; gap:0.5rem; margin-bottom:0.4rem;
+                          font-size:0.88rem; cursor:pointer;">
+                <input type="radio" name="q_{{ q.id }}" value="Oui" {% if q.requis %}required{% endif %}> Oui
+            </label>
+            <label style="display:flex; align-items:center; gap:0.5rem; font-size:0.88rem; cursor:pointer;">
+                <input type="radio" name="q_{{ q.id }}" value="Non"> Non
+            </label>
+
+        {% else %}
+            <input type="text" name="q_{{ q.id }}" {% if q.requis %}required{% endif %}
+                   style="width:100%; background:var(--surface2); border:1px solid var(--border);
+                          border-radius:var(--radius); padding:0.55rem 0.75rem; color:var(--text);
+                          font-size:0.88rem; box-sizing:border-box;">
+        {% endif %}
+    </div>
+    {% endif %}
+
+    {% endfor %}
+
+    <div style="margin-top: 1.5rem; display: flex; gap: 0.75rem; align-items: center;">
+        <button type="submit" class="btn btn-primary">Envoyer le formulaire</button>
+        <a href="/portail/formulaires" class="btn btn-secondary">Annuler</a>
+    </div>
+
+</form>
+</div>
+</div>
+{% endblock %}

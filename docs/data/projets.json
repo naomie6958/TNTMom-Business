@@ -1,8 +1,38 @@
 [
-    { "nom": "Python Lab", "description": "Apprentissage et formation Python", "link": "" },
-    { "nom": "Scheduler TNTM", "description": "Programmation et prototypes", "link": "nao-scheduler.html" },
-    { "nom": "Sobriety Tracker", "description": "Programmation et prototypes", "link": "sobriety-tracker.html" },
-    { "nom": "Client Portal", "description": "Back-office freelance — gestion clients, contrats & consultations", "link": "https://tntmom.pythonanywhere.com/" },
-    { "nom": "Family Dashboard", "description": "App familiale — planning, tâches, assistant IA & jeux éducatifs", "link": "" },
-    { "nom": "À venir", "description": "...", "link": "" }
+    {
+        "nom": "ClientPortal",
+        "tagline": "Back-office freelance déployé en production",
+        "description": "Gestion clients, contrats avec timeline milestones, facturation automatique, portail client sécurisé, messagerie intégrée, formulaires personnalisés et envoi de factures par courriel. Premier client actif.",
+        "tags": ["Python", "Flask", "SQLite", "Gmail SMTP", "PythonAnywhere"],
+        "statut": "live",
+        "couleur": "magenta",
+        "link": "https://tntmom.pythonanywhere.com/"
+    },
+    {
+        "nom": "Family Dashboard",
+        "tagline": "App homeschool familiale avec IA",
+        "description": "Calendrier partagé, suivi homeschool, système de points et récompenses pour les enfants, et app d'anglais avec exercices générés par Claude AI. 4 profils, 4 thèmes visuels.",
+        "tags": ["Python", "Flask", "Claude API", "SQLite"],
+        "statut": "en-cours",
+        "couleur": "bleu",
+        "link": ""
+    },
+    {
+        "nom": "Nao Scheduler",
+        "tagline": "Planification personnelle visuelle",
+        "description": "Prototype d'outil de planification — blocs de temps visuels, gestion des priorités et organisation quotidienne.",
+        "tags": ["HTML", "CSS", "JavaScript"],
+        "statut": "prototype",
+        "couleur": "vert",
+        "link": "nao-scheduler.html"
+    },
+    {
+        "nom": "Sobriety Tracker",
+        "tagline": "Suivi de jalons personnels",
+        "description": "Outil de suivi personnel — visualisation des jalons, compteur de jours et données de progression.",
+        "tags": ["HTML", "CSS", "JavaScript"],
+        "statut": "prototype",
+        "couleur": "vert",
+        "link": "sobriety-tracker.html"
+    }
 ]

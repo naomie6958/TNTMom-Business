@@ -186,6 +186,9 @@ function render() {
             <input type="number" placeholder="0" min="0"
                    value="${esc(m.prix)}"
                    oninput="milestones[${i}].prix = this.value; updateTotal()">
+            <input type="date" title="Date prévue du milestone"
+                   value="${esc(m.date || '')}"
+                   oninput="milestones[${i}].date = this.value">
             <select onchange="milestones[${i}].statut = this.value">
                 <option value="en attente" ${m.statut === 'en attente' ? 'selected' : ''}>En attente</option>
                 <option value="en cours"   ${m.statut === 'en cours'   ? 'selected' : ''}>En cours</option>
@@ -209,7 +212,7 @@ function esc(str) {
 }
 
 function addMilestone() {
-    milestones.push({ titre: '', livrable: '', prix: '', statut: 'en attente' });
+    milestones.push({ titre: '', livrable: '', prix: '', date: '', statut: 'en attente' });
     render();
 }
 

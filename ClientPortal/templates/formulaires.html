@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+
+{% block title %}Formulaires{% endblock %}
+
+{% block content %}
+
+<div class="page-header">
+    <div>
+        <h1 class="page-title">Mes <span class="client-nom" style="font-size:inherit; display:inline-block; animation-delay:0.4s;">formulaires</span></h1>
+        <div class="page-sub">{{ formulaires | length }} formulaire{{ 's' if formulaires | length != 1 }}</div>
+    </div>
+    <a href="#new-form" class="btn btn-primary">+ Nouveau formulaire</a>
+</div>
+
+{# ── NOUVEAU FORMULAIRE ───────────────────────────────────────────────────── #}
+<details class="collapsible" id="new-form">
+    <summary>+ Nouveau formulaire</summary>
+    <div class="collapsible-body">
+        <form method="POST" action="/formulaires/new">
+            <div class="form-grid">
+                <div class="form-group">
+                    <label for="titre">Titre *</label>
+                    <input type="text" id="titre" name="titre" placeholder="ex: Découverte client, Satisfaction..." required>
+                </div>
+                <div class="form-group">
+                    <label for="description">Description</label>
+                    <input type="text" id="description" name="description" placeholder="À quoi sert ce formulaire ?">
+                </div>
+            </div>
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary">Créer →</button>
+            </div>
+        </form>
+    </div>
+</details>
+
+{# ── LISTE DES FORMULAIRES ────────────────────────────────────────────────── #}
+{% if formulaires %}
+    {% for f in formulaires %}
+    <div class="formulaire-card" onclick="window.location='/formulaires/{{ f.id }}'">
+        <div style="flex: 1; min-width: 0;">
+            <div style="font-weight: 600; font-size: 0.95rem; color: var(--text); margin-bottom: 0.2rem;">{{ f.titre }}</div>
+            {% if f.description %}
+            <div class="text-muted" style="font-size: 0.8rem;">{{ f.description }}</div>
+            {% endif %}
+        </div>
+        <div style="display: flex; align-items: center; gap: 0.8rem; flex-shrink: 0;">
+            <span class="text-muted" style="font-size: 0.75rem;">
+                {{ f.nb_questions }} question{{ 's' if f.nb_questions != 1 }}
+            </span>
+            <span class="text-muted" style="font-size: 0.72rem;">{{ f.created_at[:10] }}</span>
+            <form id="del-form-{{ f.id }}" method="POST" action="/formulaires/{{ f.id }}/delete">
+                <button type="button" class="btn btn-ghost" style="font-size: 0.75rem; color: var(--red);"
+                        onclick="event.stopPropagation();
+                                 if(confirm('Supprimer « {{ f.titre }} » et toutes ses questions ?'))
+                                     document.getElementById('del-form-{{ f.id }}').submit();">✕</button>
+            </form>
+        </div>
+    </div>
+    {% endfor %}
+{% else %}
+    <div class="card">
+        <div class="empty-state">Aucun formulaire. Crée-en un avec le bouton ci-dessus.</div>
+    </div>
+{% endif %}
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+    if (window.location.hash === '#new-form') {
+        document.getElementById('new-form').open = true;
+    }
+</script>
+{% endblock %}

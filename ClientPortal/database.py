@@ -10,7 +10,7 @@ load_dotenv()
 
 # SQLite = base de données dans un seul fichier .db, pas de serveur séparé.
 # Parfait pour une app mono-utilisateur ou petit trafic.
-DB_PATH = os.path.join(os.path.dirname(__file__), 'portal.db')
+DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'portal.db')
 
 
 def get_db():
@@ -71,14 +71,15 @@ def init_db():
         CREATE TABLE IF NOT EXISTS contrats (
             id                  INTEGER PRIMARY KEY AUTOINCREMENT,
             client_id           INTEGER NOT NULL,
-            scope               TEXT,   -- description du projet + périmètre
-            milestones          TEXT,   -- JSON array
+            nom                 TEXT,
+            scope               TEXT,
+            milestones          TEXT,
             conditions_paiement TEXT,
             politique_revisions TEXT,
-            hors_scope          TEXT,   -- ce qui n'est PAS inclus (important!)
+            hors_scope          TEXT,
             timeline            TEXT,
             statut              TEXT DEFAULT 'draft',
-            -- statuts : draft / envoyé / signé
+            signed_at           TEXT,
             created_at          TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY(client_id) REFERENCES clients(id) ON DELETE CASCADE
         );
@@ -115,6 +116,50 @@ def init_db():
             message    TEXT NOT NULL,
             lu         INTEGER DEFAULT 0,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY(client_id) REFERENCES clients(id) ON DELETE CASCADE
+        );
+
+        CREATE TABLE IF NOT EXISTS factures (
+            id              INTEGER PRIMARY KEY AUTOINCREMENT,
+            client_id       INTEGER NOT NULL,
+            contrat_id      INTEGER,
+            numero          TEXT,
+            milestone_titre TEXT,
+            description     TEXT,
+            montant         REAL NOT NULL DEFAULT 0,
+            statut          TEXT DEFAULT 'envoyée',
+            date_emission   TEXT NOT NULL,
+            date_paiement   TEXT,
+            FOREIGN KEY(client_id) REFERENCES clients(id) ON DELETE CASCADE
+        );
+
+        CREATE TABLE IF NOT EXISTS formulaires (
+            id          INTEGER PRIMARY KEY AUTOINCREMENT,
+            titre       TEXT NOT NULL,
+            description TEXT,
+            created_at  TEXT DEFAULT (datetime('now')),
+            actif       INTEGER DEFAULT 1
+        );
+
+        CREATE TABLE IF NOT EXISTS formulaire_questions (
+            id            INTEGER PRIMARY KEY AUTOINCREMENT,
+            formulaire_id INTEGER NOT NULL,
+            ordre         INTEGER DEFAULT 0,
+            titre         TEXT NOT NULL,
+            sous_titre    TEXT,
+            type          TEXT DEFAULT 'texte',
+            options       TEXT,   -- lignes séparées par saut de ligne (choix et cases)
+            requis        INTEGER DEFAULT 0,
+            FOREIGN KEY(formulaire_id) REFERENCES formulaires(id) ON DELETE CASCADE
+        );
+
+        CREATE TABLE IF NOT EXISTS formulaire_reponses (
+            id            INTEGER PRIMARY KEY AUTOINCREMENT,
+            formulaire_id INTEGER NOT NULL,
+            client_id     INTEGER NOT NULL,
+            reponses      TEXT NOT NULL,
+            submitted_at  TEXT DEFAULT (datetime('now')),
+            FOREIGN KEY(formulaire_id) REFERENCES formulaires(id) ON DELETE CASCADE,
             FOREIGN KEY(client_id) REFERENCES clients(id) ON DELETE CASCADE
         );
 
@@ -178,6 +223,52 @@ def migrate_db():
         conn.commit()
     except Exception:
         pass
+
+    conn.executescript('''
+        CREATE TABLE IF NOT EXISTS factures (
+            id              INTEGER PRIMARY KEY AUTOINCREMENT,
+            client_id       INTEGER NOT NULL,
+            contrat_id      INTEGER,
+            numero          TEXT,
+            milestone_titre TEXT,
+            description     TEXT,
+            montant         REAL NOT NULL DEFAULT 0,
+            statut          TEXT DEFAULT 'envoyée',
+            date_emission   TEXT NOT NULL,
+            date_paiement   TEXT,
+            FOREIGN KEY(client_id) REFERENCES clients(id) ON DELETE CASCADE
+        );
+
+        CREATE TABLE IF NOT EXISTS formulaires (
+            id          INTEGER PRIMARY KEY AUTOINCREMENT,
+            titre       TEXT NOT NULL,
+            description TEXT,
+            created_at  TEXT DEFAULT (datetime('now')),
+            actif       INTEGER DEFAULT 1
+        );
+
+        CREATE TABLE IF NOT EXISTS formulaire_questions (
+            id            INTEGER PRIMARY KEY AUTOINCREMENT,
+            formulaire_id INTEGER NOT NULL,
+            ordre         INTEGER DEFAULT 0,
+            titre         TEXT NOT NULL,
+            sous_titre    TEXT,
+            type          TEXT DEFAULT 'texte',
+            options       TEXT,
+            requis        INTEGER DEFAULT 0,
+            FOREIGN KEY(formulaire_id) REFERENCES formulaires(id) ON DELETE CASCADE
+        );
+
+        CREATE TABLE IF NOT EXISTS formulaire_reponses (
+            id            INTEGER PRIMARY KEY AUTOINCREMENT,
+            formulaire_id INTEGER NOT NULL,
+            client_id     INTEGER NOT NULL,
+            reponses      TEXT NOT NULL,
+            submitted_at  TEXT DEFAULT (datetime('now')),
+            FOREIGN KEY(formulaire_id) REFERENCES formulaires(id) ON DELETE CASCADE,
+            FOREIGN KEY(client_id) REFERENCES clients(id) ON DELETE CASCADE
+        );
+    ''')
 
     # Traduit les anciens statuts anglais des milestones en français dans tous les contrats.
     # Les valeurs 'pending' et 'en_cours' viennent de la Phase 1 — on les remplace une fois.

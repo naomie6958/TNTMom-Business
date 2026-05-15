@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     {# block title : chaque template enfant peut personnaliser le titre de l'onglet #}
     <title>{% block title %}ClientPortal{% endblock %} — TNTMom</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}?v=30">
     <link rel="icon" href="{{ url_for('static', filename='images/favicon.svg') }}" type="image/svg+xml">
     {# url_for('static', ...) génère le bon chemin peu importe où Flask est monté #}
     {% block head %}{% endblock %}
@@ -20,27 +20,30 @@
 
     {# ── SIDEBAR ─────────────────────────────────────────────────────────── #}
     <aside class="sidebar">
-        <div class="sidebar-logo gold-title">TNTMom</div>
+        <div class="sidebar-logo"><span class="gold-title">TNT</span><span class="gold-title gold-mom">Mom</span></div>
 
         <nav class="sidebar-nav">
             <a href="/dashboard"
                {% if request.path == '/dashboard' %}class="active"{% endif %}>
-                ◈ Dashboard
+                <span class="nav-bullet">◈</span> Dashboard
             </a>
             <a href="/plan"
                {% if request.path == '/plan' %}class="active"{% endif %}>
-                ◈ Plan d'affaires
+                <span class="nav-bullet">◈</span> Plan d'affaires
             </a>
             <a href="/roadmap"
                {% if request.path == '/roadmap' %}class="active"{% endif %}>
-                ◈ Feuille de route
+                <span class="nav-bullet">◈</span> Feuille de route
+            </a>
+            <a href="/formulaires"
+               {% if request.path.startswith('/formulaires') %}class="active"{% endif %}>
+                <span class="nav-bullet">◈</span> Formulaires
             </a>
         </nav>
 
         <div class="sidebar-user">
             <strong>{{ name }}</strong>
             <a href="/logout" class="text-muted">→ Déconnexion</a>
-            <a href="https://buymeacoffee.com/tntm" target="_blank" class="bmc-btn">☕ Buy me a coffee</a>
         </div>
     </aside>
 

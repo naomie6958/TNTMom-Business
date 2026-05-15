@@ -5,12 +5,12 @@
 {% block content %}
 <div class="page-header">
     <div>
-        <h1 class="page-title">Bonjour, {{ client.nom }} 👋</h1>
+        <h1 class="page-title">Bonjour, <span class="client-nom">{{ client.nom }}</span> 👋</h1>
         <div class="page-sub">Voici l'avancement de ton projet.</div>
     </div>
 </div>
 
-<div style="max-width: 700px;">
+<div>
 
     {# ── PROJETS ──────────────────────────────────────────────────────────── #}
     {% if projets %}
@@ -39,6 +39,11 @@
                         ✍ Signer le contrat
                     </button>
                 </form>
+                {% elif c.statut == 'signé' %}
+                <a href="/portail/contrat/{{ c.id }}/print" target="_blank"
+                   class="btn btn-secondary" style="font-size: 0.82rem;">
+                    ⎙ Télécharger le contrat signé
+                </a>
                 {% endif %}
             </div>
 
@@ -54,11 +59,19 @@
                     {% set point_class = '' %}
                 {% endif %}
                 <div class="timeline-point {{ point_class }}">
-                    {% if m.statut == 'en cours' %}
-                    <div class="timeline-step-badge">↓ En cours</div>
-                    {% endif %}
+                    <div class="timeline-above">
+                        {% if m.statut == 'en cours' %}
+                        <div class="timeline-step-badge">↓ En cours</div>
+                        {% endif %}
+                        <div class="timeline-label">{{ m.titre or '—' }}</div>
+                    </div>
                     <div class="timeline-dot"></div>
-                    <div class="timeline-label">{{ m.titre or '—' }}</div>
+                    {% if not loop.last and m.deadline %}
+                    <div class="timeline-deadline-at-mid">
+                        <div class="deadline-vline"></div>
+                        <span class="deadline-date-label">{{ m.deadline | fmt_date }}</span>
+                    </div>
+                    {% endif %}
                 </div>
                 {% endfor %}
             </div></div>
