@@ -36,7 +36,15 @@ fetch('data/projets.json')
             // ── Header visuel ─────────────────────────────────────────────
             const imgWrap = document.createElement('div');
             imgWrap.className = 'projet-card-preview projet-card-preview--' + (projet.couleur || 'magenta');
-            imgWrap.innerHTML = `<span class="projet-card-initiales">${initiales(projet.nom)}</span>`;
+            if (projet.image) {
+                const img = document.createElement('img');
+                img.src = projet.image;
+                img.alt = projet.nom;
+                img.className = 'projet-card-img';
+                imgWrap.appendChild(img);
+            } else {
+                imgWrap.innerHTML = `<span class="projet-card-initiales">${initiales(projet.nom)}</span>`;
+            }
             card.appendChild(imgWrap);
 
             // ── Corps ─────────────────────────────────────────────────────

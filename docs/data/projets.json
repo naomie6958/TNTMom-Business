@@ -6,6 +6,7 @@
         "tags": ["Python", "Flask", "SQLite", "Gmail SMTP", "PythonAnywhere"],
         "statut": "live",
         "couleur": "magenta",
+        "image": "images/Screenshots/2026-05/clientportal-fiche.png",
         "link": "https://tntmom.pythonanywhere.com/"
     },
     {
@@ -15,24 +16,7 @@
         "tags": ["Python", "Flask", "Claude API", "SQLite"],
         "statut": "en-cours",
         "couleur": "bleu",
+        "image": "images/Screenshots/2026-05/familydashboard-enfant.png",
         "link": ""
-    },
-    {
-        "nom": "Nao Scheduler",
-        "tagline": "Planification personnelle visuelle",
-        "description": "Prototype d'outil de planification — blocs de temps visuels, gestion des priorités et organisation quotidienne.",
-        "tags": ["HTML", "CSS", "JavaScript"],
-        "statut": "prototype",
-        "couleur": "vert",
-        "link": "nao-scheduler.html"
-    },
-    {
-        "nom": "Sobriety Tracker",
-        "tagline": "Suivi de jalons personnels",
-        "description": "Outil de suivi personnel — visualisation des jalons, compteur de jours et données de progression.",
-        "tags": ["HTML", "CSS", "JavaScript"],
-        "statut": "prototype",
-        "couleur": "vert",
-        "link": "sobriety-tracker.html"
     }
 ]
