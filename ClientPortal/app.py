@@ -84,6 +84,22 @@ app.secret_key = os.getenv('SECRET_KEY', 'dev-only-change-me')
 
 _MOIS = ['jan', 'fév', 'mar', 'avr', 'mai', 'juin', 'juil', 'août', 'sep', 'oct', 'nov', 'déc']
 
+
+@app.context_processor
+def portail_badge_ctx():
+    if 'client_id' in session:
+        try:
+            conn = get_db()
+            count = conn.execute(
+                "SELECT COUNT(*) FROM messages_client WHERE client_id=? AND lu_client=0 AND reponse IS NOT NULL",
+                (session['client_id'],)
+            ).fetchone()[0]
+            conn.close()
+        except Exception:
+            count = 0
+        return {'messages_non_lus': count}
+    return {'messages_non_lus': 0}
+
 @app.template_filter('fmt_date')
 def fmt_date(s):
     if not s:
@@ -111,8 +127,8 @@ def to_local(dt_str):
 
 
 def _now():
-    """Heure actuelle en Eastern — à utiliser pour tous les inserts explicites."""
-    return datetime.datetime.now(_EASTERN).replace(tzinfo=None).isoformat(timespec='seconds')
+    """Heure actuelle en UTC — to_local convertit à l'affichage."""
+    return datetime.datetime.now(datetime.timezone.utc).strftime('%Y-%m-%d %H:%M:%S')
 
 # Limite la taille des uploads à 16 MB — au-delà Flask retourne une erreur 413
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024
@@ -223,12 +239,35 @@ def dashboard():
         'SELECT client_id, COUNT(*) as cnt FROM messages_client WHERE lu = 0 GROUP BY client_id'
     ).fetchall()
     unread_counts = {row['client_id']: row['cnt'] for row in unread_rows}
+
+    messages_nonlus = conn.execute('''
+        SELECT mc.id, mc.sujet, mc.message, mc.created_at,
+               c.nom as client_nom, c.id as client_id
+        FROM messages_client mc
+        JOIN clients c ON c.id = mc.client_id
+        WHERE mc.lu = 0 AND (mc.reponse IS NULL OR mc.reponse = '')
+        ORDER BY mc.created_at DESC
+        LIMIT 8
+    ''').fetchall()
+
+    factures_attente = conn.execute('''
+        SELECT f.id, f.numero, f.milestone_titre, f.description,
+               f.montant, f.statut, f.date_emission,
+               c.nom as client_nom, c.id as client_id
+        FROM factures f
+        JOIN clients c ON c.id = f.client_id
+        WHERE f.statut != 'payée'
+        ORDER BY f.date_emission DESC
+    ''').fetchall()
+
     conn.close()
 
     return render_template('admin_dashboard.html',
                            clients=clients,
                            stats=stats,
                            unread_counts=unread_counts,
+                           messages_nonlus=messages_nonlus,
+                           factures_attente=factures_attente,
                            name=session['user_name'])
 
 
@@ -921,7 +960,16 @@ def client_formulaire_remove(client_id, fid):
 @app.route('/plan')
 @login_required
 def plan():
-    return render_template('plan.html')
+    conn = get_db()
+    plan_stats = conn.execute('''
+        SELECT
+            COUNT(*) as total_clients,
+            COUNT(CASE WHEN statut = 'actif' THEN 1 END) as clients_actifs,
+            (SELECT COALESCE(SUM(montant), 0) FROM factures WHERE statut = 'payée') as revenus_realises
+        FROM clients
+    ''').fetchone()
+    conn.close()
+    return render_template('plan.html', stats=plan_stats)
 
 
 @app.route('/roadmap')
@@ -1075,7 +1123,7 @@ def repondre_message(client_id, message_id):
         now = _now()
         conn = get_db()
         conn.execute(
-            'UPDATE messages_client SET reponse=?, repondu_at=? WHERE id=? AND client_id=?',
+            'UPDATE messages_client SET reponse=?, repondu_at=?, lu_client=0 WHERE id=? AND client_id=?',
             (reponse, now, message_id, client_id)
         )
         conn.commit()
@@ -1151,6 +1199,11 @@ def portail_contact():
             flash('Le message ne peut pas être vide.', 'error')
         return redirect('/portail/contact')
 
+    conn.execute(
+        "UPDATE messages_client SET lu_client=1 WHERE client_id=? AND lu_client=0",
+        (session['client_id'],)
+    )
+    conn.commit()
     historique = conn.execute(
         'SELECT * FROM messages_client WHERE client_id = ? ORDER BY created_at ASC',
         (session['client_id'],)

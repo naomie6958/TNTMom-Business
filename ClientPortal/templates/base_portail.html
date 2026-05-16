@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Mon projet{% endblock %} — TNTMom</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}?v=33">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}?v=40">
     <link rel="icon" href="{{ url_for('static', filename='images/favicon.svg') }}" type="image/svg+xml">
     {% block head %}{% endblock %}
 </head>
@@ -32,6 +32,7 @@
             <a href="/portail/contact"
                {% if request.path == '/portail/contact' %}class="active"{% endif %}>
                 <span class="nav-bullet">◈</span> Contacter Naomie
+                {% if messages_non_lus > 0 %}<span class="nav-badge">{{ messages_non_lus }}</span>{% endif %}
             </a>
         </nav>
 
@@ -81,7 +82,7 @@
     </a>
     <a href="/portail/contact"
        class="pbn-item {% if request.path == '/portail/contact' %}active{% endif %}">
-        <span class="pbn-icon">✉</span>
+        <span class="pbn-icon">✉{% if messages_non_lus > 0 %}<span class="pbn-badge">{{ messages_non_lus }}</span>{% endif %}</span>
         <span class="pbn-label">Contact</span>
     </a>
     <a href="/portail/logout" class="pbn-item pbn-logout">

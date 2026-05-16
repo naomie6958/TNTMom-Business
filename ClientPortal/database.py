@@ -213,6 +213,12 @@ def migrate_db():
         pass
 
     try:
+        conn.execute("ALTER TABLE messages_client ADD COLUMN lu_client INTEGER DEFAULT 1")
+        conn.commit()
+    except Exception:
+        pass
+
+    try:
         conn.execute("ALTER TABLE contrats ADD COLUMN nom TEXT")
         conn.commit()
     except Exception:

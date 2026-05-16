@@ -32,6 +32,59 @@
     </div>
 </div>
 
+{# ── COMMAND CENTER ───────────────────────────────────────────────────────── #}
+{% if messages_nonlus or factures_attente %}
+<div class="cmd-center">
+
+    <div class="cmd-section">
+        <div class="cmd-section-title">✉ Messages sans réponse
+            {% if messages_nonlus %}<span class="tab-count">{{ messages_nonlus | length }}</span>{% endif %}
+        </div>
+        {% if messages_nonlus %}
+            {% for m in messages_nonlus %}
+            <a class="cmd-row" href="/clients/{{ m.client_id }}">
+                <div class="cmd-row-left">
+                    <strong>{{ m.client_nom }}</strong>
+                    <span class="cmd-subject">{{ m.sujet }}</span>
+                    <span class="cmd-preview">{{ m.message[:80] }}{% if m.message | length > 80 %}…{% endif %}</span>
+                </div>
+                <div class="cmd-row-right">
+                    <span class="cmd-time">{{ m.created_at[:10] }}</span>
+                    <span class="badge" style="background:var(--accent);color:#fff;font-size:0.62rem;">↩ Répondre</span>
+                </div>
+            </a>
+            {% endfor %}
+        {% else %}
+            <div class="cmd-empty">Aucun message en attente.</div>
+        {% endif %}
+    </div>
+
+    <div class="cmd-section">
+        <div class="cmd-section-title">$ Factures en attente
+            {% if factures_attente %}<span class="tab-count">{{ factures_attente | length }}</span>{% endif %}
+        </div>
+        {% if factures_attente %}
+            {% for f in factures_attente %}
+            <a class="cmd-row" href="/clients/{{ f.client_id }}">
+                <div class="cmd-row-left">
+                    <strong>{{ f.client_nom }}</strong>
+                    <span class="cmd-subject">{{ f.milestone_titre or f.description or f.numero or '—' }}</span>
+                    <span class="cmd-preview">Émise le {{ f.date_emission }}</span>
+                </div>
+                <div class="cmd-row-right">
+                    <span class="cmd-montant">{{ f.montant | int }}$</span>
+                    <span class="badge badge-envoyé" style="font-size:0.6rem;">{{ f.statut }}</span>
+                </div>
+            </a>
+            {% endfor %}
+        {% else %}
+            <div class="cmd-empty">Toutes les factures sont payées 🎉</div>
+        {% endif %}
+    </div>
+
+</div>
+{% endif %}
+
 {# ── FORMULAIRE NOUVEAU CLIENT (collapsible) ──────────────────────────────── #}
 {# <details> est un élément HTML natif qui se toggle sans JS — pratique! #}
 <details class="collapsible" id="new-client-form">

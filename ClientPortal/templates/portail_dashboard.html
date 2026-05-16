@@ -75,34 +75,37 @@
             </div>
             {% endif %}
 
-            {# Timeline des milestones #}
+            {# Étapes du projet #}
             {% if ms %}
-            <div class="timeline-scroll" style="margin-top: 1rem;"><div class="timeline">
+            <div class="ms-steps">
                 {% for m in ms %}
                 {% if m.statut in ['livré', 'payé'] %}
-                    {% set point_class = 'done' %}
+                    {% set step_class = 'done' %}
+                    {% set step_icon = '✓' %}
                 {% elif m.statut == 'en cours' %}
-                    {% set point_class = 'active' %}
+                    {% set step_class = 'active' %}
+                    {% set step_icon = '⚙' %}
                 {% else %}
-                    {% set point_class = '' %}
+                    {% set step_class = 'pending' %}
+                    {% set step_icon = '○' %}
                 {% endif %}
-                <div class="timeline-point {{ point_class }}">
-                    <div class="timeline-above">
-                        {% if m.statut == 'en cours' %}
-                        <div class="timeline-step-badge">↓ En cours</div>
-                        {% endif %}
-                        <div class="timeline-label">{{ m.titre or '—' }}</div>
+                <div class="ms-step {{ step_class }}">
+                    <div class="ms-icon">{{ step_icon }}</div>
+                    <div class="ms-body">
+                        <div>
+                            <div class="ms-titre">{{ m.titre or '—' }}</div>
+                            {% if m.deadline %}
+                            <div class="ms-meta">{{ m.deadline | fmt_date }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="ms-right">
+                            {% if m.get('prix') %}<div class="ms-prix">{{ m.prix | int }}$</div>{% endif %}
+                            <div class="ms-badge-step">{{ m.statut }}</div>
+                        </div>
                     </div>
-                    <div class="timeline-dot"></div>
-                    {% if not loop.last and m.deadline %}
-                    <div class="timeline-deadline-at-mid">
-                        <div class="deadline-vline"></div>
-                        <span class="deadline-date-label">{{ m.deadline | fmt_date }}</span>
-                    </div>
-                    {% endif %}
                 </div>
                 {% endfor %}
-            </div></div>
+            </div>
             {% else %}
             <div class="empty-state">Milestones à venir.</div>
             {% endif %}

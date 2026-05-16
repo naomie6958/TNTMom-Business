@@ -1,609 +1,530 @@
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>TNT Mom — Feuille de route projets 2026</title>
-<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300&family=Fraunces:ital,wght@0,300;0,700;1,300&display=swap" rel="stylesheet">
+{% extends "base.html" %}
+
+{% block title %}Feuille de route{% endblock %}
+
+{% block head %}
 <style>
-:root {
-  --ink: #0d0d0d;
-  --paper: #f5f0e8;
-  --paper2: #ede7d6;
-  --red: #c9392c;
-  --orange: #e07b39;
-  --gold: #c8963e;
-  --green: #3a7d5c;
-  --blue: #2c5f8a;
-  --purple: #7c3aed;
-  --muted: #7a7060;
-  --border: rgba(13,13,13,0.12);
-}
-* { box-sizing: border-box; margin: 0; padding: 0; }
-body {
-  background: var(--paper);
-  color: var(--ink);
-  font-family: 'DM Mono', monospace;
-  min-height: 100vh;
-  overflow-x: hidden;
-}
-body::before {
-  content: '';
-  position: fixed;
-  inset: 0;
-  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
-  pointer-events: none;
-  z-index: 0;
-  opacity: .5;
-}
-.wrap { max-width: 900px; margin: 0 auto; padding: 3rem 2rem 5rem; position: relative; z-index: 1; }
+/* ── Roadmap V2 ─────────────────────────────────────────────────────────── */
 
-/* HEADER */
-.masthead {
-  border-top: 3px solid var(--ink);
-  border-bottom: 1px solid var(--ink);
-  padding: 1.5rem 0 1.2rem;
-  margin-bottom: 2.5rem;
-  display: flex;
-  flex-direction: column;
-  gap: .3rem;
+.rm-hero {
+    padding: 1.8rem 0 1.4rem;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 1.4rem;
 }
-.masthead-top {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  flex-wrap: wrap;
-  gap: .5rem;
+.rm-eyebrow {
+    font-size: 0.6rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 0.5rem;
 }
-.brand {
-  font-family: 'Bebas Neue', sans-serif;
-  font-size: clamp(2.8rem, 8vw, 5rem);
-  letter-spacing: .02em;
-  line-height: 1;
+.rm-title {
+    font-size: clamp(1.6rem, 4vw, 2.5rem);
+    font-weight: 800;
+    color: var(--text);
+    line-height: 1.1;
+    margin-bottom: 0.3rem;
+    letter-spacing: -0.02em;
 }
-.brand span { color: var(--red); }
-.plan-label {
-  font-family: 'Fraunces', serif;
-  font-style: italic;
-  font-weight: 300;
-  font-size: 1.1rem;
-  color: var(--muted);
+.rm-title .accent { color: var(--accent); }
+.rm-sub {
+    font-size: 0.74rem;
+    color: var(--muted);
+    margin-bottom: 1.1rem;
 }
-.masthead-meta {
-  font-size: .65rem;
-  color: var(--muted);
-  letter-spacing: .1em;
-  text-transform: uppercase;
-  border-top: 1px solid var(--border);
-  padding-top: .6rem;
-  display: flex;
-  gap: 2rem;
-  flex-wrap: wrap;
+.rm-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
 }
+.rm-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 0.28rem 0.65rem;
+    font-size: 0.68rem;
+    color: var(--muted);
+}
+.rm-chip strong { color: var(--text); }
 
-/* LÉGENDE STATUTS */
-.legend {
-  display: flex;
-  gap: .6rem;
-  flex-wrap: wrap;
-  margin-bottom: 2rem;
+/* ── Légende ────────────────────────────────────────────────────────────── */
+.rm-legend {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    margin-bottom: 1.3rem;
+    padding: 0.55rem 0.75rem;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
 }
-.legend-item {
-  display: flex;
-  align-items: center;
-  gap: .4rem;
-  font-size: .62rem;
-  letter-spacing: .07em;
-  text-transform: uppercase;
-  color: var(--muted);
+.rm-legend-item {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-size: 0.62rem;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    color: var(--muted);
 }
-.legend-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  flex-shrink: 0;
+.rm-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    flex-shrink: 0;
 }
+.rd-green  { background: var(--green); }
+.rd-accent { background: var(--accent); }
+.rd-gold   { background: var(--gold); }
+.rd-muted  { background: var(--border); }
+.rd-accent2 { background: var(--accent2, #f0b429); }
 
-/* PROJET CARD */
-.project-card {
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  margin-bottom: 1.2rem;
-  overflow: hidden;
+/* ── Section label ──────────────────────────────────────────────────────── */
+.rm-section-label {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    font-size: 0.58rem;
+    letter-spacing: 0.13em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin: 1.4rem 0 0.7rem;
+    padding-bottom: 0.4rem;
+    border-bottom: 1px solid var(--border);
 }
-.project-card-header {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  padding: 1rem 1.2rem;
-  background: var(--paper2);
-  border-bottom: 1px solid var(--border);
-  flex-wrap: wrap;
-}
-.project-status-dot {
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  flex-shrink: 0;
-}
-.dot-green { background: var(--green); }
-.dot-orange { background: var(--orange); }
-.dot-blue { background: var(--blue); }
-.dot-muted { background: var(--muted); opacity: .4; }
-.dot-purple { background: var(--purple); }
-
-.project-name {
-  font-family: 'Bebas Neue', sans-serif;
-  font-size: 1.3rem;
-  letter-spacing: .04em;
-  line-height: 1;
-  flex: 1;
-}
-.project-badge {
-  font-size: .58rem;
-  padding: 3px 9px;
-  border-radius: 20px;
-  letter-spacing: .06em;
-  text-transform: uppercase;
-  font-weight: 400;
-  white-space: nowrap;
-}
-.badge-green { background: rgba(58,125,92,.12); color: var(--green); border: 1px solid rgba(58,125,92,.25); }
-.badge-orange { background: rgba(224,123,57,.12); color: var(--orange); border: 1px solid rgba(224,123,57,.25); }
-.badge-blue { background: rgba(44,95,138,.12); color: var(--blue); border: 1px solid rgba(44,95,138,.25); }
-.badge-muted { background: rgba(122,112,96,.1); color: var(--muted); border: 1px solid rgba(122,112,96,.2); }
-.badge-purple { background: rgba(124,58,237,.1); color: var(--purple); border: 1px solid rgba(124,58,237,.2); }
-.badge-red { background: rgba(201,57,44,.1); color: var(--red); border: 1px solid rgba(201,57,44,.2); }
-
-.project-url {
-  font-size: .6rem;
-  color: var(--muted);
-  letter-spacing: .04em;
+.rm-section-label:first-of-type { margin-top: 0; }
+.rm-section-label::before {
+    content: '';
+    display: inline-block;
+    width: 16px;
+    height: 1px;
+    background: var(--muted);
+    opacity: 0.5;
 }
 
-.project-body {
-  display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
-  gap: 0;
+/* ── Project card ───────────────────────────────────────────────────────── */
+.rm-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    margin-bottom: 0.8rem;
+    overflow: hidden;
+    border-left-width: 3px;
 }
-.project-col {
-  padding: .9rem 1.1rem;
-  border-right: 1px solid var(--border);
-  font-size: .72rem;
-  line-height: 1.6;
+.rm-card.s-green   { border-left-color: var(--green); }
+.rm-card.s-accent  { border-left-color: var(--accent); }
+.rm-card.s-gold    { border-left-color: var(--gold); }
+.rm-card.s-muted   { border-left-color: var(--border); }
+.rm-card.s-accent2 { border-left-color: var(--accent2, #f0b429); }
+
+.rm-card-header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.85rem 1.1rem;
+    border-bottom: 1px solid var(--border);
+    flex-wrap: wrap;
+    background: var(--surface2);
 }
-.project-col:last-child { border-right: none; }
-.col-label {
-  font-size: .57rem;
-  letter-spacing: .09em;
-  text-transform: uppercase;
-  color: var(--muted);
-  margin-bottom: .5rem;
-  font-weight: 500;
+.rm-status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+.rm-project-name {
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: var(--text);
+    flex: 1;
+    min-width: 0;
+}
+.rm-project-url {
+    font-size: 0.62rem;
+    color: var(--muted);
+    letter-spacing: 0.03em;
 }
 
-/* ITEMS DANS LES COLONNES */
-.done-item, .next-item, .stack-item {
-  display: flex;
-  align-items: flex-start;
-  gap: .4rem;
-  margin-bottom: .25rem;
-  font-size: .7rem;
-  line-height: 1.45;
+.rm-card-body {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 0;
 }
-.done-item::before { content: '✓'; color: var(--green); flex-shrink: 0; font-size: .65rem; margin-top: .05rem; }
-.next-item::before { content: '→'; color: var(--red); flex-shrink: 0; font-size: .65rem; margin-top: .05rem; }
-.stack-item::before { content: '·'; color: var(--muted); flex-shrink: 0; }
-
-/* PRIORITÉ BADGE */
-.priority-row {
-  padding: .6rem 1.2rem;
-  background: rgba(201,57,44,.05);
-  border-top: 1px solid var(--border);
-  display: flex;
-  align-items: center;
-  gap: .6rem;
-  font-size: .65rem;
+.rm-col {
+    padding: 0.85rem 1rem;
+    border-right: 1px solid var(--border);
+    font-size: 0.72rem;
+    line-height: 1.6;
 }
-.priority-label {
-  font-size: .57rem;
-  letter-spacing: .08em;
-  text-transform: uppercase;
-  color: var(--red);
-  font-weight: 500;
-  flex-shrink: 0;
-}
-.priority-text { color: var(--muted); line-height: 1.4; }
-.priority-row.green-bg { background: rgba(58,125,92,.05); }
-.priority-row.green-bg .priority-label { color: var(--green); }
-
-/* SECTION TITRE */
-.section-label {
-  font-size: .6rem;
-  letter-spacing: .12em;
-  text-transform: uppercase;
-  color: var(--muted);
-  margin-bottom: .8rem;
-  margin-top: 1.8rem;
-  padding-bottom: .4rem;
-  border-bottom: 1px solid var(--border);
-  display: flex;
-  align-items: center;
-  gap: .6rem;
-}
-.section-label:first-child { margin-top: 0; }
-
-.nav-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: .5rem;
-  font-family: 'DM Mono', monospace;
-  font-size: .65rem;
-  letter-spacing: .08em;
-  text-transform: uppercase;
-  color: var(--ink);
-  background: var(--paper2);
-  border: 1px solid var(--border);
-  border-radius: 4px;
-  padding: .45rem .9rem;
-  text-decoration: none;
-  transition: border-color .15s, background .15s;
-}
-.nav-btn:hover { border-color: var(--red); background: var(--paper); }
-
-footer {
-  margin-top: 3rem;
-  padding-top: 1rem;
-  border-top: 1px solid var(--border);
-  font-size: .62rem;
-  color: var(--muted);
-  letter-spacing: .07em;
-  text-transform: uppercase;
-  display: flex;
-  justify-content: space-between;
-  flex-wrap: wrap;
-  gap: .3rem;
-  align-items: center;
+.rm-col:last-child { border-right: none; }
+.rm-col-label {
+    font-size: 0.55rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 0.55rem;
+    font-weight: 600;
 }
 
-@media(max-width: 640px) {
-  .wrap { padding: 2rem 1rem 4rem; }
-  .project-body { grid-template-columns: 1fr; }
-  .project-col { border-right: none; border-bottom: 1px solid var(--border); }
-  .project-col:last-child { border-bottom: none; }
+.rm-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.4rem;
+    margin-bottom: 0.22rem;
+    font-size: 0.71rem;
+    line-height: 1.45;
+    color: var(--muted);
+}
+.rm-item.done  { color: var(--text); }
+.rm-item.next  { color: var(--text); }
+.rm-item.stack { color: var(--muted); }
+.rm-item-bullet { flex-shrink: 0; font-size: 0.65rem; margin-top: 0.05rem; }
+.rm-item.done .rm-item-bullet  { color: var(--green); }
+.rm-item.next .rm-item-bullet  { color: var(--accent); }
+.rm-item.stack .rm-item-bullet { color: var(--border); }
+
+.rm-card-footer {
+    padding: 0.55rem 1rem;
+    border-top: 1px solid var(--border);
+    display: flex;
+    align-items: flex-start;
+    gap: 0.6rem;
+    font-size: 0.7rem;
+    background: var(--surface2);
+}
+.rm-footer-label {
+    font-size: 0.55rem;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+    font-weight: 700;
+    flex-shrink: 0;
+    margin-top: 0.05rem;
+}
+.rm-footer-label.green  { color: var(--green); }
+.rm-footer-label.accent { color: var(--accent); }
+.rm-footer-label.gold   { color: var(--gold); }
+.rm-footer-text { color: var(--muted); line-height: 1.5; }
+
+/* ── Mobile ─────────────────────────────────────────────────────────────── */
+@media (max-width: 640px) {
+    .rm-card-body { grid-template-columns: 1fr; }
+    .rm-col { border-right: none; border-bottom: 1px solid var(--border); }
+    .rm-col:last-child { border-bottom: none; }
+}
+@media (max-width: 480px) {
+    .rm-card-header { gap: 0.5rem; }
+    .rm-project-url { display: none; }
 }
 </style>
-</head>
-<body>
-<div class="wrap">
+{% endblock %}
 
-  <div class="masthead">
-    <div class="masthead-top">
-      <div class="brand">TNT<span>.</span>Mom</div>
-      <div class="plan-label">feuille de route projets · 2026</div>
-    </div>
-    <div class="masthead-meta">
-      <span>Naomie McMahon Tanguay</span>
-      <span>Mis à jour · 13 Mai 2026</span>
-      <span>6 projets actifs ou planifiés</span>
-    </div>
-  </div>
+{% block content %}
 
-  <!-- LÉGENDE -->
-  <div class="legend">
-    <div class="legend-item"><div class="legend-dot dot-green"></div>Complet / Live</div>
-    <div class="legend-item"><div class="legend-dot dot-orange"></div>En cours</div>
-    <div class="legend-item"><div class="legend-dot dot-blue"></div>Planifié · prochain</div>
-    <div class="legend-item"><div class="legend-dot dot-purple"></div>Apprentissage continu</div>
-    <div class="legend-item"><div class="legend-dot dot-muted"></div>Futur</div>
-  </div>
-
-  <!-- PROJETS ACTIFS -->
-  <div class="section-label">Projets actifs</div>
-
-  <!-- TNTMom WEBSITE -->
-  <div class="project-card">
-    <div class="project-card-header">
-      <div class="project-status-dot dot-green"></div>
-      <div class="project-name">TNTMom Website</div>
-      <span class="project-badge badge-green">Live ✓</span>
-      <span class="project-url">nerdytrapmom.com</span>
+{# ── HERO ─────────────────────────────────────────────────────────────────── #}
+<div class="rm-hero">
+    <div class="rm-eyebrow">TNTMom · Feuille de route projets · 2026</div>
+    <h1 class="rm-title">
+        Projets <span class="accent">&</span><br>
+        <span class="client-nom" style="font-size: inherit; display: inline-block; animation-delay: 0.3s;">Apprentissage</span>
+    </h1>
+    <div class="rm-sub">Naomie McMahon Tanguay · Mis à jour 16 Mai 2026 · 6 projets actifs ou planifiés</div>
+    <div class="rm-chips">
+        <div class="rm-chip"><strong style="color:var(--green);">3</strong> live ou complétés</div>
+        <div class="rm-chip"><strong style="color:var(--accent);">2</strong> en cours</div>
+        <div class="rm-chip"><strong style="color:var(--gold);">1</strong> en planification</div>
+        <div class="rm-chip"><strong>Phase 2</strong> business — premier client payant</div>
     </div>
-    <div class="project-body">
-      <div class="project-col">
-        <div class="col-label">Ce qui est fait</div>
-        <div class="done-item">6 pages complètes (index, projets, about, scheduler, tracker, contact)</div>
-        <div class="done-item">Design dark theme + logo SVG</div>
-        <div class="done-item">Formulaire contact Formspree</div>
-        <div class="done-item">Déployé sur GitHub Pages</div>
-      </div>
-      <div class="project-col">
-        <div class="col-label">Prochaines étapes</div>
-        <div class="next-item">LinkedIn mis à jour avec le lien</div>
-        <div class="next-item">Ajouter le widget TNTMom comme projet portfolio</div>
-        <div class="next-item">Ajouter le projet foodtruck quand live</div>
-      </div>
-      <div class="project-col">
-        <div class="col-label">Stack</div>
-        <div class="stack-item">HTML / CSS / JS</div>
-        <div class="stack-item">GitHub Pages</div>
-        <div class="stack-item">Formspree (contact)</div>
-      </div>
-    </div>
-    <div class="priority-row green-bg">
-      <span class="priority-label">Statut</span>
-      <span class="priority-text">Complet. Maintenance légère seulement — ajouter les nouveaux projets au fur et à mesure.</span>
-    </div>
-  </div>
-
-  <!-- NERDYTRAPMOM WIDGET -->
-  <div class="project-card">
-    <div class="project-card-header">
-      <div class="project-status-dot dot-muted"></div>
-      <div class="project-name">NerdyTrapMom Widget</div>
-      <span class="project-badge badge-muted">Archivé — intégré ✓</span>
-      <span class="project-url">_archives/FlaskLab</span>
-    </div>
-    <div class="project-body">
-      <div class="project-col">
-        <div class="col-label">Ce qui a été accompli</div>
-        <div class="done-item">Flask · routing · templates Jinja2</div>
-        <div class="done-item">Claude API connectée (Haiku)</div>
-        <div class="done-item">DB SQLite · 3 tables</div>
-        <div class="done-item">Projets + conversations dynamiques</div>
-        <div class="done-item">Historique persistant par conversation</div>
-        <div class="done-item">CRUD complet — supprimer conv + projet</div>
-        <div class="done-item">Déployé sur Render (phase d'apprentissage)</div>
-      </div>
-      <div class="project-col">
-        <div class="col-label">Statut</div>
-        <div class="done-item">Toutes les fonctionnalités absorbées dans le Family Dashboard (assistant + projets + conversations)</div>
-        <div class="done-item">Code archivé dans _archives/FlaskLab</div>
-        <div class="done-item">Projet complété — rôle pédagogique accompli</div>
-      </div>
-      <div class="project-col">
-        <div class="col-label">Stack</div>
-        <div class="stack-item">Flask · Python</div>
-        <div class="stack-item">Claude API · Anthropic SDK</div>
-        <div class="stack-item">SQLite</div>
-        <div class="stack-item">HTML / CSS / JS</div>
-      </div>
-    </div>
-    <div class="priority-row green-bg">
-      <span class="priority-label">Statut</span>
-      <span class="priority-text">Archivé le 10 Mai 2026. Projet fondateur — a permis d'apprendre Flask + Claude API + SQLite. Fonctionnalités vivantes dans le Family Dashboard.</span>
-    </div>
-  </div>
-
-  <!-- CLIENT PORTAL -->
-  <div class="project-card">
-    <div class="project-card-header">
-      <div class="project-status-dot dot-green"></div>
-      <div class="project-name">ClientPortal — Back-office Freelance</div>
-      <span class="project-badge badge-green">Live ✓ · Phase 2</span>
-      <span class="project-url">tntmom.pythonanywhere.com</span>
-    </div>
-    <div class="project-body">
-      <div class="project-col">
-        <div class="col-label">Ce qui est fait</div>
-        <div class="done-item">Back-office admin · clients, contrats, milestones</div>
-        <div class="done-item">Portail client · login + dashboard projets</div>
-        <div class="done-item">Auth séparée admin/client · sessions Flask</div>
-        <div class="done-item">Werkzeug password hashing · set par Naomie</div>
-        <div class="done-item">Multi-projets par client · timelines indépendantes</div>
-        <div class="done-item">Toggle milestones AJAX · sans reload · blocage si précédent non payé</div>
-        <div class="done-item">Signature électronique · horodatée côté portail</div>
-        <div class="done-item">Fichiers partagés · upload admin · download portail</div>
-        <div class="done-item">Messagerie bidirectionnelle · fils threadés par sujet</div>
-        <div class="done-item">Page "Contacter Naomie" · formulaire interne au portail</div>
-        <div class="done-item">Badge "En cours" au-dessus du dot actif de la timeline</div>
-        <div class="done-item">Contrat PDF imprimable · par projet</div>
-        <div class="done-item">Déploiement PythonAnywhere · WSGI config ✓</div>
-        <div class="done-item">Premier compte client actif · Annie McMahon</div>
-      </div>
-      <div class="project-col">
-        <div class="col-label">Prochaines étapes</div>
-        <div class="next-item">Notifications email · message reçu / réponse envoyée</div>
-        <div class="next-item">Badge non-lus dans le dashboard admin</div>
-        <div class="next-item">Facturation PDF · reçu auto quand milestone → payé</div>
-        <div class="next-item">Approbation livrables · bouton Approuver côté portail</div>
-        <div class="next-item">Deadline par milestone · visible dans la timeline</div>
-        <div class="next-item">Onboarder un vrai client payant</div>
-      </div>
-      <div class="project-col">
-        <div class="col-label">Stack</div>
-        <div class="stack-item">Flask · Python · SQLite</div>
-        <div class="stack-item">Werkzeug · password hashing</div>
-        <div class="stack-item">Jinja2 · CSS dark theme</div>
-        <div class="stack-item">JS · fetch API · AJAX</div>
-        <div class="stack-item">PythonAnywhere · WSGI</div>
-      </div>
-    </div>
-    <div class="priority-row green-bg">
-      <span class="priority-label">Statut</span>
-      <span class="priority-text">Phase 2+ complète · 13 Mai 2026. Multi-projets, messagerie threadée, signature électronique, AJAX milestones. Prochain focus : notifications email + badge non-lus + onboarder un client payant.</span>
-    </div>
-  </div>
-
-  <!-- PROJETS EN COURS -->
-  <div class="section-label">En cours</div>
-
-  <!-- MIMO -->
-  <div class="project-card">
-    <div class="project-card-header">
-      <div class="project-status-dot dot-purple"></div>
-      <div class="project-name">Apprentissage · Mimo JS</div>
-      <span class="project-badge badge-purple">Continu</span>
-    </div>
-    <div class="project-body">
-      <div class="project-col">
-        <div class="col-label">Ce qui est acquis</div>
-        <div class="done-item">Python · logique · fonctions · try/except</div>
-        <div class="done-item">HTML + CSS · diplômes Mimo</div>
-        <div class="done-item">SQL · bases relationnelles · SQLite</div>
-        <div class="done-item">JS · DOM · fetch API · JSON · async/await</div>
-        <div class="done-item">Flask · Jinja2 · routing · static files</div>
-        <div class="done-item">Auth Flask · sessions · login/logout · rôles</div>
-        <div class="done-item">Claude API · Anthropic SDK</div>
-        <div class="done-item">Git · GitHub · déploiement Render</div>
-        <div class="done-item">API REST · GET/POST/PUT/DELETE</div>
-      </div>
-      <div class="project-col">
-        <div class="col-label">Prochaines étapes</div>
-        <div class="done-item">Hashing mots de passe (werkzeug) ✓ · ClientPortal</div>
-        <div class="done-item">Déploiement PythonAnywhere · WSGI, dotenv, uWSGI ✓</div>
-        <div class="next-item">PostgreSQL en production</div>
-        <div class="next-item">React ou Vue — bases (Phase 3)</div>
-        <div class="next-item">Gestion de projet client · contrats · milestones</div>
-      </div>
-      <div class="project-col">
-        <div class="col-label">Rythme</div>
-        <div class="stack-item">Modules Mimo sur cell (quotidien)</div>
-        <div class="stack-item">Apprentissage par projet en VS Code</div>
-        <div class="stack-item">~13 000+ lignes écrites</div>
-        <div class="stack-item">2 apps Flask complètes buildées</div>
-      </div>
-    </div>
-    <div class="priority-row green-bg">
-      <span class="priority-label">Note</span>
-      <span class="priority-text">T'apprends plus vite en buildant de vrais projets qu'en faisant des modules théoriques. Les deux en parallèle.</span>
-    </div>
-  </div>
-
-  <!-- PROJETS PLANIFIÉS -->
-  <div class="section-label">Planifié · prochain</div>
-
-  <!-- FOODTRUCK -->
-  <div class="project-card">
-    <div class="project-card-header">
-      <div class="project-status-dot dot-blue"></div>
-      <div class="project-name">Foodtruck — Projet client #1</div>
-      <span class="project-badge badge-blue">En planification</span>
-      <span class="project-url">Premier client 0$ · maman</span>
-    </div>
-    <div class="project-body">
-      <div class="project-col">
-        <div class="col-label">Ce qui est fait</div>
-        <div class="done-item">Scope défini (site + app tablette)</div>
-        <div class="done-item">Stack identifié</div>
-        <div class="next-item" style="margin-top:.3rem;">Attente menu complet de la cliente</div>
-      </div>
-      <div class="project-col">
-        <div class="col-label">Livrables prévus</div>
-        <div class="next-item">Site vitrine · menu, horaires, localisation</div>
-        <div class="next-item">App tablette · prise de commande touch</div>
-        <div class="next-item">Historique commandes journée</div>
-        <div class="next-item">Déploiement Render</div>
-      </div>
-      <div class="project-col">
-        <div class="col-label">Stack prévu</div>
-        <div class="stack-item">Flask · Python</div>
-        <div class="stack-item">SQLite · DB commandes</div>
-        <div class="stack-item">CSS touch-friendly tablette</div>
-        <div class="stack-item">Render (hosting)</div>
-      </div>
-    </div>
-    <div class="priority-row">
-      <span class="priority-label">Priorité</span>
-      <span class="priority-text">Dès réception du menu — timing critique, saison d'été commence maintenant. Site vitrine semaine 1, app tablette semaines 2–3.</span>
-    </div>
-  </div>
-
-  <!-- PROJETS FUTURS -->
-  <div class="section-label">Futur</div>
-
-  <!-- FAMILY DASHBOARD -->
-  <div class="project-card">
-    <div class="project-card-header">
-      <div class="project-status-dot dot-orange"></div>
-      <div class="project-name">Family Dashboard — Kaboom Family Hub</div>
-      <span class="project-badge badge-orange">En cours · quasi-complet</span>
-    </div>
-    <div class="project-body">
-      <div class="project-col">
-        <div class="col-label">Ce qui est fait</div>
-        <div class="done-item">Structure Flask · app.py, database.py, templates</div>
-        <div class="done-item">Auth — login/logout, sessions, rôles parent/enfant</div>
-        <div class="done-item">DB SQLite · 9 tables (users, todos, events, grocery, projets, conversations, messages, parent_chat)</div>
-        <div class="done-item">Horaire heure par heure · 7h–22h</div>
-        <div class="done-item">To-do list · par user · par date</div>
-        <div class="done-item">Liste d'épicerie · parent seulement</div>
-        <div class="done-item">Vue enfants · horaire perso + dispo famille</div>
-        <div class="done-item">Claude AI intégré · assistant parent + chat</div>
-        <div class="done-item">Mode bilingue FR / EN / bilingue par user</div>
-        <div class="done-item">Thèmes visuels par utilisateur · couleur + pattern</div>
-        <div class="done-item">Jeux éducatifs · alphabet + additions</div>
-        <div class="done-item">Détection chevauchement events · client + serveur</div>
-        <div class="done-item">API REST complète · 20+ routes</div>
-      </div>
-      <div class="project-col">
-        <div class="col-label">Prochaines étapes</div>
-        <div class="next-item">Hashing mots de passe (sécurité)</div>
-        <div class="next-item">Secret key depuis .env</div>
-        <div class="next-item">Calendrier mensuel pop-up</div>
-        <div class="next-item">Déploiement cloud (Render / Railway)</div>
-        <div class="next-item">Vérification ownership sur delete/toggle</div>
-      </div>
-      <div class="project-col">
-        <div class="col-label">Stack</div>
-        <div class="stack-item">Flask · Python · 531 lignes app.py</div>
-        <div class="stack-item">SQLite · 9 tables · FK CASCADE</div>
-        <div class="stack-item">Claude API · Anthropic SDK (Haiku)</div>
-        <div class="stack-item">Jinja2 · CSS 30KB · JS inline</div>
-        <div class="stack-item">API REST · JSON</div>
-      </div>
-    </div>
-    <div class="priority-row">
-      <span class="priority-label">Priorité</span>
-      <span class="priority-text">Sécurité d'abord (passwords + secret key), puis déploiement cloud. L'app est fonctionnellement complète pour usage familial.</span>
-    </div>
-  </div>
-
-  <!-- BUSINESS -->
-  <div class="project-card">
-    <div class="project-card-header">
-      <div class="project-status-dot dot-orange"></div>
-      <div class="project-name">Business TNTMom · Freelance</div>
-      <span class="project-badge badge-orange">Phase 2 — en démarrage</span>
-    </div>
-    <div class="project-body">
-      <div class="project-col">
-        <div class="col-label">Ce qui est fait</div>
-        <div class="done-item">Plan d'affaires complet</div>
-        <div class="done-item">Site portfolio live</div>
-        <div class="done-item">3 projets déployés (site, widget archivé, ClientPortal)</div>
-        <div class="done-item">Modèle milestones défini</div>
-        <div class="done-item">ClientPortal back-office construit ✓</div>
-        <div class="done-item">Déploiement PythonAnywhere ✓</div>
-        <div class="done-item">Premier compte client actif · Annie McMahon ✓</div>
-      </div>
-      <div class="project-col">
-        <div class="col-label">Prochaines étapes</div>
-        <div class="next-item">LinkedIn mis à jour avec portfolio</div>
-        <div class="next-item">Livrer le projet foodtruck (bénévole)</div>
-        <div class="next-item">Témoignage client obtenu</div>
-        <div class="next-item">Premier client payant · 300–600$</div>
-      </div>
-      <div class="project-col">
-        <div class="col-label">Objectifs</div>
-        <div class="stack-item">Juin 2026 · premier client payant</div>
-        <div class="stack-item">Fin 2026 · 2 800–5 800$ cumulés</div>
-        <div class="stack-item">Max 2 clients simultanés</div>
-      </div>
-    </div>
-    <div class="priority-row">
-      <span class="priority-label">Priorité</span>
-      <span class="priority-text">LinkedIn + livraison foodtruck = les deux actions qui débloquent le premier client payant. À faire maintenant.</span>
-    </div>
-  </div>
-
-  <footer>
-    <span>TNT Mom · Feuille de route · 13 Mai 2026</span>
-    <span>Phase 1 complète · ClientPortal Phase 2 live · tntmom.pythonanywhere.com</span>
-    <a href="/dashboard" class="nav-btn">← Dashboard</a>
-    <a href="/plan" class="nav-btn">← Plan d'affaires</a>
-  </footer>
-
 </div>
-</body>
-</html>
+
+{# ── LÉGENDE ──────────────────────────────────────────────────────────────── #}
+<div class="rm-legend">
+    <div class="rm-legend-item"><div class="rm-dot rd-green"></div>Complet / Live</div>
+    <div class="rm-legend-item"><div class="rm-dot rd-accent"></div>En cours</div>
+    <div class="rm-legend-item"><div class="rm-dot rd-gold"></div>Planifié · prochain</div>
+    <div class="rm-legend-item"><div class="rm-dot rd-accent2"></div>Apprentissage continu</div>
+    <div class="rm-legend-item"><div class="rm-dot rd-muted"></div>Archivé</div>
+</div>
+
+{# ── LIVE ─────────────────────────────────────────────────────────────────── #}
+<div class="rm-section-label">Live &amp; complets</div>
+
+{# TNTMom Website #}
+<div class="rm-card s-green">
+    <div class="rm-card-header">
+        <div class="rm-status-dot rd-green"></div>
+        <span class="rm-project-name">TNTMom Website</span>
+        <span class="badge badge-actif" style="font-size:0.6rem;">Live ✓</span>
+        <span class="rm-project-url">tntm.ca · GitHub Pages</span>
+    </div>
+    <div class="rm-card-body">
+        <div class="rm-col">
+            <div class="rm-col-label">Ce qui est fait</div>
+            <div class="rm-item done"><span class="rm-item-bullet">✓</span><span>6 pages complètes — index, projets, about, scheduler, tracker, contact</span></div>
+            <div class="rm-item done"><span class="rm-item-bullet">✓</span><span>Design dark theme + logo SVG</span></div>
+            <div class="rm-item done"><span class="rm-item-bullet">✓</span><span>Formulaire contact Formspree</span></div>
+            <div class="rm-item done"><span class="rm-item-bullet">✓</span><span>Déployé sur GitHub Pages · domaine custom tntm.ca</span></div>
+        </div>
+        <div class="rm-col">
+            <div class="rm-col-label">Prochaines étapes</div>
+            <div class="rm-item next"><span class="rm-item-bullet">→</span><span>LinkedIn mis à jour avec le lien</span></div>
+            <div class="rm-item next"><span class="rm-item-bullet">→</span><span>Ajouter ClientPortal comme projet portfolio</span></div>
+            <div class="rm-item next"><span class="rm-item-bullet">→</span><span>Ajouter le projet foodtruck quand live</span></div>
+        </div>
+        <div class="rm-col">
+            <div class="rm-col-label">Stack</div>
+            <div class="rm-item stack"><span class="rm-item-bullet">·</span><span>HTML / CSS / JS</span></div>
+            <div class="rm-item stack"><span class="rm-item-bullet">·</span><span>GitHub Pages · domaine custom</span></div>
+            <div class="rm-item stack"><span class="rm-item-bullet">·</span><span>Formspree (contact)</span></div>
+        </div>
+    </div>
+    <div class="rm-card-footer">
+        <span class="rm-footer-label green">Statut</span>
+        <span class="rm-footer-text">Complet. Maintenance légère seulement — ajouter les nouveaux projets au fur et à mesure.</span>
+    </div>
+</div>
+
+{# ClientPortal #}
+<div class="rm-card s-green">
+    <div class="rm-card-header">
+        <div class="rm-status-dot rd-green"></div>
+        <span class="rm-project-name">ClientPortal — Back-office Freelance</span>
+        <span class="badge badge-actif" style="font-size:0.6rem;">Live ✓ · Phase 2+</span>
+        <span class="rm-project-url">tntmom.pythonanywhere.com</span>
+    </div>
+    <div class="rm-card-body">
+        <div class="rm-col">
+            <div class="rm-col-label">Ce qui est fait</div>
+            <div class="rm-item done"><span class="rm-item-bullet">✓</span><span>Back-office admin — clients, contrats, milestones</span></div>
+            <div class="rm-item done"><span class="rm-item-bullet">✓</span><span>Portail client — login, dashboard projets, timeline</span></div>
+            <div class="rm-item done"><span class="rm-item-bullet">✓</span><span>Auth séparée admin/client · Werkzeug password hashing</span></div>
+            <div class="rm-item done"><span class="rm-item-bullet">✓</span><span>Multi-projets par client · timelines indépendantes</span></div>
+            <div class="rm-item done"><span class="rm-item-bullet">✓</span><span>Toggle milestones AJAX · blocage si précédent non payé</span></div>
+            <div class="rm-item done"><span class="rm-item-bullet">✓</span><span>Signature électronique horodatée · fichiers partagés</span></div>
+            <div class="rm-item done"><span class="rm-item-bullet">✓</span><span>Messagerie bidirectionnelle · fils threadés · multi-messages</span></div>
+            <div class="rm-item done"><span class="rm-item-bullet">✓</span><span>Facturation — création, envoi courriel, marquer payée</span></div>
+            <div class="rm-item done"><span class="rm-item-bullet">✓</span><span>Formulaires client — assignation, soumission, réponses</span></div>
+            <div class="rm-item done"><span class="rm-item-bullet">✓</span><span>UX mobile — bottom nav, cards plein écran, tableaux → cartes</span></div>
+            <div class="rm-item done"><span class="rm-item-bullet">✓</span><span>Onglets fiche client — Résumé / Messages / Projets / Factures / Formulaires</span></div>
+            <div class="rm-item done"><span class="rm-item-bullet">✓</span><span>Command center dashboard — messages non lus + factures en attente</span></div>
+            <div class="rm-item done"><span class="rm-item-bullet">✓</span><span>Modals de confirmation personnalisées · globales dans base.html</span></div>
+            <div class="rm-item done"><span class="rm-item-bullet">✓</span><span>Notifications email · message reçu / réponse envoyée</span></div>
+            <div class="rm-item done"><span class="rm-item-bullet">✓</span><span>Premier compte client actif · Annie McMahon</span></div>
+        </div>
+        <div class="rm-col">
+            <div class="rm-col-label">Prochaines étapes</div>
+            <div class="rm-item next"><span class="rm-item-bullet">→</span><span>Facturation PDF — reçu auto quand milestone → payé</span></div>
+            <div class="rm-item next"><span class="rm-item-bullet">→</span><span>Approbation livrables — bouton Approuver côté portail client</span></div>
+            <div class="rm-item next"><span class="rm-item-bullet">→</span><span>Onboarder un vrai client payant via le portail</span></div>
+            <div class="rm-item next"><span class="rm-item-bullet">→</span><span>Domaine custom · tntm.ca (ou sous-domaine)</span></div>
+        </div>
+        <div class="rm-col">
+            <div class="rm-col-label">Stack</div>
+            <div class="rm-item stack"><span class="rm-item-bullet">·</span><span>Flask · Python · SQLite</span></div>
+            <div class="rm-item stack"><span class="rm-item-bullet">·</span><span>Werkzeug · password hashing</span></div>
+            <div class="rm-item stack"><span class="rm-item-bullet">·</span><span>Jinja2 · CSS dark theme v40</span></div>
+            <div class="rm-item stack"><span class="rm-item-bullet">·</span><span>JS · fetch API · AJAX · localStorage</span></div>
+            <div class="rm-item stack"><span class="rm-item-bullet">·</span><span>PythonAnywhere · WSGI</span></div>
+        </div>
+    </div>
+    <div class="rm-card-footer">
+        <span class="rm-footer-label green">Statut</span>
+        <span class="rm-footer-text">Phase 2+ · 16 Mai 2026. Portail freelance complet — UX mobile, onglets, command center, modals custom. Prochain focus : PDF factures + premier client payant.</span>
+    </div>
+</div>
+
+{# NerdyTrapMom Widget — archivé #}
+<div class="rm-card s-muted">
+    <div class="rm-card-header">
+        <div class="rm-status-dot rd-muted"></div>
+        <span class="rm-project-name">NerdyTrapMom Widget</span>
+        <span class="badge" style="font-size:0.6rem; background:var(--surface2); color:var(--muted);">Archivé — intégré ✓</span>
+        <span class="rm-project-url">_archives/FlaskLab</span>
+    </div>
+    <div class="rm-card-body">
+        <div class="rm-col">
+            <div class="rm-col-label">Ce qui a été accompli</div>
+            <div class="rm-item done"><span class="rm-item-bullet">✓</span><span>Flask · routing · templates Jinja2</span></div>
+            <div class="rm-item done"><span class="rm-item-bullet">✓</span><span>Claude API connectée (Haiku)</span></div>
+            <div class="rm-item done"><span class="rm-item-bullet">✓</span><span>DB SQLite · CRUD complet</span></div>
+            <div class="rm-item done"><span class="rm-item-bullet">✓</span><span>Déployé sur Render</span></div>
+        </div>
+        <div class="rm-col">
+            <div class="rm-col-label">Statut</div>
+            <div class="rm-item done"><span class="rm-item-bullet">✓</span><span>Fonctionnalités absorbées dans le Family Dashboard</span></div>
+            <div class="rm-item done"><span class="rm-item-bullet">✓</span><span>Code archivé dans _archives/FlaskLab</span></div>
+            <div class="rm-item done"><span class="rm-item-bullet">✓</span><span>Rôle pédagogique accompli — projet fondateur</span></div>
+        </div>
+        <div class="rm-col">
+            <div class="rm-col-label">Stack</div>
+            <div class="rm-item stack"><span class="rm-item-bullet">·</span><span>Flask · Python · SQLite</span></div>
+            <div class="rm-item stack"><span class="rm-item-bullet">·</span><span>Claude API · Anthropic SDK</span></div>
+            <div class="rm-item stack"><span class="rm-item-bullet">·</span><span>Render (hosting)</span></div>
+        </div>
+    </div>
+    <div class="rm-card-footer">
+        <span class="rm-footer-label" style="color:var(--muted);">Archivé</span>
+        <span class="rm-footer-text">10 Mai 2026. Projet fondateur — a permis d'apprendre Flask + Claude API + SQLite en une journée. Fonctionnalités vivantes dans le Family Dashboard.</span>
+    </div>
+</div>
+
+{# ── EN COURS ─────────────────────────────────────────────────────────────── #}
+<div class="rm-section-label">En cours</div>
+
+{# Family Dashboard #}
+<div class="rm-card s-accent">
+    <div class="rm-card-header">
+        <div class="rm-status-dot rd-accent"></div>
+        <span class="rm-project-name">Family Dashboard — Kaboom Family Hub</span>
+        <span class="badge badge-envoyé" style="font-size:0.6rem;">En cours · quasi-complet</span>
+        <span class="rm-project-url">Local port 5001 — déploiement à venir</span>
+    </div>
+    <div class="rm-card-body">
+        <div class="rm-col">
+            <div class="rm-col-label">Ce qui est fait</div>
+            <div class="rm-item done"><span class="rm-item-bullet">✓</span><span>Auth — login/logout · sessions · rôles parent/enfant</span></div>
+            <div class="rm-item done"><span class="rm-item-bullet">✓</span><span>DB SQLite · 9 tables · FK CASCADE</span></div>
+            <div class="rm-item done"><span class="rm-item-bullet">✓</span><span>Horaire heure par heure · 7h–22h</span></div>
+            <div class="rm-item done"><span class="rm-item-bullet">✓</span><span>To-do list · épicerie · vue enfants</span></div>
+            <div class="rm-item done"><span class="rm-item-bullet">✓</span><span>Claude AI intégré · assistant parent + chat</span></div>
+            <div class="rm-item done"><span class="rm-item-bullet">✓</span><span>Mode bilingue FR / EN · thèmes par utilisateur</span></div>
+            <div class="rm-item done"><span class="rm-item-bullet">✓</span><span>Jeux éducatifs · alphabet + additions</span></div>
+            <div class="rm-item done"><span class="rm-item-bullet">✓</span><span>API REST · 20+ routes · détection chevauchements</span></div>
+        </div>
+        <div class="rm-col">
+            <div class="rm-col-label">Prochaines étapes</div>
+            <div class="rm-item next"><span class="rm-item-bullet">→</span><span>Password hashing (sécurité)</span></div>
+            <div class="rm-item next"><span class="rm-item-bullet">→</span><span>Secret key depuis .env</span></div>
+            <div class="rm-item next"><span class="rm-item-bullet">→</span><span>Calendrier mensuel pop-up</span></div>
+            <div class="rm-item next"><span class="rm-item-bullet">→</span><span>Déploiement cloud (Render / Railway)</span></div>
+        </div>
+        <div class="rm-col">
+            <div class="rm-col-label">Stack</div>
+            <div class="rm-item stack"><span class="rm-item-bullet">·</span><span>Flask · Python · SQLite 9 tables</span></div>
+            <div class="rm-item stack"><span class="rm-item-bullet">·</span><span>Claude API · Anthropic SDK</span></div>
+            <div class="rm-item stack"><span class="rm-item-bullet">·</span><span>Jinja2 · CSS · JS inline</span></div>
+            <div class="rm-item stack"><span class="rm-item-bullet">·</span><span>API REST · JSON</span></div>
+        </div>
+    </div>
+    <div class="rm-card-footer">
+        <span class="rm-footer-label accent">Priorité</span>
+        <span class="rm-footer-text">Sécurité d'abord (passwords + .env), puis déploiement cloud. L'app est fonctionnellement complète pour usage familial.</span>
+    </div>
+</div>
+
+{# Apprentissage #}
+<div class="rm-card s-accent2">
+    <div class="rm-card-header">
+        <div class="rm-status-dot rd-accent2"></div>
+        <span class="rm-project-name">Apprentissage continu</span>
+        <span class="badge" style="font-size:0.6rem; background:rgba(240,180,41,0.12); color:var(--gold); border:1px solid rgba(240,180,41,0.25);">Continu</span>
+    </div>
+    <div class="rm-card-body">
+        <div class="rm-col">
+            <div class="rm-col-label">Stack acquis</div>
+            <div class="rm-item done"><span class="rm-item-bullet">✓</span><span>Python · fonctions · logique · try/except</span></div>
+            <div class="rm-item done"><span class="rm-item-bullet">✓</span><span>HTML + CSS · diplômes Mimo</span></div>
+            <div class="rm-item done"><span class="rm-item-bullet">✓</span><span>SQL · SQLite · FK · row_factory</span></div>
+            <div class="rm-item done"><span class="rm-item-bullet">✓</span><span>JS · DOM · fetch API · async/await</span></div>
+            <div class="rm-item done"><span class="rm-item-bullet">✓</span><span>Flask · Jinja2 · routing · static files</span></div>
+            <div class="rm-item done"><span class="rm-item-bullet">✓</span><span>Auth Flask · sessions · rôles · Werkzeug</span></div>
+            <div class="rm-item done"><span class="rm-item-bullet">✓</span><span>Claude API · Anthropic SDK · .env</span></div>
+            <div class="rm-item done"><span class="rm-item-bullet">✓</span><span>Git · GitHub · déploiement PA + Render</span></div>
+        </div>
+        <div class="rm-col">
+            <div class="rm-col-label">Prochaines étapes</div>
+            <div class="rm-item next"><span class="rm-item-bullet">→</span><span>PostgreSQL en production</span></div>
+            <div class="rm-item next"><span class="rm-item-bullet">→</span><span>React ou Vue — bases (Phase 3)</span></div>
+            <div class="rm-item next"><span class="rm-item-bullet">→</span><span>Gestion de projet client · scope · contrats</span></div>
+        </div>
+        <div class="rm-col">
+            <div class="rm-col-label">Rythme</div>
+            <div class="rm-item stack"><span class="rm-item-bullet">·</span><span>Modules Mimo sur cell (quotidien)</span></div>
+            <div class="rm-item stack"><span class="rm-item-bullet">·</span><span>Apprentissage par projet en VS Code</span></div>
+            <div class="rm-item stack"><span class="rm-item-bullet">·</span><span>~13 000+ lignes écrites</span></div>
+            <div class="rm-item stack"><span class="rm-item-bullet">·</span><span>2 apps Flask complètes + portail freelance</span></div>
+        </div>
+    </div>
+    <div class="rm-card-footer">
+        <span class="rm-footer-label gold">Note</span>
+        <span class="rm-footer-text">T'apprends plus vite en buildant de vrais projets qu'en faisant des modules théoriques. Les deux en parallèle, c'est la méthode qui marche.</span>
+    </div>
+</div>
+
+{# ── PLANIFIÉ ─────────────────────────────────────────────────────────────── #}
+<div class="rm-section-label">Planifié · prochain</div>
+
+{# Foodtruck #}
+<div class="rm-card s-gold">
+    <div class="rm-card-header">
+        <div class="rm-status-dot rd-gold"></div>
+        <span class="rm-project-name">Foodtruck — Projet client #1</span>
+        <span class="badge" style="font-size:0.6rem; background:rgba(200,150,62,0.12); color:var(--gold); border:1px solid rgba(200,150,62,0.25);">En planification</span>
+        <span class="rm-project-url">Premier client · famille</span>
+    </div>
+    <div class="rm-card-body">
+        <div class="rm-col">
+            <div class="rm-col-label">Ce qui est fait</div>
+            <div class="rm-item done"><span class="rm-item-bullet">✓</span><span>Scope défini — site vitrine + app tablette</span></div>
+            <div class="rm-item done"><span class="rm-item-bullet">✓</span><span>Stack identifié</span></div>
+            <div class="rm-item next"><span class="rm-item-bullet">→</span><span>En attente du menu complet de la cliente</span></div>
+        </div>
+        <div class="rm-col">
+            <div class="rm-col-label">Livrables prévus</div>
+            <div class="rm-item next"><span class="rm-item-bullet">→</span><span>Site vitrine — menu, horaires, localisation</span></div>
+            <div class="rm-item next"><span class="rm-item-bullet">→</span><span>App tablette — prise de commande touch</span></div>
+            <div class="rm-item next"><span class="rm-item-bullet">→</span><span>Historique commandes journée</span></div>
+            <div class="rm-item next"><span class="rm-item-bullet">→</span><span>Déploiement Render</span></div>
+        </div>
+        <div class="rm-col">
+            <div class="rm-col-label">Stack prévu</div>
+            <div class="rm-item stack"><span class="rm-item-bullet">·</span><span>Flask · Python · SQLite</span></div>
+            <div class="rm-item stack"><span class="rm-item-bullet">·</span><span>CSS touch-friendly tablette</span></div>
+            <div class="rm-item stack"><span class="rm-item-bullet">·</span><span>Render (hosting)</span></div>
+        </div>
+    </div>
+    <div class="rm-card-footer">
+        <span class="rm-footer-label gold">Priorité</span>
+        <span class="rm-footer-text">Dès réception du menu — saison d'été commence maintenant. Site vitrine semaine 1, app tablette semaines 2–3.</span>
+    </div>
+</div>
+
+{# Business #}
+<div class="rm-card s-gold">
+    <div class="rm-card-header">
+        <div class="rm-status-dot rd-gold"></div>
+        <span class="rm-project-name">Business TNTMom · Freelance</span>
+        <span class="badge badge-envoyé" style="font-size:0.6rem;">Phase 2 — en démarrage</span>
+    </div>
+    <div class="rm-card-body">
+        <div class="rm-col">
+            <div class="rm-col-label">Ce qui est fait</div>
+            <div class="rm-item done"><span class="rm-item-bullet">✓</span><span>Plan d'affaires complet + feuille de route</span></div>
+            <div class="rm-item done"><span class="rm-item-bullet">✓</span><span>Site portfolio live · tntm.ca</span></div>
+            <div class="rm-item done"><span class="rm-item-bullet">✓</span><span>Modèle milestones défini + contrat rodé</span></div>
+            <div class="rm-item done"><span class="rm-item-bullet">✓</span><span>ClientPortal back-office + PA ✓</span></div>
+            <div class="rm-item done"><span class="rm-item-bullet">✓</span><span>Premier compte client actif · Annie McMahon</span></div>
+        </div>
+        <div class="rm-col">
+            <div class="rm-col-label">Prochaines étapes</div>
+            <div class="rm-item next"><span class="rm-item-bullet">→</span><span>LinkedIn mis à jour avec portfolio</span></div>
+            <div class="rm-item next"><span class="rm-item-bullet">→</span><span>Livrer le projet foodtruck (bénévole)</span></div>
+            <div class="rm-item next"><span class="rm-item-bullet">→</span><span>Témoignage client obtenu</span></div>
+            <div class="rm-item next"><span class="rm-item-bullet">→</span><span>Premier client payant · 300–600$</span></div>
+        </div>
+        <div class="rm-col">
+            <div class="rm-col-label">Objectifs</div>
+            <div class="rm-item stack"><span class="rm-item-bullet">·</span><span>Juin 2026 — premier client payant</span></div>
+            <div class="rm-item stack"><span class="rm-item-bullet">·</span><span>Fin 2026 — 2 800–5 800$ cumulés</span></div>
+            <div class="rm-item stack"><span class="rm-item-bullet">·</span><span>Max 2 clients simultanés</span></div>
+        </div>
+    </div>
+    <div class="rm-card-footer">
+        <span class="rm-footer-label gold">Priorité</span>
+        <span class="rm-footer-text">LinkedIn + livraison foodtruck = les deux actions qui débloquent le premier client payant. À faire maintenant.</span>
+    </div>
+</div>
+
+{% endblock %}

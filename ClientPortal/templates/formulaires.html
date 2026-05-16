@@ -51,9 +51,7 @@
             <span class="text-muted" style="font-size: 0.72rem;">{{ f.created_at[:10] }}</span>
             <form id="del-form-{{ f.id }}" method="POST" action="/formulaires/{{ f.id }}/delete">
                 <button type="button" class="btn btn-ghost" style="font-size: 0.75rem; color: var(--red);"
-                        onclick="event.stopPropagation();
-                                 if(confirm('Supprimer « {{ f.titre }} » et toutes ses questions ?'))
-                                     document.getElementById('del-form-{{ f.id }}').submit();">✕</button>
+                        onclick="event.stopPropagation(); openDeleteModal('del-form-{{ f.id }}', 'Supprimer « {{ f.titre }} » et toutes ses questions ?')">✕</button>
             </form>
         </div>
     </div>

@@ -61,17 +61,32 @@
 
         {% for subject, msgs in threads %}
         {% set last = msgs[-1] %}
+
+        {# Calcule : nouvelles réponses non lues + messages consécutifs sans réponse (depuis la fin) #}
+        {% set ns = namespace(has_new=false, trailing=0, stopped=false) %}
+        {% for msg in msgs %}
+            {% if msg.reponse and msg.lu_client == 0 %}{% set ns.has_new = true %}{% endif %}
+        {% endfor %}
+        {% for msg in msgs|reverse %}
+            {% if not ns.stopped %}
+                {% if msg.reponse %}{% set ns.stopped = true %}
+                {% else %}{% set ns.trailing = ns.trailing + 1 %}{% endif %}
+            {% endif %}
+        {% endfor %}
+
         <details class="chat-thread" open>
             <summary>
-                <span>{{ subject }}</span>
+                <span>
+                    {{ subject }}
+                    {% if ns.has_new %}<span class="thread-new-badge">Nouvelle réponse</span>{% endif %}
+                </span>
                 <span style="font-size: 0.65rem; color: var(--muted); font-weight: 400;">
                     {{ msgs[0].created_at[:10] }}
-                    {% if not last.reponse %} · En attente…{% endif %}
+                    {% if ns.trailing > 0 and not ns.has_new %} · En attente…{% endif %}
                 </span>
             </summary>
             <div class="chat-thread-body">
 
-                {# Tous les messages du fil dans l'ordre #}
                 {% for msg in msgs %}
                 <div class="chat-row">
                     <div class="chat-bubble client">
@@ -81,29 +96,30 @@
                 </div>
                 {% if msg.reponse %}
                 <div class="chat-row">
-                    <div class="chat-bubble admin">
-                        <div class="chat-meta">Naomie · {{ msg.repondu_at | to_local | replace('T', ' ') }}</div>
+                    <div class="chat-bubble admin {% if msg.lu_client == 0 %}chat-bubble--new{% endif %}">
+                        <div class="chat-meta">
+                            Naomie · {{ msg.repondu_at | to_local | replace('T', ' ') }}
+                            {% if msg.lu_client == 0 %}<span class="chat-new-dot">● nouveau</span>{% endif %}
+                        </div>
                         {{ msg.reponse }}
                     </div>
                 </div>
                 {% endif %}
                 {% endfor %}
 
-                {# Formulaire de réponse — seulement si Naomie a répondu au dernier message #}
-                {% if last.reponse %}
-                <details class="collapsible" style="margin-top: 0.5rem;">
-                    <summary style="font-size: 0.75rem;">↩ Répondre</summary>
-                    <div class="collapsible-body">
-                        <form method="POST" action="/portail/contact">
-                            <input type="hidden" name="sujet" value="{{ subject }}">
-                            <textarea name="message" rows="3" required
-                                      placeholder="Continue la conversation…"
-                                      style="width: 100%; margin-bottom: 0.5rem; font-size: 0.85rem;"></textarea>
-                            <button type="submit" class="btn btn-primary"
-                                    style="font-size: 0.8rem;">Envoyer</button>
-                        </form>
-                    </div>
-                </details>
+                {# Formulaire : toujours visible sauf si 5 messages sans réponse consécutifs #}
+                {% if ns.trailing < 5 %}
+                <form method="POST" action="/portail/contact" class="chat-reply-form">
+                    <input type="hidden" name="sujet" value="{{ subject }}">
+                    <textarea name="message" rows="2" required
+                              placeholder="{% if last.reponse %}Répondre à Naomie…{% else %}Ajouter un message…{% endif %}"></textarea>
+                    <button type="submit" class="btn btn-primary">Envoyer</button>
+                </form>
+                {% else %}
+                <div style="font-size:0.78rem; color:var(--muted); padding:0.5rem 0;
+                            text-align:center; font-style:italic;">
+                    En attente d'une réponse de Naomie avant de pouvoir envoyer d'autres messages.
+                </div>
                 {% endif %}
 
             </div>

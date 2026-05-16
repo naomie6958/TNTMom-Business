@@ -107,7 +107,7 @@ a:hover { color: var(--accent); }
 /* ── LAYOUT ──────────────────────────────────────────────────────────────── */
 .app-layout {
     display: grid;
-    grid-template-columns: 270px 1fr;
+    grid-template-columns: 220px 1fr;
     min-height: 100vh;
 }
 
@@ -882,8 +882,10 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     .timeline-point { min-width: 68px; flex-shrink: 0; }
     .timeline-label { font-size: 0.62rem; max-width: 64px; }
 
-    /* Cibles touch min 44px */
-    .btn { min-height: 44px; padding: 0.6rem 0.9rem; }
+    /* Cibles touch : primaire 40px, utilitaires ghost/danger 36px */
+    .btn          { min-height: 40px; padding: 0.5rem 0.85rem; }
+    .btn-ghost    { min-height: 36px; }
+    .btn-danger   { min-height: 36px; }
 
     .page-header { flex-direction: column; align-items: flex-start; margin-bottom: 1.2rem; }
     .milestone-row { grid-template-columns: 1fr 1fr; }
@@ -895,6 +897,49 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     /* Form inline projet → pleine largeur */
     .projet-new-input { width: 100% !important; margin-bottom: 0.5rem; }
     .projet-new-form { flex-direction: column; }
+
+    /* ── UX admin mobile ─────────────────────────────────────────────────── */
+    /* Section-header : titre + bouton action wrap si besoin, bouton compact */
+    .section-header { flex-wrap: wrap; gap: 0.4rem 0.8rem; }
+    .section-header .btn { min-height: 34px; padding: 0.28rem 0.6rem; font-size: 0.77rem; }
+
+    /* Header fiche client : actions plus compactes */
+    .fiche-hdr-actions .btn { min-height: 34px; }
+
+    /* Facture table : masquer N° — colonne non critique mobile */
+    .fiche-invoice-wrap table th:nth-child(1),
+    .fiche-invoice-wrap table td:nth-child(1) { display: none; }
+
+    /* Fichiers partagés : wrap sur petits écrans */
+    .fiche-file-row { flex-wrap: wrap; gap: 0.4rem; }
+    .fiche-file-row > div:first-child { flex: 1; min-width: 0; }
+
+    /* Upload fichier : bouton pleine largeur sur mobile */
+    .fiche-upload-form { flex-direction: column; }
+    .fiche-upload-form .btn { width: 100%; }
+
+    /* ── Portail client UX ──────────────────────────────────────────────── */
+    /* Factures table → card layout : N°|Description|Montant|Statut|PDF */
+    .factures-table-wrap { overflow-x: visible; }
+    .factures-table-wrap table thead { display: none; }
+    .factures-table-wrap table tbody tr {
+        display: grid;
+        grid-template-columns: 1fr auto;
+        padding: 0.8rem 0;
+        border-bottom: 1px solid var(--border);
+        gap: 0.15rem 0.6rem;
+    }
+    .factures-table-wrap table tbody tr:last-child { border-bottom: none; }
+    .factures-table-wrap table td { display: block; padding: 0; border: none; }
+    .factures-table-wrap table td:nth-child(1) { display: none; }
+    .factures-table-wrap table td:nth-child(2) { grid-column: 1; grid-row: 1; }
+    .factures-table-wrap table td:nth-child(3) { grid-column: 2; grid-row: 1; text-align: right !important; align-self: start; }
+    .factures-table-wrap table td:nth-child(4) { grid-column: 1; grid-row: 2; }
+    .factures-table-wrap table td:nth-child(5) { grid-column: 2; grid-row: 2; text-align: right !important; }
+
+    /* Chat reply : textarea pleine largeur, bouton aligné à droite */
+    .chat-reply-form { flex-direction: column; align-items: flex-end; }
+    .chat-reply-form textarea { width: 100%; box-sizing: border-box; min-height: 72px; }
 }
 
 /* ── DASHBOARD FICHIERS CLIENT — layout mobile ───────────────────────────── */
@@ -916,6 +961,10 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     .stats-bar { grid-template-columns: 1fr 1fr; gap: 0.4rem; }
     .main { padding: 0.75rem 0.65rem; }
     .card { padding: 0.8rem; }
+
+    /* Next-action card : bouton CTA pleine largeur sur très petits écrans */
+    .next-action-card { flex-direction: column; align-items: flex-start; }
+    .na-btn { width: 100%; text-align: center; justify-content: center; }
 }
 
 /* ── FLASH MESSAGES ─────────────────────────────────────────────────────── */
@@ -940,6 +989,196 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     background: rgba(220, 80, 80, 0.15);
     border: 1px solid var(--red);
     color: var(--red);
+}
+
+/* ── TABS FICHE CLIENT ───────────────────────────────────────────────────── */
+.fiche-tabs {
+    display: flex;
+    border-bottom: 2px solid var(--border);
+    margin-bottom: 1.2rem;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    gap: 0;
+}
+.tab-btn {
+    background: none;
+    border: none;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -2px;
+    padding: 0.6rem 1.1rem;
+    color: var(--muted);
+    font-size: 0.82rem;
+    letter-spacing: 0.04em;
+    cursor: pointer;
+    white-space: nowrap;
+    font-family: inherit;
+    transition: color 0.15s, border-color 0.15s;
+}
+.tab-btn:hover { color: var(--text); }
+.tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); font-weight: 600; }
+.tab-count {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--accent);
+    color: #fff;
+    font-size: 0.58rem;
+    font-weight: 700;
+    border-radius: 99px;
+    padding: 1px 5px;
+    min-width: 15px;
+    margin-left: 4px;
+    vertical-align: middle;
+}
+.tab-panel { display: none; }
+.tab-panel.active { display: flex; flex-direction: column; gap: 1rem; }
+
+/* ── COMMAND CENTER DASHBOARD ────────────────────────────────────────────── */
+.cmd-center {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    margin-bottom: 1.2rem;
+}
+.cmd-section {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+}
+.cmd-section-title {
+    padding: 0.6rem 1rem;
+    font-size: 0.7rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted);
+    border-bottom: 1px solid var(--border);
+    background: var(--surface2);
+}
+.cmd-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    padding: 0.65rem 1rem;
+    border-bottom: 1px solid var(--border);
+    gap: 0.8rem;
+    cursor: pointer;
+    transition: background 0.12s;
+    text-decoration: none;
+    color: inherit;
+}
+.cmd-row:last-child { border-bottom: none; }
+.cmd-row:hover { background: var(--surface2); }
+.cmd-row-left { flex: 1; min-width: 0; }
+.cmd-row-left strong { display: block; font-size: 0.85rem; margin-bottom: 0.1rem; color: var(--text); }
+.cmd-subject { display: block; font-size: 0.72rem; color: var(--accent2); margin-bottom: 0.15rem; }
+.cmd-preview {
+    display: block; font-size: 0.78rem; color: var(--muted);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.cmd-row-right {
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 0.35rem;
+}
+.cmd-time { font-size: 0.67rem; color: var(--muted); }
+.cmd-empty { padding: 0.8rem 1rem; font-size: 0.82rem; color: var(--muted); font-style: italic; }
+.cmd-montant { font-size: 0.88rem; font-weight: 700; color: var(--green); }
+@media (max-width: 700px) { .cmd-center { grid-template-columns: 1fr; } }
+
+/* ── BADGES NAV MESSAGES ─────────────────────────────────────────────────── */
+.nav-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--accent);
+    color: #fff;
+    font-size: 0.58rem;
+    font-weight: 700;
+    min-width: 16px;
+    height: 16px;
+    border-radius: 99px;
+    padding: 0 4px;
+    margin-left: 5px;
+    vertical-align: middle;
+    line-height: 1;
+}
+
+.pbn-badge {
+    position: absolute;
+    top: -4px;
+    right: -4px;
+    background: var(--accent);
+    color: #fff;
+    font-size: 0.5rem;
+    font-weight: 700;
+    min-width: 14px;
+    height: 14px;
+    border-radius: 99px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 3px;
+}
+
+.pbn-icon { position: relative; display: inline-block; }
+
+/* ── BADGES CONVERSATION ─────────────────────────────────────────────────── */
+.thread-new-badge {
+    display: inline-block;
+    background: var(--accent);
+    color: #fff;
+    font-size: 0.55rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    padding: 2px 7px;
+    border-radius: 99px;
+    margin-left: 0.5rem;
+    vertical-align: middle;
+    text-transform: uppercase;
+    animation: dot-pulse 2s ease-in-out infinite;
+}
+
+.chat-bubble--new {
+    border-left-color: var(--accent) !important;
+    background: rgba(217, 79, 189, 0.1) !important;
+}
+
+.chat-new-dot {
+    color: var(--accent);
+    font-size: 0.6rem;
+    font-weight: 700;
+    margin-left: 0.4rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+/* ── FORMULAIRE RÉPONSE INLINE ───────────────────────────────────────────── */
+.chat-reply-form {
+    display: flex;
+    gap: 0.5rem;
+    align-items: flex-end;
+    margin-top: 0.75rem;
+    padding-top: 0.75rem;
+    border-top: 1px solid var(--border);
+}
+
+.chat-reply-form textarea {
+    flex: 1;
+    resize: none;
+    font-size: 0.85rem;
+    padding: 0.45rem 0.7rem;
+    min-height: 60px;
+}
+
+.chat-reply-form .btn {
+    flex-shrink: 0;
+    align-self: flex-end;
+    font-size: 0.8rem;
+    padding: 0.45rem 0.9rem;
+    min-height: unset;
 }
 
 /* ── CHAT MESSAGES ───────────────────────────────────────────────────────── */
@@ -1106,6 +1345,113 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 .chat-thread-body {
     padding: 0.7rem 0.8rem 0.4rem;
 }
+
+/* ── ÉTAPES PROJET (portail client) ─────────────────────────────────────── */
+.ms-steps { display: flex; flex-direction: column; margin-top: 1rem; }
+
+.ms-step {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.9rem;
+    position: relative;
+}
+
+.ms-step:not(:last-child)::after {
+    content: '';
+    position: absolute;
+    left: 13px;
+    top: 30px;
+    bottom: 0;
+    width: 2px;
+    background: var(--border);
+    z-index: 0;
+}
+.ms-step.done:not(:last-child)::after { background: var(--green); opacity: 0.35; }
+.ms-step.active:not(:last-child)::after { background: var(--accent); opacity: 0.25; }
+
+.ms-icon {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    border: 2px solid var(--border);
+    background: var(--surface2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.75rem;
+    flex-shrink: 0;
+    z-index: 1;
+    position: relative;
+    margin-top: 0.1rem;
+}
+.ms-step.done .ms-icon {
+    background: var(--green);
+    border-color: var(--green);
+    color: #0f0f14;
+    font-weight: 900;
+    font-size: 0.68rem;
+}
+.ms-step.active .ms-icon {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #fff;
+    animation: dot-pulse 2s ease-in-out infinite;
+}
+
+.ms-body {
+    flex: 1;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    padding: 0.15rem 0 1rem;
+    border-bottom: 1px solid var(--border);
+    gap: 0.75rem;
+    min-width: 0;
+}
+.ms-step:last-child .ms-body { border-bottom: none; padding-bottom: 0.1rem; }
+
+.ms-titre {
+    font-size: 0.88rem;
+    color: var(--muted);
+    line-height: 1.35;
+}
+.ms-step.done .ms-titre   { color: var(--text); }
+.ms-step.active .ms-titre { color: var(--accent); font-weight: 600; }
+
+.ms-meta {
+    font-size: 0.7rem;
+    color: var(--muted);
+    margin-top: 0.2rem;
+    opacity: 0.7;
+}
+
+.ms-right {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 0.2rem;
+    flex-shrink: 0;
+}
+
+.ms-prix {
+    font-size: 0.78rem;
+    color: var(--muted);
+}
+.ms-step.done .ms-prix   { color: var(--green); }
+.ms-step.active .ms-prix { color: var(--accent); }
+
+.ms-badge-step {
+    font-size: 0.58rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 2px 7px;
+    border-radius: 4px;
+    font-weight: 600;
+    background: var(--surface2);
+    color: var(--muted);
+}
+.ms-step.done .ms-badge-step   { background: rgba(62,207,142,0.1); color: var(--green); }
+.ms-step.active .ms-badge-step { background: rgba(217,79,189,0.1); color: var(--accent); }
 
 /* ── TIMELINE MILESTONES (portail client) ────────────────────────────────── */
 .timeline {
@@ -1431,4 +1777,91 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     /* Bouton déconnexion dans la bottom nav */
     .pbn-logout { color: var(--red); opacity: 0.6; }
     .pbn-logout:hover { opacity: 1; }
+}
+
+/* ── ADMIN BOTTOM NAV (mobile only) ─────────────────────────────────────────── */
+.admin-bottom-nav { display: none; }
+
+@media (max-width: 600px) {
+    /* Cache la sidebar nav + user admin sur mobile — remplacés par la bottom bar */
+    .sidebar:not(.sidebar-portail) .sidebar-nav,
+    .sidebar:not(.sidebar-portail) .sidebar-user { display: none; }
+
+    /* Sidebar admin réduite au logo centré */
+    .sidebar:not(.sidebar-portail) { justify-content: center; padding: 0.6rem 1rem; }
+
+    /* Espace en bas pour ne pas masquer le contenu */
+    .sidebar:not(.sidebar-portail) ~ .main { padding-bottom: 80px; }
+
+    /* Bottom bar admin visible */
+    .admin-bottom-nav {
+        display: flex;
+        position: fixed;
+        bottom: 0; left: 0; right: 0;
+        z-index: 100;
+        background: var(--surface);
+        border-top: 1px solid var(--border);
+        height: 60px;
+    }
+}
+
+/* ── CLIENT FICHE ADMIN — mobile fixes ─────────────────────────────────────── */
+.fiche-file-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.5rem 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 0.85rem;
+}
+
+.fiche-invoice-wrap {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    margin-bottom: 1rem;
+}
+
+.facture-form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.7rem;
+    margin-bottom: 0.7rem;
+}
+
+@media (max-width: 540px) {
+    /* !important needed to beat inline style align-items: flex-end */
+    .fiche-hdr-actions { align-items: flex-start !important; width: 100%; }
+    .fiche-hdr-actions form select { width: 100%; box-sizing: border-box; }
+    .fiche-hdr-actions > div { flex-wrap: wrap; }
+    .facture-form-grid { grid-template-columns: 1fr; }
+
+    /* ── Dashboard client table → card list ──────────────────────── */
+    .client-table-wrap { overflow-x: visible; }
+    .client-table thead { display: none; }
+    .client-table tbody tr {
+        display: grid;
+        grid-template-columns: 1fr auto;
+        grid-template-rows: auto auto;
+        padding: 0.8rem 0;
+        gap: 0.1rem 0.6rem;
+        border-bottom: 1px solid var(--border);
+    }
+    .client-table tbody tr:last-child { border-bottom: none; }
+    .client-table td {
+        display: block;
+        padding: 0;
+        border: none;
+    }
+    /* Nom + email → colonne gauche, rangée 1 */
+    .client-table td:nth-child(1) { grid-column: 1; grid-row: 1; }
+    /* Statut → colonne droite, rangée 1, centré verticalement */
+    .client-table td:nth-child(4) { grid-column: 2; grid-row: 1; align-self: center; }
+    /* Entreprise → rangée 2, pleine largeur, texte discret */
+    .client-table td:nth-child(2) {
+        grid-column: 1 / 3; grid-row: 2;
+        font-size: 0.75rem; color: var(--muted);
+    }
+    /* Secteur + Ajouté → masqués (info non critique sur mobile) */
+    .client-table td:nth-child(3),
+    .client-table td:nth-child(5) { display: none; }
 }

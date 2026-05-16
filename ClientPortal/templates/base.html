@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     {# block title : chaque template enfant peut personnaliser le titre de l'onglet #}
     <title>{% block title %}ClientPortal{% endblock %} — TNTMom</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}?v=33">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}?v=40">
     <link rel="icon" href="{{ url_for('static', filename='images/favicon.svg') }}" type="image/svg+xml">
     {# url_for('static', ...) génère le bon chemin peu importe où Flask est monté #}
     {% block head %}{% endblock %}
@@ -27,6 +27,10 @@
                {% if request.path == '/dashboard' %}class="active"{% endif %}>
                 <span class="nav-bullet">◈</span> Dashboard
             </a>
+            <a href="/formulaires"
+               {% if request.path.startswith('/formulaires') %}class="active"{% endif %}>
+                <span class="nav-bullet">◈</span> Formulaires
+            </a>
             <a href="/plan"
                {% if request.path == '/plan' %}class="active"{% endif %}>
                 <span class="nav-bullet">◈</span> Plan d'affaires
@@ -34,10 +38,6 @@
             <a href="/roadmap"
                {% if request.path == '/roadmap' %}class="active"{% endif %}>
                 <span class="nav-bullet">◈</span> Feuille de route
-            </a>
-            <a href="/formulaires"
-               {% if request.path.startswith('/formulaires') %}class="active"{% endif %}>
-                <span class="nav-bullet">◈</span> Formulaires
             </a>
         </nav>
 
@@ -64,6 +64,89 @@
     </main>
 
 </div>
+
+{# ── BOTTOM TAB BAR ADMIN (mobile seulement) ─────────────────────────────── #}
+<nav class="admin-bottom-nav">
+    <a href="/dashboard"
+       class="pbn-item {% if request.path == '/dashboard' %}active{% endif %}">
+        <span class="pbn-icon">◈</span>
+        <span class="pbn-label">Clients</span>
+    </a>
+    <a href="/formulaires"
+       class="pbn-item {% if request.path.startswith('/formulaires') %}active{% endif %}">
+        <span class="pbn-icon">≡</span>
+        <span class="pbn-label">Formulaires</span>
+    </a>
+    <a href="/plan"
+       class="pbn-item {% if request.path == '/plan' %}active{% endif %}">
+        <span class="pbn-icon">☰</span>
+        <span class="pbn-label">Plan</span>
+    </a>
+    <a href="/roadmap"
+       class="pbn-item {% if request.path == '/roadmap' %}active{% endif %}">
+        <span class="pbn-icon">↗</span>
+        <span class="pbn-label">Roadmap</span>
+    </a>
+    <a href="/logout" class="pbn-item pbn-logout">
+        <span class="pbn-icon">⏻</span>
+        <span class="pbn-label">Quitter</span>
+    </a>
+</nav>
+
+{# ── MODAL DE CONFIRMATION GLOBAL ────────────────────────────────────────── #}
+<style>
+@keyframes modal-in {
+    from { opacity: 0; transform: scale(0.94) translateY(-8px); }
+    to   { opacity: 1; transform: scale(1) translateY(0); }
+}
+#confirm-modal-card { animation: modal-in 0.18s ease-out; }
+</style>
+
+<div id="confirm-modal"
+     style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.7);
+            z-index:1000; align-items:center; justify-content:center; backdrop-filter:blur(3px);">
+    <div id="confirm-modal-card"
+         style="background:var(--surface); border:1px solid rgba(217,79,189,0.25);
+                border-radius:var(--radius-lg); padding:2rem; max-width:400px; width:90%;
+                box-shadow:0 24px 60px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.04);">
+        <div style="display:flex; align-items:center; gap:0.75rem; margin-bottom:0.75rem;">
+            <span id="confirm-modal-icon" style="font-size:1.4rem; line-height:1;">⚠️</span>
+            <h3 id="confirm-modal-title" style="font-size:1.1rem; color:var(--text);"></h3>
+        </div>
+        <p id="confirm-msg" style="color:var(--muted); font-size:0.85rem; margin-bottom:1.75rem;
+                                    line-height:1.5; padding-left:2.15rem;"></p>
+        <div style="display:flex; gap:0.8rem; justify-content:flex-end;">
+            <button class="btn btn-secondary" onclick="closeModal()">Annuler</button>
+            <button class="btn btn-danger" id="confirm-btn">Confirmer</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    function openModal(title, msg, btnLabel, btnClass, onConfirm, icon) {
+        document.getElementById('confirm-modal-title').textContent = title;
+        document.getElementById('confirm-msg').textContent = msg;
+        document.getElementById('confirm-modal-icon').textContent = icon || '⚠️';
+        const btn = document.getElementById('confirm-btn');
+        btn.textContent = btnLabel;
+        btn.className = 'btn ' + (btnClass || 'btn-danger');
+        btn.onclick = () => { closeModal(); onConfirm(); };
+        document.getElementById('confirm-modal').style.display = 'flex';
+    }
+
+    function openDeleteModal(formId, message) {
+        openModal('Confirmer la suppression', message, 'Supprimer', 'btn-danger',
+            () => document.getElementById(formId).submit());
+    }
+
+    function closeModal() {
+        document.getElementById('confirm-modal').style.display = 'none';
+    }
+
+    document.getElementById('confirm-modal').addEventListener('click', function(e) {
+        if (e.target === this) closeModal();
+    });
+</script>
 
 {% block scripts %}{% endblock %}
 </body>

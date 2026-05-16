@@ -16,7 +16,7 @@
             {% if client.email %}<span>✉ {{ client.email }}</span>{% endif %}
         </div>
     </div>
-    <div style="display: flex; flex-direction: column; gap: 0.45rem; align-items: flex-end; flex-shrink: 0; padding-top: 0.2rem;">
+    <div class="fiche-hdr-actions" style="display: flex; flex-direction: column; gap: 0.45rem; align-items: flex-end; flex-shrink: 0; padding-top: 0.2rem;">
         {# Sélecteur de statut — soumet automatiquement au changement #}
         <form method="POST" action="/clients/{{ client.id }}/statut">
             <select name="statut" onchange="this.form.submit()"
@@ -116,8 +116,25 @@
     </form>
 </div>
 
+{# ── ONGLETS ─────────────────────────────────────────────────────────────── #}
+{% set ns_unr = namespace(n=0) %}
+{% for m in messages %}{% if not m.reponse %}{% set ns_unr.n = ns_unr.n + 1 %}{% endif %}{% endfor %}
+<div class="fiche-tabs">
+    <button class="tab-btn active" data-tab="resume"      onclick="switchTab('resume')">Résumé</button>
+    <button class="tab-btn"        data-tab="messages"    onclick="switchTab('messages')">
+        Messages{% if ns_unr.n > 0 %} <span class="tab-count">{{ ns_unr.n }}</span>{% endif %}
+    </button>
+    <button class="tab-btn"        data-tab="projets"     onclick="switchTab('projets')">Projets</button>
+    <button class="tab-btn"        data-tab="factures"    onclick="switchTab('factures')">
+        Factures{% if factures %} <span class="tab-count">{{ factures | length }}</span>{% endif %}
+    </button>
+    <button class="tab-btn"        data-tab="formulaires" onclick="switchTab('formulaires')">Formulaires</button>
+</div>
+
 {# ── CONTENU PRINCIPAL ───────────────────────────────────────────────────── #}
 <div class="fiche-content">
+
+<div id="tab-resume" class="tab-panel active">
 
         {# ── QUESTIONNAIRE CLIENT (lien à envoyer) ──────────────────────── #}
         <div class="card">
@@ -280,6 +297,10 @@
             {% endif %}
         </div>
 
+</div>{# /tab-resume #}
+
+<div id="tab-projets" class="tab-panel">
+
         {# ── PROJETS ──────────────────────────────────────────────────── #}
         <div class="card">
             <div class="section-header">
@@ -393,7 +414,7 @@
             {# enctype="multipart/form-data" est obligatoire pour les uploads de fichiers #}
             <form method="POST" action="/clients/{{ client.id }}/fichiers/upload"
                   enctype="multipart/form-data" style="margin-bottom: 0.8rem;">
-                <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
+                <div class="fiche-upload-form" style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
                     <input type="file" name="fichier" required
                            style="font-size: 0.82rem; flex: 1; min-width: 0;
                                   background: var(--surface2); border: 1px solid var(--border);
@@ -406,9 +427,7 @@
 
             {% if fichiers %}
                 {% for f in fichiers %}
-                <div style="display: flex; justify-content: space-between; align-items: center;
-                            padding: 0.5rem 0; border-bottom: 1px solid var(--border);
-                            font-size: 0.85rem;">
+                <div class="fiche-file-row">
                     <div>
                         <div>{{ f.nom_original }}</div>
                         <div class="text-muted" style="font-size: 0.75rem;">
@@ -438,6 +457,10 @@
                 <div class="empty-state">Aucun fichier partagé.</div>
             {% endif %}
         </div>
+
+</div>{# /tab-projets #}
+
+<div id="tab-messages" class="tab-panel">
 
         {# ── MESSAGES CLIENT ──────────────────────────────────────────── #}
         {% if msg_threads %}
@@ -500,10 +523,16 @@
             </details>
             {% endfor %}
         </div>
+        {% else %}
+        <div class="card"><div class="empty-state">Aucun message pour ce client.</div></div>
         {% endif %}
 
+</div>{# /tab-messages #}
+
+<div id="tab-factures" class="tab-panel">
+
         {# ── FACTURES ──────────────────────────────────────────────────── #}
-        <div class="card" style="margin-top: 1rem;">
+        <div class="card">
             <div class="section-header">
                 <div class="section-title">Factures</div>
                 {% if factures %}
@@ -517,7 +546,8 @@
 
             {# Tableau des factures existantes #}
             {% if factures %}
-            <table style="width:100%; border-collapse:collapse; font-size:0.82rem; margin-bottom:1rem;">
+            <div class="fiche-invoice-wrap">
+            <table style="width:100%; border-collapse:collapse; font-size:0.82rem; margin-bottom:0;">
                 <thead>
                     <tr style="color:var(--muted); font-size:0.72rem; text-transform:uppercase; letter-spacing:0.05em;">
                         <th style="text-align:left; padding:0.4rem 0; border-bottom:1px solid var(--border);">N°</th>
@@ -575,6 +605,7 @@
                 {% endfor %}
                 </tbody>
             </table>
+            </div>
             {% else %}
             <div class="empty-state" style="margin-bottom:1rem;">Aucune facture pour ce client.</div>
             {% endif %}
@@ -595,7 +626,7 @@
                             </select>
                         </div>
                         {% endif %}
-                        <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.7rem; margin-bottom:0.7rem;">
+                        <div class="facture-form-grid">
                             <div class="form-group">
                                 <label>Milestone / titre</label>
                                 <input type="text" name="milestone_titre" placeholder="ex: V1 — Design">
@@ -614,6 +645,10 @@
                 </div>
             </details>
         </div>
+
+</div>{# /tab-factures #}
+
+<div id="tab-formulaires" class="tab-panel">
 
         {# ── FORMULAIRES DISPONIBLES ──────────────────────────────────────── #}
         <div class="card" id="formulaires">
@@ -692,65 +727,17 @@
         </div>
         {% endif %}
 
-</div>
+</div>{# /tab-formulaires #}
 
 {% endblock %}
 
 {% block scripts %}
-
-{# ── MODAL DE CONFIRMATION ────────────────────────────────────────────────── #}
-<style>
-@keyframes modal-in {
-    from { opacity: 0; transform: scale(0.94) translateY(-8px); }
-    to   { opacity: 1; transform: scale(1) translateY(0); }
-}
-#confirm-modal-card { animation: modal-in 0.18s ease-out; }
-</style>
-
-<div id="confirm-modal"
-     style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.7);
-            z-index:1000; align-items:center; justify-content:center; backdrop-filter:blur(3px);">
-    <div id="confirm-modal-card"
-         style="background:var(--surface); border:1px solid rgba(217,79,189,0.25);
-                border-radius:var(--radius-lg); padding:2rem; max-width:400px; width:90%;
-                box-shadow:0 24px 60px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.04);">
-        <div style="display:flex; align-items:center; gap:0.75rem; margin-bottom:0.75rem;">
-            <span style="font-size:1.4rem; line-height:1;">⚠️</span>
-            <h3 style="font-size:1.1rem; color:var(--text);">Confirmer la suppression</h3>
-        </div>
-        <p id="confirm-msg" style="color:var(--muted); font-size:0.85rem; margin-bottom:1.75rem;
-                                    line-height:1.5; padding-left:2.15rem;"></p>
-        <div style="display:flex; gap:0.8rem; justify-content:flex-end;">
-            <button class="btn btn-secondary" onclick="closeModal()">Annuler</button>
-            <button class="btn btn-danger" id="confirm-btn">Supprimer</button>
-        </div>
-    </div>
-</div>
 
 <script>
     function toggleInfoSection(id) {
         const el = document.getElementById(id);
         el.style.display = el.style.display === 'none' ? 'block' : 'none';
     }
-
-    function openDeleteModal(formId, message) {
-        document.getElementById('confirm-msg').textContent = message;
-        // Quand on clique "Supprimer", on soumet le bon formulaire par son id
-        document.getElementById('confirm-btn').onclick = () => {
-            document.getElementById(formId).submit();
-        };
-        const modal = document.getElementById('confirm-modal');
-        modal.style.display = 'flex';
-    }
-
-    function closeModal() {
-        document.getElementById('confirm-modal').style.display = 'none';
-    }
-
-    // Ferme le modal si on clique sur le fond sombre (pas sur la carte)
-    document.getElementById('confirm-modal').addEventListener('click', function(e) {
-        if (e.target === this) closeModal();
-    });
 
     function copyQLink(token) {
         const url = window.location.origin + '/q/' + token;
@@ -818,11 +805,12 @@
     });
 
     // ── Envoi facture par courriel ────────────────────────────────────────────
-    async function envoyerFacture(clientId, factureId, email) {
-        if (!confirm(`Envoyer la facture à ${email} ?`)) return;
-        const r = await fetch(`/clients/${clientId}/factures/${factureId}/envoyer`, { method: 'POST' });
-        const d = await r.json();
-        showFicheToast(d.ok ? `✉ Facture envoyée à ${email} !` : (d.error || 'Erreur'), d.ok);
+    function envoyerFacture(clientId, factureId, email) {
+        openModal('Envoyer la facture', `Envoyer la facture à ${email} ?`, '✉ Envoyer', 'btn-primary', async () => {
+            const r = await fetch(`/clients/${clientId}/factures/${factureId}/envoyer`, { method: 'POST' });
+            const d = await r.json();
+            showFicheToast(d.ok ? `✉ Facture envoyée à ${email} !` : (d.error || 'Erreur'), d.ok);
+        }, '✉');
     }
 
     function showFicheToast(msg, ok = true) {
@@ -840,5 +828,16 @@
         clearTimeout(el._t);
         el._t = setTimeout(() => el.style.opacity = '0', 3000);
     }
+
+    // ── Tabs ─────────────────────────────────────────────────────────────────
+    function switchTab(name) {
+        document.querySelectorAll('.tab-btn').forEach(b =>
+            b.classList.toggle('active', b.dataset.tab === name));
+        document.querySelectorAll('.tab-panel').forEach(p =>
+            p.classList.toggle('active', p.id === 'tab-' + name));
+        localStorage.setItem('fiche-tab-{{ client.id }}', name);
+    }
+    const _savedTab = localStorage.getItem('fiche-tab-{{ client.id }}');
+    if (_savedTab) switchTab(_savedTab);
 </script>
 {% endblock %}
