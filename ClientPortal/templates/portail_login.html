@@ -69,8 +69,11 @@
         btn.textContent = showing ? '👁' : '🙈';
     }
 
+    const urlEmail = new URLSearchParams(window.location.search).get('email');
     const saved = localStorage.getItem('portail_email');
-    if (saved) {
+    if (urlEmail) {
+        document.getElementById('email').value = urlEmail;
+    } else if (saved) {
         document.getElementById('email').value = saved;
         document.getElementById('remember').checked = true;
     }
