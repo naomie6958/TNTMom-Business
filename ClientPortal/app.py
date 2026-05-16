@@ -1356,7 +1356,6 @@ def portail_formulaires():
     formulaires = conn.execute(
         'SELECT * FROM formulaires WHERE actif = 1 ORDER BY created_at DESC'
     ).fetchall()
-    # Pour chaque formulaire, vérifie si ce client l'a déjà rempli
     deja_remplis = {
         row['formulaire_id']
         for row in conn.execute(
@@ -1364,11 +1363,16 @@ def portail_formulaires():
             (session['client_id'],)
         ).fetchall()
     }
+    questionnaire = conn.execute(
+        'SELECT reponses FROM questionnaires_client WHERE client_id = ?',
+        (session['client_id'],)
+    ).fetchone()
     conn.close()
     return render_template('portail_formulaires.html',
                            client=client,
                            formulaires=formulaires,
-                           deja_remplis=deja_remplis)
+                           deja_remplis=deja_remplis,
+                           questionnaire=questionnaire)
 
 
 @app.route('/portail/formulaires/<int:fid>')
