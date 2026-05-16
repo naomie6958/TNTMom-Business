@@ -1,3 +1,32 @@
+// ── Lightbox ──────────────────────────────────────────────────────────────
+const lightbox = document.createElement('div');
+lightbox.className = 'lightbox';
+lightbox.innerHTML = '<button class="lightbox-close" aria-label="Fermer">✕</button><img class="lightbox-img" src="" alt="">';
+document.body.appendChild(lightbox);
+
+const lbImg   = lightbox.querySelector('.lightbox-img');
+const lbClose = lightbox.querySelector('.lightbox-close');
+
+function openLightbox(src, alt) {
+    lbImg.src = src;
+    lbImg.alt = alt;
+    lightbox.classList.add('open');
+    document.body.style.overflow = 'hidden';
+}
+function closeLightbox() {
+    lightbox.classList.remove('open');
+    document.body.style.overflow = '';
+}
+
+lightbox.addEventListener('click', e => { if (e.target !== lbImg) closeLightbox(); });
+lbClose.addEventListener('click', closeLightbox);
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeLightbox(); });
+
+document.querySelectorAll('.screenshot-item img').forEach(img => {
+    img.addEventListener('click', () => openLightbox(img.src, img.alt));
+});
+
+// ── Nav toggle ────────────────────────────────────────────────────────────
 const toggle = document.querySelector('#menu-toggle')
 const nav = document.querySelector('nav')
 

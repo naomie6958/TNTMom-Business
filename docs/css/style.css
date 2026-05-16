@@ -1136,7 +1136,64 @@ h3.projet-section-titre {
     object-fit: cover;
     object-position: top;
     display: block;
+    cursor: zoom-in;
+    transition: opacity 0.2s;
 }
+
+.screenshot-item:hover img { opacity: 1; }
+
+/* ── Lightbox ─────────────────────────────────────────────────────────── */
+.lightbox {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.92);
+    z-index: 2000;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+    cursor: zoom-out;
+}
+
+.lightbox.open {
+    display: flex;
+    animation: lightbox-fade 0.18s ease-out;
+}
+
+@keyframes lightbox-fade {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+}
+
+.lightbox-img {
+    max-width: 90vw;
+    max-height: 85vh;
+    object-fit: contain;
+    border-radius: 8px;
+    box-shadow: 0 0 80px rgba(0, 0, 0, 0.8);
+    cursor: default;
+    animation: lightbox-zoom 0.18s ease-out;
+}
+
+@keyframes lightbox-zoom {
+    from { transform: scale(0.96); }
+    to   { transform: scale(1); }
+}
+
+.lightbox-close {
+    position: absolute;
+    top: 1.25rem;
+    right: 1.5rem;
+    background: transparent;
+    border: none;
+    color: rgba(245, 222, 179, 0.5);
+    font-size: 1.6rem;
+    line-height: 1;
+    cursor: pointer;
+    transition: color 0.2s;
+    font-family: 'Open Sans', sans-serif;
+}
+.lightbox-close:hover { color: wheat; }
 
 .screenshot-item figcaption {
     font-family: 'Open Sans', sans-serif;
