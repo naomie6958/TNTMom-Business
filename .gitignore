@@ -1,0 +1,16 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.env
+
+# DB locale
+ClientPortal/portal.db
+
+# ShareX — configs et captures locales
+docs/images/ApplicationConfig.json
+docs/images/HotkeysConfig.json
+docs/images/UploadersConfig.json
+docs/images/History.db
+docs/images/Backup/
+docs/images/Logs/
