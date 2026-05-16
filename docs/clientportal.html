@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="fr">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta name="description" content="ClientPortal — Back-office freelance complet développé par TNTMom. Gestion clients, contrats, facturation, portail client sécurisé.">
+        <meta property="og:title" content="ClientPortal — TNTMom">
+        <meta property="og:description" content="Back-office freelance déployé en production. Contrats, milestones, facturation auto, portail client sécurisé.">
+        <meta property="og:image" content="https://tntm.ca/images/Screenshots/2026-05/clientportal-fiche.png">
+        <meta property="og:url" content="https://tntm.ca/clientportal.html">
+        <meta property="og:type" content="website">
+        <title>ClientPortal — TNTMom</title>
+        <link rel="stylesheet" href="css/style.css">
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Nabla&family=Open+Sans:ital,wght@0,300..800;1,300..800&family=Orbitron:wght@400..900&display=swap" rel="stylesheet">
+        <link rel="icon" href="images/tntmom-icone-dark-magenta.svg" type="image/svg+xml">
+    </head>
+    <body>
+        <div class="sticky-header">
+        <header>
+            <div id="header-brand">
+                <img src="images/tntmom-favicon-bleu.svg" alt="TNTM" id="header-favicon">
+                <h1>The Nerdy Trap Mom</h1>
+            </div>
+            <nav>
+                <a href="index.html">Accueil</a>
+                <a href="index.html#galerie">Mes projets</a>
+                <a href="about.html">À propos</a>
+                <a href="contact.html">Contact</a>
+            </nav>
+            <button id="menu-toggle">☰</button>
+        </header>
+        </div>
+
+        <main>
+
+            <!-- HERO -->
+            <section class="projet-hero projet-hero--magenta">
+                <div class="projet-hero-content">
+                    <div class="projet-hero-meta">
+                        <span class="projet-hero-tag">Fabricant de logiciels</span>
+                        <span class="statut-badge-lg statut-live">● Live — Déployé en production</span>
+                    </div>
+                    <h2 class="projet-hero-titre">ClientPortal</h2>
+                    <p class="projet-hero-tagline">Back-office freelance complet — conçu, développé et déployé par TNTMom.</p>
+                    <div class="projet-hero-stack">
+                        <span>Python</span><span>Flask</span><span>SQLite</span><span>Jinja2</span><span>Gmail SMTP</span><span>PythonAnywhere</span>
+                    </div>
+                    <a href="https://tntmom.pythonanywhere.com/" target="_blank" class="projet-cta">Voir le projet live →</a>
+                </div>
+                <div class="projet-hero-img-wrap">
+                    <img src="images/Screenshots/2026-05/clientportal-fiche.png" alt="ClientPortal — fiche client" class="projet-hero-img">
+                </div>
+            </section>
+
+            <!-- SCREENSHOTS -->
+            <section class="projet-section">
+                <h3 class="projet-section-titre">Aperçu de l'application</h3>
+                <div class="projet-screenshots">
+                    <figure class="screenshot-item">
+                        <img src="images/Screenshots/2026-05/clientportal-dashboard.png" alt="Dashboard admin" loading="lazy">
+                        <figcaption>Dashboard admin — vue d'ensemble des clients</figcaption>
+                    </figure>
+                    <figure class="screenshot-item">
+                        <img src="images/Screenshots/2026-05/clientportal-fiche.png" alt="Fiche client avec timeline" loading="lazy">
+                        <figcaption>Fiche client — timeline milestones avec deadlines</figcaption>
+                    </figure>
+                    <figure class="screenshot-item">
+                        <img src="images/Screenshots/2026-05/clientportal-portail.png" alt="Portail client" loading="lazy">
+                        <figcaption>Portail client — vue sécurisée pour le client</figcaption>
+                    </figure>
+                </div>
+            </section>
+
+            <!-- FEATURES -->
+            <section class="projet-section projet-section--alt">
+                <h3 class="projet-section-titre">Ce que l'app fait</h3>
+                <div class="projet-features">
+                    <div class="feature-card">
+                        <div class="feature-icon">◈</div>
+                        <div class="feature-nom">Gestion clients</div>
+                        <div class="feature-desc">Fiches complètes, statuts, notes, historique complet par client.</div>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">◈</div>
+                        <div class="feature-nom">Contrats & milestones</div>
+                        <div class="feature-desc">Timeline visuelle avec deadlines auto-calculées. Blocage si milestone précédent non payé.</div>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">◈</div>
+                        <div class="feature-nom">Facturation automatique</div>
+                        <div class="feature-desc">Facture créée automatiquement quand un milestone est livré. Envoi par courriel en un clic.</div>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">◈</div>
+                        <div class="feature-nom">Portail client sécurisé</div>
+                        <div class="feature-desc">Lien unique par client. Vue de son projet, factures, contrat signé téléchargeable.</div>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">◈</div>
+                        <div class="feature-nom">Messagerie intégrée</div>
+                        <div class="feature-desc">Fils de conversation threadés entre Naomie et le client. Badge non-lus en temps réel.</div>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">◈</div>
+                        <div class="feature-nom">Formulaires personnalisés</div>
+                        <div class="feature-desc">Admin crée des formulaires sur mesure, client les remplit depuis son portail.</div>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">◈</div>
+                        <div class="feature-nom">Signature électronique</div>
+                        <div class="feature-desc">Contrat envoyé au client, signé en ligne, téléchargeable en PDF.</div>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon">◈</div>
+                        <div class="feature-nom">Notifications courriel</div>
+                        <div class="feature-desc">Email automatique à chaque message client ou soumission de formulaire.</div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- CTA -->
+            <section class="about-cta">
+                <p class="about-cta-text">T'as besoin d'un outil comme ça ?</p>
+                <a href="contact.html" class="hero-cta" style="margin-top: 0;">Parlons-en →</a>
+            </section>
+
+        </main>
+
+        <footer>
+            <div id="footer-brand">
+                <img src="images/tntmom-favicon-bleu.svg" alt="TNTM" id="footer-favicon">
+                <span>The Nerdy Trap Mom</span>
+            </div>
+            <a href="https://buymeacoffee.com/tntm" target="_blank" class="bmc-btn">☕ Buy me a coffee</a>
+            <span id="footer-copy">© 2026 TNTM — Naomie McMahon Tanguay</span>
+        </footer>
+
+        <script src="js/script.js"></script>
+    </body>
+</html>

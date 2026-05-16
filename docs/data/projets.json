@@ -7,7 +7,7 @@
         "statut": "live",
         "couleur": "magenta",
         "image": "images/Screenshots/2026-05/clientportal-fiche.png",
-        "link": "https://tntmom.pythonanywhere.com/"
+        "link": "clientportal.html"
     },
     {
         "nom": "Family Dashboard",
@@ -17,6 +17,6 @@
         "statut": "en-cours",
         "couleur": "bleu",
         "image": "images/Screenshots/2026-05/familydashboard-enfant.png",
-        "link": ""
+        "link": "familydashboard.html"
     }
 ]

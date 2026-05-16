@@ -95,11 +95,12 @@ fetch('data/projets.json')
 
             // Lien
             if (projet.link) {
+                const isExternal = projet.link.startsWith('http');
                 const lien = document.createElement('a');
                 lien.href = projet.link;
-                lien.target = '_blank';
+                if (isExternal) lien.target = '_blank';
                 lien.className = 'projet-card-link';
-                lien.textContent = 'Voir le projet →';
+                lien.textContent = isExternal ? 'Voir le projet →' : 'Voir la fiche →';
                 body.appendChild(lien);
             }
 
