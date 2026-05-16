@@ -12,6 +12,7 @@
 
 {% if factures %}
 <div class="card">
+    <div class="factures-table-wrap">
     <table style="width:100%; border-collapse:collapse; font-size:0.85rem;">
         <thead>
             <tr style="color:var(--muted); font-size:0.72rem; text-transform:uppercase; letter-spacing:0.05em;">
@@ -44,6 +45,7 @@
         {% endfor %}
         </tbody>
     </table>
+    </div>
 
     <div style="margin-top:1rem; font-size:0.8rem; color:var(--muted);">
         Total facturé :

@@ -790,6 +790,13 @@ input[type="date"]::-webkit-calendar-picker-indicator {
         overflow-x: auto;
         -webkit-overflow-scrolling: touch;
     }
+
+    /* Sidebar portail en mode horizontal : cache la desc BMC, garde juste le bouton */
+    .bmc-desc { display: none; }
+    .bmc-btn { margin-top: 0; }
+
+    /* Sidebar-user portail : empêche le client-nom de prendre trop de place */
+    .client-nom { font-size: 1rem; }
 }
 
 /* ── RESPONSIVE TÉLÉPHONE ────────────────────────────────────────────────── */
@@ -797,9 +804,9 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     .sidebar { padding: 0.75rem 1rem; gap: 0.5rem; }
     .sidebar-logo { font-size: 1.25rem; }
 
-    /* Nav : wrap autorisé + labels courts */
-    .sidebar-nav { flex-wrap: wrap; gap: 0.3rem; }
-    .sidebar-nav a { font-size: 0.75rem; padding: 0.35rem 0.5rem; white-space: nowrap; }
+    /* Nav admin : scroll horizontal pour ne pas wrapper sur 2 lignes */
+    .sidebar-nav { flex-wrap: nowrap; overflow-x: auto; gap: 0.3rem; -webkit-overflow-scrolling: touch; }
+    .sidebar-nav a { font-size: 0.75rem; padding: 0.35rem 0.5rem; white-space: nowrap; flex-shrink: 0; }
 
     .sidebar-user strong { display: none; }
     .sidebar-user { border-left: none; padding-left: 0; font-size: 0.72rem; }
@@ -836,6 +843,17 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     /* Form inline projet → pleine largeur */
     .projet-new-input { width: 100% !important; margin-bottom: 0.5rem; }
     .projet-new-form { flex-direction: column; }
+}
+
+/* ── DASHBOARD FICHIERS CLIENT — layout mobile ───────────────────────────── */
+@media (max-width: 480px) {
+    /* Nom de fichier + bouton télécharger : passe en colonne sur très petit écran */
+    .fichier-row {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.5rem;
+    }
+    .fichier-row .btn { width: 100%; justify-content: center; }
 }
 
 /* ── RESPONSIVE TRÈS PETIT (iPhone SE, 375px etc.) ──────────────────────── */
@@ -1270,6 +1288,12 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 }
 @media (max-width: 600px) { .add-q-grid { grid-template-columns: 1fr; } }
 
+/* ── FACTURES TABLE CLIENT — scroll horizontal ──────────────────────────── */
+.factures-table-wrap {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
 /* Formulaires-list cards */
 .formulaire-card {
     background: var(--surface);
@@ -1292,18 +1316,19 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 }
 
 @media (max-width: 600px) {
-    /* Masque la sidebar nav + user info — remplacés par la bottom bar */
-    .sidebar .sidebar-nav,
-    .sidebar .sidebar-user { display: none; }
+    /* Masque la sidebar nav + user info côté PORTAIL seulement — remplacés par la bottom bar */
+    /* La sidebar admin (.sidebar sans .sidebar-portail) garde sa nav visible */
+    .sidebar-portail .sidebar-nav,
+    .sidebar-portail .sidebar-user { display: none; }
 
-    /* Le header sidebar devient juste le logo centré */
-    .sidebar {
+    /* Le header sidebar portail devient juste le logo centré */
+    .sidebar-portail {
         justify-content: center;
         padding: 0.6rem 1rem;
     }
 
-    /* Espace en bas pour ne pas cacher le contenu derrière la bottom bar */
-    .main { padding-bottom: 80px; }
+    /* Espace en bas pour ne pas cacher le contenu derrière la bottom bar (portail seulement) */
+    .sidebar-portail ~ .main { padding-bottom: 80px; }
 
     /* Bottom tab bar */
     .portail-bottom-nav {
