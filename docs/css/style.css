@@ -81,6 +81,19 @@ nav a.active {
     color: #87CEEB;
 }
 
+nav a.nav-portail {
+    background: rgba(217, 79, 189, 0.08);
+    border-color: rgba(217, 79, 189, 0.45);
+    color: rgba(217, 79, 189, 0.9);
+}
+
+nav a.nav-portail:hover {
+    background: rgba(217, 79, 189, 0.14);
+    border-color: #d94fbd;
+    color: #d94fbd;
+    box-shadow: 0 0 16px rgba(217, 79, 189, 0.45), 0 0 6px rgba(217, 79, 189, 0.25);
+}
+
 #menu-toggle {
     display: none;
     background: transparent;
