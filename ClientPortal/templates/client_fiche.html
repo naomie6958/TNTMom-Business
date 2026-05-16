@@ -465,14 +465,14 @@
                     {% for msg in msgs %}
                     <div class="chat-row">
                         <div class="chat-bubble client">
-                            <div class="chat-meta">{{ client.nom }} · {{ msg.created_at[:16] | replace('T', ' ') }}</div>
+                            <div class="chat-meta">{{ client.nom }} · {{ msg.created_at | to_local | replace('T', ' ') }}</div>
                             {{ msg.message }}
                         </div>
                     </div>
                     {% if msg.reponse %}
                     <div class="chat-row">
                         <div class="chat-bubble admin">
-                            <div class="chat-meta">Naomie · {{ msg.repondu_at[:16] | replace('T', ' ') }}</div>
+                            <div class="chat-meta">Naomie · {{ msg.repondu_at | to_local | replace('T', ' ') }}</div>
                             {{ msg.reponse }}
                         </div>
                     </div>

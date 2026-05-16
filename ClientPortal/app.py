@@ -6,6 +6,9 @@ from dotenv import load_dotenv
 from functools import wraps
 import datetime
 import json
+from zoneinfo import ZoneInfo
+
+_EASTERN = ZoneInfo('America/Montreal')
 import os
 import uuid
 import smtplib
@@ -90,6 +93,26 @@ def fmt_date(s):
         return f"{dt.day} {_MOIS[dt.month - 1]}"
     except Exception:
         return s
+
+
+@app.template_filter('to_local')
+def to_local(dt_str):
+    """Convertit une string datetime UTC (stockée en DB) en heure locale Eastern."""
+    if not dt_str:
+        return ''
+    try:
+        s = str(dt_str)[:19].replace('T', ' ')
+        dt_utc = datetime.datetime.strptime(s, '%Y-%m-%d %H:%M:%S').replace(
+            tzinfo=datetime.timezone.utc
+        )
+        return dt_utc.astimezone(_EASTERN).strftime('%Y-%m-%dT%H:%M:%S')
+    except Exception:
+        return str(dt_str)
+
+
+def _now():
+    """Heure actuelle en Eastern — à utiliser pour tous les inserts explicites."""
+    return datetime.datetime.now(_EASTERN).replace(tzinfo=None).isoformat(timespec='seconds')
 
 # Limite la taille des uploads à 16 MB — au-delà Flask retourne une erreur 413
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024
@@ -984,7 +1007,7 @@ def portail_dashboard():
 def repondre_message(client_id, message_id):
     reponse = request.form.get('reponse', '').strip()
     if reponse:
-        now = datetime.datetime.now().isoformat(timespec='seconds')
+        now = _now()
         conn = get_db()
         conn.execute(
             'UPDATE messages_client SET reponse=?, repondu_at=? WHERE id=? AND client_id=?',
@@ -1024,7 +1047,7 @@ def portail_signer(contrat_id):
     ).fetchone()
 
     if contrat and contrat['statut'] == 'envoyé':
-        now = datetime.datetime.now().isoformat(timespec='seconds')
+        now = _now()
         conn.execute(
             "UPDATE contrats SET statut='signé', signed_at=? WHERE id=?",
             (now, contrat_id)
