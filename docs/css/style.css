@@ -155,7 +155,6 @@ body {
 }
 
 h1 {
-    color: purple;
     font-family: 'Nabla', cursive;
     font-size: 3rem;
     font-weight: 700;
@@ -288,7 +287,7 @@ p {
 
 #galerie {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
     gap: 24px;
 }
 
@@ -431,22 +430,6 @@ form {
     background: rgba(217, 79, 189, 0.06);
 }
 
-/* Carte "À venir" */
-.projet-card:last-child:not(:first-child) {
-    border: 1px dashed rgba(217, 79, 189, 0.25);
-    box-shadow: none;
-    opacity: 0.45;
-    background-color: transparent;
-}
-
-.projet-card:last-child:not(:first-child):hover {
-    transform: none;
-    background-image: none;
-    background-color: transparent;
-    border: 1px dashed rgba(217, 79, 189, 0.4);
-    box-shadow: none;
-    opacity: 0.6;
-}
 
 /* ── Nouvelles cartes projets ──────────────────────────────────────────── */
 .projet-card {
@@ -461,7 +444,7 @@ form {
 /* Header visuel — simule une preview avec les initiales */
 .projet-card-preview {
     width: 100%;
-    height: 130px;
+    height: 185px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -782,6 +765,11 @@ footer {
     line-height: 1.8;
     max-width: 680px;
     margin-bottom: 1rem;
+}
+
+.about-quote {
+    color: rgba(217, 79, 189, 0.85);
+    font-style: italic;
 }
 
 .bmc-btn {
