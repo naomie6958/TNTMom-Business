@@ -48,10 +48,11 @@ header h1 {
 }
 
 .header-logo {
-    font-family: 'Orbitron', sans-serif;
-    font-size: 1.5rem;
+    font-family: 'Bebas Neue', cursive;
+    font-size: 2.2rem;
     letter-spacing: 0.08em;
     text-decoration: none;
+    line-height: 1;
 }
 
 .gold-title {
