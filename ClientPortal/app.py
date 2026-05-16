@@ -981,9 +981,23 @@ def portail_dashboard():
         (session['client_id'],)
     ).fetchall()
 
+    formulaire_pending = conn.execute('''
+        SELECT f.id, f.titre FROM formulaires f
+        JOIN client_formulaires cf ON f.id = cf.formulaire_id
+        WHERE cf.client_id = ? AND f.actif = 1
+          AND f.id NOT IN (
+              SELECT formulaire_id FROM formulaire_reponses WHERE client_id = ?
+          )
+        ORDER BY cf.assigned_at ASC LIMIT 1
+    ''', (session['client_id'], session['client_id'])).fetchone()
+
+    facture_pending = conn.execute(
+        "SELECT * FROM factures WHERE client_id = ? AND statut != 'payée' ORDER BY date_emission ASC LIMIT 1",
+        (session['client_id'],)
+    ).fetchone()
+
     conn.close()
 
-    # Construit une liste de projets enrichis pour le template
     projets = []
     for c in contrats_all:
         m = _compute_deadlines(json.loads(c['milestones']) if c['milestones'] else [])
@@ -996,10 +1010,61 @@ def portail_dashboard():
             'faits': faits,
         })
 
+    next_action = None
+
+    for p in projets:
+        if p['contrat']['statut'] == 'envoyé':
+            next_action = {
+                'type': 'contrat',
+                'icon': '✍',
+                'label': f'Ton contrat pour « {p["contrat"]["nom"] or "ton projet"} » est prêt à signer.',
+                'cta': 'Signer maintenant',
+                'url': '#dashboard-projets',
+            }
+            break
+
+    if not next_action and formulaire_pending:
+        next_action = {
+            'type': 'formulaire',
+            'icon': '📋',
+            'label': f'Naomie attend que tu remplisses : « {formulaire_pending["titre"]} ».',
+            'cta': 'Remplir maintenant',
+            'url': f'/portail/formulaires/{formulaire_pending["id"]}',
+        }
+
+    if not next_action and facture_pending:
+        try:
+            montant_str = f'{int(float(facture_pending["montant"]))}$'
+        except Exception:
+            montant_str = ''
+        next_action = {
+            'type': 'facture',
+            'icon': '💳',
+            'label': f'Une facture est en attente de paiement{" — " + montant_str if montant_str else ""}.',
+            'cta': 'Voir mes factures',
+            'url': '/portail/factures',
+        }
+
+    if not next_action:
+        for p in projets:
+            for m in p['milestones']:
+                if m.get('statut') == 'en cours':
+                    next_action = {
+                        'type': 'en_cours',
+                        'icon': '⚙',
+                        'label': f'En cours de développement : « {m["titre"]} ».',
+                        'cta': None,
+                        'url': None,
+                    }
+                    break
+            if next_action:
+                break
+
     return render_template('portail_dashboard.html',
                             client=client,
                             projets=projets,
-                            fichiers=fichiers)
+                            fichiers=fichiers,
+                            next_action=next_action)
 
 
 @app.route('/clients/<int:client_id>/messages/<int:message_id>/repondre', methods=['POST'])

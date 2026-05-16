@@ -10,16 +10,31 @@
     </div>
 </div>
 
-<div>
+{# ── PROCHAINE ÉTAPE ──────────────────────────────────────────────────────── #}
+{% if next_action %}
+<div class="next-action-card next-action-{{ next_action.type }}">
+    <div class="na-icon">{{ next_action.icon }}</div>
+    <div class="na-content">
+        <div class="na-eyebrow">Prochaine étape</div>
+        <div class="na-label">{{ next_action.label }}</div>
+    </div>
+    {% if next_action.cta and next_action.url %}
+    <a href="{{ next_action.url }}" class="btn btn-primary na-btn">{{ next_action.cta }}</a>
+    {% endif %}
+</div>
+{% endif %}
+
+<div id="dashboard-projets">
 
     {# ── PROJETS ──────────────────────────────────────────────────────────── #}
     {% if projets %}
         {% for p in projets %}
         {% set c = p.contrat %}
         {% set ms = p.milestones %}
+        {% set pct = ((p.faits / ms|length * 100) | int) if ms|length > 0 else 0 %}
         <div class="card" {% if not loop.first %}style="margin-top: 1rem;"{% endif %}>
 
-            {# En-tête : nom + statut (+ bouton signer si envoyé) #}
+            {# En-tête : nom + statut #}
             <div style="display: flex; justify-content: space-between;
                         align-items: flex-start; margin-bottom: 1rem; flex-wrap: wrap; gap: 0.5rem;">
                 <div>
@@ -47,9 +62,22 @@
                 {% endif %}
             </div>
 
+            {# Barre de progression #}
+            {% if ms %}
+            <div class="projet-progress">
+                <div class="projet-progress-bar" style="width: {{ pct }}%"></div>
+            </div>
+            <div class="projet-progress-label">
+                <span>{{ p.faits }} / {{ ms|length }} étapes complétées</span>
+                {% if p.total > 0 %}
+                <span style="color: var(--green);">{{ p.total | int }}$ total</span>
+                {% endif %}
+            </div>
+            {% endif %}
+
             {# Timeline des milestones #}
             {% if ms %}
-            <div class="timeline-scroll"><div class="timeline">
+            <div class="timeline-scroll" style="margin-top: 1rem;"><div class="timeline">
                 {% for m in ms %}
                 {% if m.statut in ['livré', 'payé'] %}
                     {% set point_class = 'done' %}
@@ -75,11 +103,6 @@
                 </div>
                 {% endfor %}
             </div></div>
-
-            <div style="margin-top: 0.4rem; font-size: 0.75rem; color: var(--muted); text-align: right;">
-                {{ p.faits }} / {{ ms|length }} complétés
-                {% if p.total > 0 %} · Total : <strong style="color: var(--green);">{{ p.total | int }}$</strong>{% endif %}
-            </div>
             {% else %}
             <div class="empty-state">Milestones à venir.</div>
             {% endif %}
