@@ -224,6 +224,12 @@ def migrate_db():
     except Exception:
         pass
 
+    try:
+        conn.execute("ALTER TABLE formulaire_questions ADD COLUMN prefill_field TEXT")
+        conn.commit()
+    except Exception:
+        pass
+
     conn.executescript('''
         CREATE TABLE IF NOT EXISTS factures (
             id              INTEGER PRIMARY KEY AUTOINCREMENT,

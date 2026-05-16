@@ -1346,11 +1346,12 @@ def formulaire_delete(fid):
 @app.route('/formulaires/<int:fid>/questions/add', methods=['POST'])
 @login_required
 def formulaire_question_add(fid):
-    titre     = request.form.get('titre', '').strip()
-    type_     = request.form.get('type', 'texte')
-    sous_titre = request.form.get('sous_titre', '').strip()
-    options   = request.form.get('options', '').strip()
-    requis    = 1 if request.form.get('requis') else 0
+    titre        = request.form.get('titre', '').strip()
+    type_        = request.form.get('type', 'texte')
+    sous_titre   = request.form.get('sous_titre', '').strip()
+    options      = request.form.get('options', '').strip()
+    requis       = 1 if request.form.get('requis') else 0
+    prefill_field = request.form.get('prefill_field', '').strip() or None
     if not titre and type_ != 'section':
         flash('Le titre de la question est requis.', 'error')
         return redirect(f'/formulaires/{fid}')
@@ -1359,8 +1360,8 @@ def formulaire_question_add(fid):
         'SELECT COALESCE(MAX(ordre), -1) FROM formulaire_questions WHERE formulaire_id = ?', (fid,)
     ).fetchone()[0]
     conn.execute(
-        'INSERT INTO formulaire_questions (formulaire_id, ordre, titre, sous_titre, type, options, requis) VALUES (?, ?, ?, ?, ?, ?, ?)',
-        (fid, max_ordre + 1, titre or '—', sous_titre or None, type_, options or None, requis)
+        'INSERT INTO formulaire_questions (formulaire_id, ordre, titre, sous_titre, type, options, requis, prefill_field) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+        (fid, max_ordre + 1, titre or '—', sous_titre or None, type_, options or None, requis, prefill_field)
     )
     conn.commit()
     conn.close()
@@ -1370,15 +1371,16 @@ def formulaire_question_add(fid):
 @app.route('/formulaires/<int:fid>/questions/<int:qid>/edit', methods=['POST'])
 @login_required
 def formulaire_question_edit(fid, qid):
-    titre      = request.form.get('titre', '').strip()
-    sous_titre = request.form.get('sous_titre', '').strip()
-    type_      = request.form.get('type', 'texte')
-    options    = request.form.get('options', '').strip()
-    requis     = 1 if request.form.get('requis') else 0
+    titre         = request.form.get('titre', '').strip()
+    sous_titre    = request.form.get('sous_titre', '').strip()
+    type_         = request.form.get('type', 'texte')
+    options       = request.form.get('options', '').strip()
+    requis        = 1 if request.form.get('requis') else 0
+    prefill_field = request.form.get('prefill_field', '').strip() or None
     conn = get_db()
     conn.execute(
-        'UPDATE formulaire_questions SET titre=?, sous_titre=?, type=?, options=?, requis=? WHERE id=? AND formulaire_id=?',
-        (titre, sous_titre or None, type_, options or None, requis, qid, fid)
+        'UPDATE formulaire_questions SET titre=?, sous_titre=?, type=?, options=?, requis=?, prefill_field=? WHERE id=? AND formulaire_id=?',
+        (titre, sous_titre or None, type_, options or None, requis, prefill_field, qid, fid)
     )
     conn.commit()
     conn.close()
@@ -1458,12 +1460,40 @@ def portail_formulaire_fill(fid):
         'SELECT id FROM formulaire_reponses WHERE formulaire_id = ? AND client_id = ?',
         (fid, session['client_id'])
     ).fetchone()
+
+    # Build prefill dict from existing client data
+    prefill = {
+        'client.nom':        client['nom'] or '',
+        'client.email':      client['email'] or '',
+        'client.entreprise': client['entreprise'] or '',
+        'client.secteur':    client['secteur'] or '',
+    }
+    q_row = conn.execute(
+        'SELECT reponses FROM questionnaires_client WHERE client_id = ?', (session['client_id'],)
+    ).fetchone()
+    if q_row and q_row['reponses']:
+        try:
+            for k, v in json.loads(q_row['reponses']).items():
+                prefill[f'questionnaire.{k}'] = v or ''
+        except Exception:
+            pass
+    c_row = conn.execute(
+        'SELECT reponses FROM consultations WHERE client_id = ? ORDER BY created_at DESC LIMIT 1',
+        (session['client_id'],)
+    ).fetchone()
+    if c_row and c_row['reponses']:
+        try:
+            for k, v in json.loads(c_row['reponses']).items():
+                prefill[f'consultation.{k}'] = v or ''
+        except Exception:
+            pass
+
     conn.close()
     if deja:
         flash('Tu as déjà rempli ce formulaire.', 'success')
         return redirect('/portail/formulaires')
     return render_template('portail_formulaire_fill.html',
-                           client=client, formulaire=f, questions=questions)
+                           client=client, formulaire=f, questions=questions, prefill=prefill)
 
 
 @app.route('/portail/formulaires/<int:fid>/submit', methods=['POST'])

@@ -41,8 +41,10 @@
         <div class="text-muted" style="font-size: 0.75rem; margin-bottom: 0.4rem;">{{ q.sous_titre }}</div>
         {% endif %}
 
+        {% set pv = prefill.get(q.prefill_field, '') if q.prefill_field else '' %}
+
         {% if q.type == 'texte' %}
-            <input type="text" name="q_{{ q.id }}" {% if q.requis %}required{% endif %}
+            <input type="text" name="q_{{ q.id }}" value="{{ pv }}" {% if q.requis %}required{% endif %}
                    style="width:100%; background:var(--surface2); border:1px solid var(--border);
                           border-radius:var(--radius); padding:0.55rem 0.75rem; color:var(--text);
                           font-size:0.88rem; box-sizing:border-box;">
@@ -51,22 +53,22 @@
             <textarea name="q_{{ q.id }}" rows="4" {% if q.requis %}required{% endif %}
                       style="width:100%; background:var(--surface2); border:1px solid var(--border);
                              border-radius:var(--radius); padding:0.55rem 0.75rem; color:var(--text);
-                             font-size:0.88rem; resize:vertical; box-sizing:border-box;"></textarea>
+                             font-size:0.88rem; resize:vertical; box-sizing:border-box;">{{ pv }}</textarea>
 
         {% elif q.type == 'nombre' %}
-            <input type="number" name="q_{{ q.id }}" {% if q.requis %}required{% endif %}
+            <input type="number" name="q_{{ q.id }}" value="{{ pv }}" {% if q.requis %}required{% endif %}
                    style="width:100%; background:var(--surface2); border:1px solid var(--border);
                           border-radius:var(--radius); padding:0.55rem 0.75rem; color:var(--text);
                           font-size:0.88rem; box-sizing:border-box;">
 
         {% elif q.type == 'date' %}
-            <input type="date" name="q_{{ q.id }}" {% if q.requis %}required{% endif %}
+            <input type="date" name="q_{{ q.id }}" value="{{ pv }}" {% if q.requis %}required{% endif %}
                    style="width:100%; background:var(--surface2); border:1px solid var(--border);
                           border-radius:var(--radius); padding:0.55rem 0.75rem; color:var(--text);
                           font-size:0.88rem; box-sizing:border-box;">
 
         {% elif q.type == 'url' %}
-            <input type="url" name="q_{{ q.id }}" placeholder="https://..." {% if q.requis %}required{% endif %}
+            <input type="url" name="q_{{ q.id }}" value="{{ pv }}" placeholder="https://..." {% if q.requis %}required{% endif %}
                    style="width:100%; background:var(--surface2); border:1px solid var(--border);
                           border-radius:var(--radius); padding:0.55rem 0.75rem; color:var(--text);
                           font-size:0.88rem; box-sizing:border-box;">

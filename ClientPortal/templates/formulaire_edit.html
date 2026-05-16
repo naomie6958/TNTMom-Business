@@ -4,6 +4,29 @@
 
 {% block content %}
 
+{% set prefill_options = [
+    ('', '— Aucun —'),
+    ('client.nom',        'Client · Nom'),
+    ('client.email',      'Client · Courriel'),
+    ('client.entreprise', 'Client · Entreprise'),
+    ('client.secteur',    'Client · Secteur'),
+    ('questionnaire.activite',          'Questionnaire · Activité'),
+    ('questionnaire.clientele',         'Questionnaire · Clientèle cible'),
+    ('questionnaire.pourquoi_maintenant','Questionnaire · Pourquoi maintenant'),
+    ('questionnaire.type_projet',       'Questionnaire · Type de projet'),
+    ('questionnaire.vision',            'Questionnaire · Vision'),
+    ('questionnaire.budget',            'Questionnaire · Budget'),
+    ('questionnaire.deadline',          'Questionnaire · Échéancier'),
+    ('questionnaire.assets',            'Questionnaire · Contenus / assets'),
+    ('questionnaire.acces_technique',   'Questionnaire · Accès technique'),
+    ('questionnaire.implication',       'Questionnaire · Implication souhaitée'),
+    ('consultation.activite',           'Consultation · Activité'),
+    ('consultation.clientele',          'Consultation · Clientèle'),
+    ('consultation.budget',             'Consultation · Budget'),
+    ('consultation.deadline',           'Consultation · Échéancier'),
+    ('consultation.vision',             'Consultation · Vision'),
+] %}
+
 {% set type_labels = {
     'texte':     'Texte court',
     'paragraphe':'Paragraphe',
@@ -97,6 +120,9 @@
                     {% if q.sous_titre %}
                     <div class="q-sous-titre">{{ q.sous_titre }}</div>
                     {% endif %}
+                    {% if q.prefill_field %}
+                    <div class="q-sous-titre" style="color: var(--accent); font-size: 0.7rem;">⟵ {{ q.prefill_field }}</div>
+                    {% endif %}
                     {% if q.options and q.type in ['choix', 'cases'] %}
                     <div class="q-options-preview">
                         {% for opt in q.options.split('\n') %}
@@ -143,6 +169,14 @@
                                 <div class="form-group q-options-field" style="{{ 'display:none;' if q.type not in ['choix', 'cases'] else '' }}">
                                     <label style="font-size: 0.75rem;">Options (une par ligne)</label>
                                     <textarea name="options" rows="3" style="font-size: 0.82rem;">{{ q.options or '' }}</textarea>
+                                </div>
+                                <div class="form-group">
+                                    <label style="font-size: 0.75rem;">Pré-remplir depuis</label>
+                                    <select name="prefill_field" style="font-size: 0.82rem;">
+                                        {% for val, label in prefill_options %}
+                                        <option value="{{ val }}" {% if q.prefill_field == val %}selected{% endif %}>{{ label }}</option>
+                                        {% endfor %}
+                                    </select>
                                 </div>
                             </div>
                             <div style="display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;">
@@ -198,6 +232,14 @@
             <div class="form-group" id="add-options-field" style="display: none;">
                 <label>Options (une par ligne)</label>
                 <textarea name="options" rows="3" placeholder="Option A&#10;Option B&#10;Option C"></textarea>
+            </div>
+            <div class="form-group">
+                <label>Pré-remplir depuis</label>
+                <select name="prefill_field">
+                    {% for val, label in prefill_options %}
+                    <option value="{{ val }}">{{ label }}</option>
+                    {% endfor %}
+                </select>
             </div>
         </div>
         <div style="display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;">
