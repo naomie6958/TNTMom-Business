@@ -36,9 +36,47 @@ header h1 {
     gap: 0.75rem;
 }
 
-#header-favicon {
-    height: 36px;
-    width: auto;
+/* ── LOGO TNTMOM DORÉ ─────────────────────────────────────────────────────── */
+@keyframes gold-glow {
+    0%, 100% { filter: drop-shadow(0 0 4px rgba(212, 175, 55, 0.55)); }
+    50%       { filter: drop-shadow(0 0 9px rgba(212, 175, 55, 0.8)); }
+}
+@keyframes gold-sparkle {
+    0%, 72%, 100% { opacity: 0; transform: scale(0); }
+    75%            { opacity: 1; transform: scale(1); }
+    80%            { opacity: 0; transform: scale(0.5); }
+}
+
+.header-logo {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 1.5rem;
+    letter-spacing: 0.08em;
+    text-decoration: none;
+}
+
+.gold-title {
+    position: relative;
+    display: inline-block;
+    background: linear-gradient(135deg, #D4AF37 0%, #F0D060 40%, #fffde0 55%, #D4AF37 80%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    animation: gold-glow 3.5s ease-in-out infinite;
+}
+
+.gold-mom::after {
+    content: '';
+    position: absolute;
+    top: 11px;
+    right: 1px;
+    width: 4px;
+    height: 4px;
+    border-radius: 50%;
+    background: radial-gradient(circle, #fff 0%, rgba(255,248,180,0.6) 60%, transparent 100%);
+    box-shadow: 0 0 4px 1px rgba(255, 255, 255, 0.8);
+    animation: gold-sparkle 3.5s ease-in-out infinite;
+    animation-delay: 0.7s;
+    pointer-events: none;
 }
 
 #hero-logo {

@@ -49,7 +49,7 @@
 .gold-mom::after {
     content: '';
     position: absolute;
-    top: 9px;
+    top: 11px;
     right: 1px;
     width: 4px;
     height: 4px;
