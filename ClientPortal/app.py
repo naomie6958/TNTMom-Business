@@ -94,6 +94,10 @@ def fmt_date(s):
 # Limite la taille des uploads à 16 MB — au-delà Flask retourne une erreur 413
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024
 
+# Permet au cookie de session de fonctionner dans un iframe cross-site (démo portfolio)
+app.config['SESSION_COOKIE_SAMESITE'] = 'None'
+app.config['SESSION_COOKIE_SECURE']   = True
+
 # Dossier de stockage des fichiers uploadés — en dehors de static/ pour ne pas
 # être servi directement. Flask contrôle qui peut télécharger quoi.
 UPLOAD_ROOT = os.path.join(os.path.dirname(__file__), 'uploads')
