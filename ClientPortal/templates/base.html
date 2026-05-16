@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     {# block title : chaque template enfant peut personnaliser le titre de l'onglet #}
     <title>{% block title %}ClientPortal{% endblock %} — TNTMom</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}?v=32">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}?v=33">
     <link rel="icon" href="{{ url_for('static', filename='images/favicon.svg') }}" type="image/svg+xml">
     {# url_for('static', ...) génère le bon chemin peu importe où Flask est monté #}
     {% block head %}{% endblock %}

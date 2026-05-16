@@ -1375,4 +1375,8 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 
     /* Cache le texte bmc sur mobile, garde juste le bouton */
     .bmc-desc { display: none; }
+
+    /* Bouton déconnexion dans la bottom nav */
+    .pbn-logout { color: var(--red); opacity: 0.6; }
+    .pbn-logout:hover { opacity: 1; }
 }
