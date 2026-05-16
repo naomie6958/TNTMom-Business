@@ -296,6 +296,17 @@ def client_fiche(client_id):
         ORDER BY fr.submitted_at DESC
     ''', (client_id,)).fetchall()
 
+    formulaires_tous = conn.execute(
+        'SELECT * FROM formulaires WHERE actif = 1 ORDER BY titre'
+    ).fetchall()
+    formulaires_assignes_ids = {
+        row['formulaire_id'] for row in conn.execute(
+            'SELECT formulaire_id FROM client_formulaires WHERE client_id = ?', (client_id,)
+        ).fetchall()
+    }
+    formulaires_assignes    = [f for f in formulaires_tous if f['id'] in formulaires_assignes_ids]
+    formulaires_disponibles = [f for f in formulaires_tous if f['id'] not in formulaires_assignes_ids]
+
     # Auto-marque les messages comme lus dès que Naomie ouvre la fiche
     conn.execute(
         'UPDATE messages_client SET lu = 1 WHERE client_id = ? AND lu = 0',
@@ -366,6 +377,8 @@ def client_fiche(client_id):
                            msg_threads=group_messages(messages),
                            factures=factures,
                            form_reponses=form_reponses,
+                           formulaires_assignes=formulaires_assignes,
+                           formulaires_disponibles=formulaires_disponibles,
                            name=session['user_name'])
 
 
@@ -852,6 +865,34 @@ def set_client_password(client_id):
     conn.close()
     flash('Mot de passe mis à jour.', 'success')
     return redirect(f'/clients/{client_id}')
+
+
+@app.route('/clients/<int:client_id>/formulaires/assign', methods=['POST'])
+@login_required
+def client_formulaire_assign(client_id):
+    fid = request.form.get('formulaire_id')
+    if fid:
+        conn = get_db()
+        conn.execute(
+            'INSERT OR IGNORE INTO client_formulaires (client_id, formulaire_id) VALUES (?,?)',
+            (client_id, int(fid))
+        )
+        conn.commit()
+        conn.close()
+    return redirect(f'/clients/{client_id}#formulaires')
+
+
+@app.route('/clients/<int:client_id>/formulaires/<int:fid>/remove', methods=['POST'])
+@login_required
+def client_formulaire_remove(client_id, fid):
+    conn = get_db()
+    conn.execute(
+        'DELETE FROM client_formulaires WHERE client_id = ? AND formulaire_id = ?',
+        (client_id, fid)
+    )
+    conn.commit()
+    conn.close()
+    return redirect(f'/clients/{client_id}#formulaires')
 
 
 @app.route('/plan')
@@ -1353,9 +1394,12 @@ def formulaire_questions_reorder(fid):
 def portail_formulaires():
     conn = get_db()
     client = conn.execute('SELECT * FROM clients WHERE id = ?', (session['client_id'],)).fetchone()
-    formulaires = conn.execute(
-        'SELECT * FROM formulaires WHERE actif = 1 ORDER BY created_at DESC'
-    ).fetchall()
+    formulaires = conn.execute('''
+        SELECT f.* FROM formulaires f
+        JOIN client_formulaires cf ON f.id = cf.formulaire_id
+        WHERE cf.client_id = ? AND f.actif = 1
+        ORDER BY cf.assigned_at DESC
+    ''', (session['client_id'],)).fetchall()
     deja_remplis = {
         row['formulaire_id']
         for row in conn.execute(

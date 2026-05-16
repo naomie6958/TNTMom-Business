@@ -268,6 +268,15 @@ def migrate_db():
             FOREIGN KEY(formulaire_id) REFERENCES formulaires(id) ON DELETE CASCADE,
             FOREIGN KEY(client_id) REFERENCES clients(id) ON DELETE CASCADE
         );
+
+        CREATE TABLE IF NOT EXISTS client_formulaires (
+            client_id     INTEGER NOT NULL,
+            formulaire_id INTEGER NOT NULL,
+            assigned_at   TEXT DEFAULT (datetime('now')),
+            PRIMARY KEY (client_id, formulaire_id),
+            FOREIGN KEY(client_id) REFERENCES clients(id) ON DELETE CASCADE,
+            FOREIGN KEY(formulaire_id) REFERENCES formulaires(id) ON DELETE CASCADE
+        );
     ''')
 
     # Traduit les anciens statuts anglais des milestones en français dans tous les contrats.

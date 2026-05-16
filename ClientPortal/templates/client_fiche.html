@@ -615,6 +615,53 @@
             </details>
         </div>
 
+        {# ── FORMULAIRES DISPONIBLES ──────────────────────────────────────── #}
+        <div class="card" id="formulaires">
+            <div class="section-header">
+                <div class="section-title">Formulaires</div>
+                {% if formulaires_assignes %}
+                <span class="badge badge-actif" style="font-size: 0.68rem;">{{ formulaires_assignes | length }}</span>
+                {% endif %}
+            </div>
+
+            {% if formulaires_assignes %}
+                {% for f in formulaires_assignes %}
+                <div style="display: flex; justify-content: space-between; align-items: center;
+                            padding: 0.45rem 0; border-bottom: 1px solid var(--border); gap: 0.5rem;">
+                    <span style="font-size: 0.85rem;">{{ f.titre }}</span>
+                    <form method="POST" action="/clients/{{ client.id }}/formulaires/{{ f.id }}/remove">
+                        <button type="submit" class="btn btn-ghost"
+                                style="font-size: 0.72rem; color: var(--red); padding: 2px 7px;">✕</button>
+                    </form>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="text-muted" style="font-size: 0.82rem; margin-bottom: 0.5rem;">
+                    Aucun formulaire assigné à ce client.
+                </div>
+            {% endif %}
+
+            {% if formulaires_disponibles %}
+            <form method="POST" action="/clients/{{ client.id }}/formulaires/assign"
+                  style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; margin-top: 0.75rem;">
+                <select name="formulaire_id"
+                        style="flex: 1; min-width: 180px; font-size: 0.82rem;
+                               background: var(--surface2); border: 1px solid var(--border);
+                               border-radius: var(--radius); padding: 0.35rem 0.55rem; color: var(--text);">
+                    {% for f in formulaires_disponibles %}
+                    <option value="{{ f.id }}">{{ f.titre }}</option>
+                    {% endfor %}
+                </select>
+                <button type="submit" class="btn btn-primary"
+                        style="font-size: 0.82rem; white-space: nowrap;">+ Assigner</button>
+            </form>
+            {% elif not formulaires_assignes %}
+                <div class="text-muted" style="font-size: 0.78rem; margin-top: 0.5rem;">
+                    Aucun formulaire créé dans le système — crée-en un dans la section Formulaires.
+                </div>
+            {% endif %}
+        </div>
+
         {# ── FORMULAIRES SOUMIS ───────────────────────────────────────────── #}
         {% if form_reponses %}
         <div class="card">
