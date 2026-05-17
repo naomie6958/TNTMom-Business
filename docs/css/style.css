@@ -1789,7 +1789,9 @@ h3.projet-section-titre {
 
 /* ── PAGE TARIFS ─────────────────────────────────────────────────────────────── */
 #hero.tarifs-hero {
-    min-height: 28vh;
+    min-height: 20vh;
+    padding-top: 2.5vh;
+    padding-bottom: 2.5vh;
     background:
         radial-gradient(ellipse at 50% 130%, rgba(217,79,189,0.22) 0%, transparent 65%),
         radial-gradient(ellipse at 80% 0%, rgba(135,206,235,0.1) 0%, transparent 50%),

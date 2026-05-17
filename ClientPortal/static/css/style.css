@@ -107,7 +107,7 @@ a:hover { color: var(--accent); }
 /* ── LAYOUT ──────────────────────────────────────────────────────────────── */
 .app-layout {
     display: grid;
-    grid-template-columns: 220px 1fr;
+    grid-template-columns: auto 1fr;
     min-height: 100vh;
 }
 
@@ -122,7 +122,37 @@ a:hover { color: var(--accent); }
     top: 0;
     height: 100vh;
     overflow: hidden;
+    width: 220px;
+    min-width: 220px;
+    transition: width 0.25s ease, min-width 0.25s ease, padding 0.25s ease, border-color 0.25s ease;
 }
+
+body.sidebar-collapsed .sidebar {
+    width: 0;
+    min-width: 0;
+    padding-left: 0;
+    padding-right: 0;
+    border-color: transparent;
+}
+
+/* ── Bouton toggle sidebar ───────────────────────────────────────────────── */
+#nav-toggle {
+    position: fixed;
+    top: 1rem;
+    left: calc(220px + 0.6rem);
+    z-index: 300;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 0.3rem 0.55rem;
+    cursor: pointer;
+    color: var(--muted);
+    font-size: 1rem;
+    line-height: 1;
+    transition: left 0.25s ease, color 0.15s, background 0.15s;
+}
+#nav-toggle:hover { color: var(--text); background: var(--surface2); }
+body.sidebar-collapsed #nav-toggle { left: 0.6rem; }
 
 .sidebar-logo {
     font-family: 'Bebas Neue', sans-serif;
@@ -855,15 +885,30 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 @media (max-width: 900px) {
     .app-layout { grid-template-columns: 1fr; align-content: start; }
 
+    /* Le toggle flotte en haut à droite sur mobile (la sidebar est en barre horizontale) */
+    #nav-toggle {
+        position: static;
+        margin-left: auto;
+        order: 99;
+    }
+
     /* La sidebar verticale devient une barre horizontale en haut */
     .sidebar {
         position: static;
         height: auto;
+        width: auto;
+        min-width: 0;
         flex-direction: row;
         align-items: center;
         padding: 0.9rem 1.2rem;
         flex-wrap: wrap;
         gap: 0.6rem;
+        transition: none;
+        overflow: visible;
+    }
+
+    body.sidebar-collapsed .sidebar {
+        display: none;
     }
 
     .sidebar-nav { flex-direction: row; flex: none; }

@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     {# block title : chaque template enfant peut personnaliser le titre de l'onglet #}
     <title>{% block title %}ClientPortal{% endblock %} — TNTMom</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}?v=43">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}?v=44">
     <link rel="icon" href="{{ url_for('static', filename='images/favicon.svg') }}" type="image/svg+xml">
     {# url_for('static', ...) génère le bon chemin peu importe où Flask est monté #}
     {% block head %}{% endblock %}
@@ -15,6 +15,8 @@
 {# ── LAYOUT : sidebar gauche + contenu principal ─────────────────────────── #}
 {# Héritage Jinja2 : base.html définit la structure,
    les templates enfants remplissent les blocs avec {% block %} ... {% endblock %} #}
+
+<button id="nav-toggle" onclick="toggleNav()" title="Masquer/afficher le menu">☰</button>
 
 <div class="app-layout">
 
@@ -175,5 +177,16 @@
 </script>
 
 {% block scripts %}{% endblock %}
+
+<script>
+(function() {
+    if (localStorage.getItem('sidebarCollapsed') === 'true')
+        document.body.classList.add('sidebar-collapsed');
+})();
+function toggleNav() {
+    document.body.classList.toggle('sidebar-collapsed');
+    localStorage.setItem('sidebarCollapsed', document.body.classList.contains('sidebar-collapsed'));
+}
+</script>
 </body>
 </html>
