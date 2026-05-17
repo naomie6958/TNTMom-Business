@@ -30,6 +30,13 @@ document.querySelectorAll('.screenshot-item img').forEach(img => {
 const toggle = document.querySelector('#menu-toggle')
 const nav = document.querySelector('nav')
 
+const isDesktop = () => window.matchMedia('(min-width: 900px)').matches;
+
+// Sur desktop : ouvrir par défaut sauf si localStorage dit fermé
+if (isDesktop()) {
+    if (localStorage.getItem('tntmNavOpen') !== 'false') nav.classList.add('open');
+}
+
 toggle.addEventListener('click', function() {
     nav.classList.toggle('open')
     if (!nav.classList.contains('open')) {
@@ -37,6 +44,9 @@ toggle.addEventListener('click', function() {
         const chevron = document.querySelector('.nav-chevron-btn')
         if (sub) sub.classList.remove('open')
         if (chevron) { chevron.setAttribute('aria-expanded', 'false'); chevron.textContent = '▾'; }
+    }
+    if (isDesktop()) {
+        localStorage.setItem('tntmNavOpen', nav.classList.contains('open'));
     }
 })
 

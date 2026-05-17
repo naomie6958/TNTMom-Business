@@ -1948,22 +1948,28 @@ h3.projet-section-titre {
 
 /* ── NAV DESKTOP ─────────────────────────────────────────────────────────────── */
 @media (min-width: 900px) {
-    #menu-toggle { display: none; }
+    /* toggle visible sur tous les écrans */
 
     header { flex-wrap: nowrap; }
 
     nav {
-        display: flex !important;
+        display: none;           /* caché par défaut — .open l'affiche */
         flex-direction: row;
-        max-height: none !important;
+        max-height: none;
         overflow: visible;
-        clip-path: none !important;
+        clip-path: none;
         width: auto;
         order: 0;
         padding: 0;
         gap: 0.3rem;
         align-items: center;
         transition: none;
+    }
+
+    nav.open {
+        display: flex;
+        padding-top: 0;
+        padding-bottom: 0;
     }
 
     nav a {
