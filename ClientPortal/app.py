@@ -174,6 +174,7 @@ def inject_user():
     return {
         'name': session.get('user_name', ''),
         'client_nom': session.get('client_nom', ''),
+        'admin_impersonating': session.get('admin_impersonating', False),
     }
 
 
@@ -1180,9 +1181,34 @@ def portail_login():
 
 @app.route('/portail/logout')
 def portail_logout():
+    if session.get('admin_impersonating'):
+        return redirect('/admin/exit-client')
     session.pop('client_id', None)
     session.pop('client_nom', None)
     return redirect('/portail/login')
+
+
+@app.route('/admin/switch-client/<int:client_id>', methods=['POST'])
+@login_required
+def admin_switch_client(client_id):
+    conn = get_db()
+    client = conn.execute('SELECT * FROM clients WHERE id=?', (client_id,)).fetchone()
+    conn.close()
+    if not client:
+        flash('Client introuvable.', 'error')
+        return redirect('/dashboard')
+    session['client_id']          = client['id']
+    session['client_nom']         = client['nom']
+    session['admin_impersonating'] = True
+    return redirect('/portail/dashboard')
+
+
+@app.route('/admin/exit-client')
+def admin_exit_client():
+    client_id = session.pop('client_id', None)
+    session.pop('client_nom', None)
+    session.pop('admin_impersonating', None)
+    return redirect(f'/clients/{client_id}' if client_id else '/dashboard')
 
 
 

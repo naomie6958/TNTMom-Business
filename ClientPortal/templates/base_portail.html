@@ -37,13 +37,25 @@
         </nav>
 
         <div class="sidebar-user">
+            {% if admin_impersonating %}
+            <a href="/admin/exit-client"
+               style="display: block; text-align: center; margin-bottom: 0.75rem;
+                      background: rgba(217,79,189,0.12); border: 1px solid rgba(217,79,189,0.35);
+                      border-radius: var(--radius); padding: 0.45rem 0.75rem;
+                      color: var(--accent); font-size: 0.78rem; text-decoration: none;
+                      font-weight: 600; letter-spacing: 0.02em;">
+                ← Retour admin
+            </a>
+            {% endif %}
             <div class="client-name-wrap">
                 <span class="client-tag">◈ client</span>
                 <strong class="client-nom">{{ client.nom }}</strong>
             </div>
+            {% if not admin_impersonating %}
             <a href="/portail/logout" class="text-muted">→ Déconnexion</a>
             <a href="https://buymeacoffee.com/tntm" target="_blank" class="bmc-btn">☕ Buy me a coffee</a>
             <p class="bmc-desc">Soutiens mon travail avec un petit don — l'équivalent d'un café ☕</p>
+            {% endif %}
         </div>
     </aside>
 
@@ -85,10 +97,17 @@
         <span class="pbn-icon">✉{% if messages_non_lus > 0 %}<span class="pbn-badge">{{ messages_non_lus }}</span>{% endif %}</span>
         <span class="pbn-label">Contact</span>
     </a>
+    {% if admin_impersonating %}
+    <a href="/admin/exit-client" class="pbn-item" style="color: var(--accent);">
+        <span class="pbn-icon">←</span>
+        <span class="pbn-label">Admin</span>
+    </a>
+    {% else %}
     <a href="/portail/logout" class="pbn-item pbn-logout">
         <span class="pbn-icon">⏻</span>
         <span class="pbn-label">Quitter</span>
     </a>
+    {% endif %}
 </nav>
 
 {% block scripts %}{% endblock %}

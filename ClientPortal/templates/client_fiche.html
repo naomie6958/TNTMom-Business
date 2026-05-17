@@ -45,6 +45,14 @@
                     {{ '⚠ Démo' if client.demo else '⚐ Marquer démo' }}
                 </button>
             </form>
+            {% if client.password %}
+            <form method="POST" action="/admin/switch-client/{{ client.id }}">
+                <button type="submit" class="btn btn-secondary" style="font-size: 0.78rem; color: var(--accent);"
+                        title="Basculer en vue portail client (retour admin en 1 clic)">
+                    ⊕ Vue client
+                </button>
+            </form>
+            {% endif %}
             <form id="delete-client-form" method="POST" action="/clients/{{ client.id }}/delete">
                 <button type="button" class="btn btn-danger" style="font-size: 0.78rem;"
                         onclick="openDeleteModal('delete-client-form', 'Supprimer {{ client.nom }} et toutes ses données ?')">✕</button>
