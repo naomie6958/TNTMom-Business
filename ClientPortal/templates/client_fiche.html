@@ -458,17 +458,24 @@
 
             {% for subject, msgs in msg_threads %}
             {% set last = msgs[-1] %}
+            {% set first = msgs[0] %}
             <details class="chat-thread">
                 <summary>
                     <span>{{ subject }}</span>
                     <span style="font-size: 0.65rem; color: var(--muted); font-weight: 400;">
-                        {{ msgs[0].created_at[:10] }}
+                        {{ first.created_at[:10] }}
                         {% if not last.reponse %} · Sans réponse{% endif %}
                     </span>
+                    <form method="POST" action="/clients/{{ client.id }}/messages/thread/{{ first.id }}/delete"
+                          style="margin-left: auto;"
+                          onsubmit="event.stopPropagation(); return confirm('Supprimer toute cette conversation ?')">
+                        <button type="submit" class="btn btn-ghost"
+                                style="font-size: 0.68rem; color: var(--red); padding: 0.1rem 0.4rem;"
+                                onclick="event.stopPropagation()">✕ fil</button>
+                    </form>
                 </summary>
                 <div class="chat-thread-body">
 
-                    {# Tous les messages du fil dans l'ordre #}
                     {% for msg in msgs %}
                     <div class="chat-row">
                         <div class="chat-bubble client">
@@ -478,15 +485,20 @@
                     </div>
                     {% if msg.reponse %}
                     <div class="chat-row">
-                        <div class="chat-bubble admin">
+                        <div class="chat-bubble admin" style="position: relative;">
                             <div class="chat-meta">Naomie · {{ msg.repondu_at | to_local | replace('T', ' ') }}</div>
                             {{ msg.reponse }}
+                            <form method="POST" action="/clients/{{ client.id }}/messages/{{ msg.id }}/reponse/delete"
+                                  style="position: absolute; top: 0.4rem; right: 0.4rem;"
+                                  onsubmit="return confirm('Supprimer cette réponse ?')">
+                                <button type="submit" class="btn btn-ghost"
+                                        style="font-size: 0.6rem; color: var(--red); padding: 0.1rem 0.35rem; line-height: 1;">✕</button>
+                            </form>
                         </div>
                     </div>
                     {% endif %}
                     {% endfor %}
 
-                    {# Répondre au dernier message sans réponse #}
                     {% if not last.reponse %}
                     <details class="collapsible" style="margin-top: 0.5rem;">
                         <summary style="font-size: 0.75rem;">↩ Répondre</summary>

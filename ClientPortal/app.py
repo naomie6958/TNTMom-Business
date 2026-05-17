@@ -1285,6 +1285,39 @@ def portail_dashboard():
                             next_action=next_action)
 
 
+@app.route('/clients/<int:client_id>/messages/thread/<int:first_msg_id>/delete', methods=['POST'])
+@login_required
+def delete_thread(client_id, first_msg_id):
+    conn = get_db()
+    row = conn.execute(
+        'SELECT sujet FROM messages_client WHERE id = ? AND client_id = ?', (first_msg_id, client_id)
+    ).fetchone()
+    if row:
+        sujet = row['sujet'] or ''
+        conn.execute(
+            'DELETE FROM messages_client WHERE client_id = ? AND (sujet = ? OR (sujet IS NULL AND ? = ""))',
+            (client_id, sujet, sujet)
+        )
+        conn.commit()
+    conn.close()
+    flash('Conversation supprimée.', 'success')
+    return redirect(f'/clients/{client_id}#messages')
+
+
+@app.route('/clients/<int:client_id>/messages/<int:message_id>/reponse/delete', methods=['POST'])
+@login_required
+def delete_reponse(client_id, message_id):
+    conn = get_db()
+    conn.execute(
+        'UPDATE messages_client SET reponse = NULL, repondu_at = NULL, lu_client = 1 WHERE id = ? AND client_id = ?',
+        (message_id, client_id)
+    )
+    conn.commit()
+    conn.close()
+    flash('Réponse supprimée.', 'success')
+    return redirect(f'/clients/{client_id}#messages')
+
+
 @app.route('/clients/<int:client_id>/messages/<int:message_id>/repondre', methods=['POST'])
 @login_required
 def repondre_message(client_id, message_id):
