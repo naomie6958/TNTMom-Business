@@ -60,6 +60,13 @@
 </style>
 {% endblock %}
 
+{% set TAUX_FIXES = {
+    'Développement & Architecture': 80,
+    'Design UI/UX & Conception': 65,
+    'Intégration & Maintenance': 55,
+    'Gestion, Admin & Consultation': 50
+} %}
+
 {% block content %}
 <div class="page-header">
     <div>
@@ -116,18 +123,16 @@
             <select id="timer-cat" class="form-control" onchange="syncTaux('timer')">
                 <option value="">— Choisir —</option>
                 {% for cat in categories %}
-                <option value="{{ cat.id }}"
-                    data-taux-min="{{ cat.taux_min or 0 }}"
-                    data-taux-max="{{ cat.taux_max or 0 }}"
-                    data-couleur="{{ cat.couleur }}">
-                    {{ cat.nom }} ({{ cat.taux_min | int }}–{{ cat.taux_max | int }}$/h)
+                {% set taux_fixe = TAUX_FIXES.get(cat.nom, (cat.taux_min or 0) | int) %}
+                <option value="{{ cat.id }}" data-taux="{{ taux_fixe }}" data-couleur="{{ cat.couleur }}">
+                    {{ cat.nom }} ({{ taux_fixe }}$/h)
                 </option>
                 {% endfor %}
             </select>
         </div>
         <div>
             <label class="field-label">Type de facturation</label>
-            <select id="timer-type" class="form-control">
+            <select id="timer-type" class="form-control" onchange="syncFacturation('timer')">
                 <option value="horaire">Facturable à l'heure</option>
                 <option value="package">Inclus dans package</option>
                 <option value="gratuit">Gratuit (non facturé)</option>
@@ -199,10 +204,9 @@
                     <select name="categorie_id" class="form-control" required onchange="syncTaux('manuel')">
                         <option value="">— Choisir —</option>
                         {% for cat in categories %}
-                        <option value="{{ cat.id }}"
-                            data-taux-min="{{ cat.taux_min or 0 }}"
-                            data-taux-max="{{ cat.taux_max or 0 }}">
-                            {{ cat.nom }}
+                        {% set taux_fixe = TAUX_FIXES.get(cat.nom, (cat.taux_min or 0) | int) %}
+                        <option value="{{ cat.id }}" data-taux="{{ taux_fixe }}">
+                            {{ cat.nom }} ({{ taux_fixe }}$/h)
                         </option>
                         {% endfor %}
                     </select>
@@ -260,7 +264,7 @@
                 </div>
                 <div>
                     <label class="field-label">Type de facturation</label>
-                    <select name="type_facturation" class="form-control">
+                    <select name="type_facturation" class="form-control" onchange="syncFacturation('manuel')">
                         <option value="horaire">Facturable à l'heure</option>
                         <option value="package">Inclus dans package</option>
                         <option value="gratuit">Gratuit (non facturé)</option>
@@ -459,20 +463,28 @@ function toggleSection(bodyId, arrowId) {
     if (arrow) arrow.style.transform = open ? '' : 'rotate(180deg)';
 }
 
-// ── Taux moyen auto depuis catégorie ─────────────────────────────────────────
+// ── Taux fixe depuis catégorie ────────────────────────────────────────────────
 function syncTaux(ctx) {
-    const sel = ctx === 'timer'
-        ? document.getElementById('timer-cat')
-        : document.querySelector('[name="categorie_id"]');
-    const taux_el = ctx === 'timer'
-        ? document.getElementById('timer-taux')
-        : document.getElementById('man-taux');
+    const sel     = ctx === 'timer' ? document.getElementById('timer-cat')  : document.querySelector('[name="categorie_id"]');
+    const taux_el = ctx === 'timer' ? document.getElementById('timer-taux') : document.getElementById('man-taux');
+    const type_el = ctx === 'timer' ? document.getElementById('timer-type') : document.querySelector('[name="type_facturation"]');
     if (!sel || !taux_el) return;
-    const opt  = sel.options[sel.selectedIndex];
-    const min  = parseFloat(opt.dataset.tauxMin || 0);
-    const max  = parseFloat(opt.dataset.tauxMax || 0);
-    const avg  = (min + max) / 2;
-    if (avg > 0) taux_el.value = Math.round(avg / 5) * 5;
+    const taux = parseFloat(sel.options[sel.selectedIndex]?.dataset?.taux || 0);
+    taux_el.value = (type_el && type_el.value !== 'horaire') ? 0 : (taux || '');
+}
+
+// ── Remise à zéro si non-facturable, restaure si retour horaire ──────────────
+function syncFacturation(ctx) {
+    const type_el = ctx === 'timer' ? document.getElementById('timer-type') : document.querySelector('[name="type_facturation"]');
+    const taux_el = ctx === 'timer' ? document.getElementById('timer-taux') : document.getElementById('man-taux');
+    const sel     = ctx === 'timer' ? document.getElementById('timer-cat')  : document.querySelector('[name="categorie_id"]');
+    if (!type_el || !taux_el) return;
+    if (type_el.value !== 'horaire') {
+        taux_el.value = 0;
+    } else {
+        const taux = parseFloat(sel?.options[sel?.selectedIndex]?.dataset?.taux || 0);
+        taux_el.value = taux || '';
+    }
 }
 
 // ── Calcul durée auto (saisie manuelle) ──────────────────────────────────────
