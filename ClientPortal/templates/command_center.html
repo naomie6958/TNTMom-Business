@@ -1,0 +1,115 @@
+{% extends "base.html" %}
+
+{% block title %}Command Center{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1 class="page-title">Command Center</h1>
+        <div class="page-sub">Vue d'ensemble de tous les projets actifs.</div>
+    </div>
+</div>
+
+{% if rows %}
+<div class="card" style="padding: 0; overflow: hidden;">
+    <table style="width: 100%; border-collapse: collapse; font-size: 0.84rem;">
+        <thead>
+            <tr style="background: var(--surface-2, rgba(255,255,255,0.03));
+                        color: var(--muted); font-size: 0.7rem; text-transform: uppercase;
+                        letter-spacing: 0.06em;">
+                <th style="padding: 0.75rem 1rem; text-align: left; border-bottom: 1px solid var(--border);">Client</th>
+                <th style="padding: 0.75rem 0.5rem; text-align: left; border-bottom: 1px solid var(--border);">Projet</th>
+                <th style="padding: 0.75rem 0.5rem; text-align: center; border-bottom: 1px solid var(--border);">Progrès</th>
+                <th style="padding: 0.75rem 0.5rem; text-align: left; border-bottom: 1px solid var(--border);">Prochaine action</th>
+                <th style="padding: 0.75rem 0.5rem; text-align: center; border-bottom: 1px solid var(--border);">Factures</th>
+                <th style="padding: 0.75rem 1rem; text-align: right; border-bottom: 1px solid var(--border);"></th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for r in rows %}
+        {% set a = r.action %}
+        <tr class="cc-row {% if a and a.urgent %}cc-urgent{% endif %}"
+            style="border-bottom: 1px solid var(--border);">
+
+            {# Client #}
+            <td style="padding: 0.8rem 1rem;">
+                <div style="font-weight: 600;">{{ r.client.nom }}</div>
+                <span class="badge badge-{{ r.client.statut }}" style="font-size: 0.62rem; margin-top: 0.2rem;">{{ r.client.statut }}</span>
+            </td>
+
+            {# Projet #}
+            <td style="padding: 0.8rem 0.5rem; color: var(--muted);">
+                {{ r.contrat.nom or '—' }}
+                <div style="font-size: 0.7rem; color: var(--muted); margin-top: 0.15rem;">
+                    <span class="badge badge-{{ r.contrat.statut }}" style="font-size: 0.6rem;">{{ r.contrat.statut }}</span>
+                </div>
+            </td>
+
+            {# Progrès #}
+            <td style="padding: 0.8rem 0.5rem; text-align: center; white-space: nowrap;">
+                {% if r.ms_total > 0 %}
+                {% set pct = ((r.ms_faits / r.ms_total) * 100) | int %}
+                <div style="font-size: 0.75rem; color: var(--muted); margin-bottom: 0.3rem;">{{ r.ms_faits }}/{{ r.ms_total }}</div>
+                <div style="width: 80px; height: 4px; background: var(--border); border-radius: 2px; margin: 0 auto;">
+                    <div style="width: {{ pct }}%; height: 100%; background: var(--accent); border-radius: 2px;"></div>
+                </div>
+                {% else %}
+                <span style="color: var(--muted); font-size: 0.75rem;">—</span>
+                {% endif %}
+            </td>
+
+            {# Prochaine action #}
+            <td style="padding: 0.8rem 0.5rem;">
+                {% if a %}
+                {% if a.type == 'attente_appro' %}
+                <span style="color: var(--gold); font-size: 0.78rem;">⏳ {{ a.label }}</span>
+                {% elif a.type == 'a_payer' %}
+                <span style="color: var(--accent); font-size: 0.78rem;">💳 {{ a.label }}</span>
+                {% elif a.type == 'en_cours' %}
+                <span style="color: var(--text); font-size: 0.78rem;">⚙ {{ a.label }}</span>
+                {% elif a.type == 'a_demarrer' %}
+                <span style="color: var(--muted); font-size: 0.78rem;">○ {{ a.label }}</span>
+                {% elif a.type == 'termine' %}
+                <span style="color: var(--green); font-size: 0.78rem;">✓ {{ a.label }}</span>
+                {% endif %}
+                {% else %}
+                <span style="color: var(--muted); font-size: 0.78rem;">—</span>
+                {% endif %}
+            </td>
+
+            {# Factures #}
+            <td style="padding: 0.8rem 0.5rem; text-align: center;">
+                {% if r.factures_att > 0 %}
+                <span style="color: var(--gold); font-weight: 600; font-size: 0.8rem;">{{ r.factures_att }} en attente</span>
+                {% else %}
+                <span style="color: var(--green); font-size: 0.78rem;">✓</span>
+                {% endif %}
+            </td>
+
+            {# Actions #}
+            <td style="padding: 0.8rem 1rem; text-align: right; white-space: nowrap;">
+                <a href="/clients/{{ r.client.id }}" class="btn btn-secondary" style="font-size: 0.75rem; padding: 0.25rem 0.7rem;">
+                    Fiche →
+                </a>
+            </td>
+        </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+{% else %}
+<div class="card">
+    <div class="empty-state">Aucun projet actif pour le moment.</div>
+</div>
+{% endif %}
+
+{% endblock %}
+
+{% block head %}
+<style>
+.cc-row { transition: background 0.15s; }
+.cc-row:hover { background: rgba(255,255,255,0.02); }
+.cc-urgent { border-left: 3px solid var(--gold) !important; }
+</style>
+{% endblock %}

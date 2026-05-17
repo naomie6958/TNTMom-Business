@@ -19,7 +19,12 @@
         <div class="na-label">{{ next_action.label }}</div>
     </div>
     {% if next_action.cta and next_action.url %}
-    <a href="{{ next_action.url }}" class="btn btn-primary na-btn">{{ next_action.cta }}</a>
+        {% if next_action.type == 'approuver' %}
+        <button type="button" class="btn btn-primary na-btn"
+                onclick="approuverMilestone('{{ next_action.url }}')">{{ next_action.cta }}</button>
+        {% else %}
+        <a href="{{ next_action.url }}" class="btn btn-primary na-btn">{{ next_action.cta }}</a>
+        {% endif %}
     {% endif %}
 </div>
 {% endif %}
@@ -79,9 +84,15 @@
             {% if ms %}
             <div class="ms-steps">
                 {% for m in ms %}
-                {% if m.statut in ['livré', 'payé'] %}
+                {% if m.statut == 'payé' %}
                     {% set step_class = 'done' %}
                     {% set step_icon = '✓' %}
+                {% elif m.statut == 'approuvé' %}
+                    {% set step_class = 'approuve' %}
+                    {% set step_icon = '✅' %}
+                {% elif m.statut == 'livré' %}
+                    {% set step_class = 'livre' %}
+                    {% set step_icon = '📦' %}
                 {% elif m.statut == 'en cours' %}
                     {% set step_class = 'active' %}
                     {% set step_icon = '⚙' %}
@@ -97,10 +108,38 @@
                             {% if m.deadline %}
                             <div class="ms-meta">{{ m.deadline | fmt_date }}</div>
                             {% endif %}
+                            {% if m.statut == 'approuvé' and m.approuve_at %}
+                            <div class="ms-meta" style="color: var(--green);">Approuvé le {{ m.approuve_at[:10] }}</div>
+                            {% endif %}
+                            {% if m.get('historique') and m.historique|length > 1 %}
+                            <div class="ms-meta" style="margin-top: 0.25rem; font-size: 0.65rem; color: var(--muted);">
+                                {% for h in m.historique %}{{ h.statut }} {{ h.at }}{% if not loop.last %} · {% endif %}{% endfor %}
+                            </div>
+                            {% endif %}
                         </div>
                         <div class="ms-right">
                             {% if m.get('prix') %}<div class="ms-prix">{{ m.prix | int }}$</div>{% endif %}
-                            <div class="ms-badge-step">{{ m.statut }}</div>
+                            <span class="badge badge-{{ m.statut | replace(' ', '-') }}" style="font-size:0.65rem;">{{ m.statut }}</span>
+                            {% set idx = loop.index0 %}
+                            {% set ms_livrables = livrables | selectattr('milestone_index', 'equalto', idx) | list %}
+                            {% if ms_livrables %}
+                            <div style="margin-top: 0.4rem;">
+                                {% for lf in ms_livrables %}
+                                <a href="/portail/fichiers/{{ lf.id }}"
+                                   style="display: block; font-size: 0.68rem; color: var(--accent);
+                                          text-decoration: none; margin-top: 0.15rem;">
+                                    ↓ {{ lf.nom_original }}
+                                </a>
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                            {% if m.statut == 'livré' %}
+                            <button type="button" class="btn btn-primary"
+                                    style="font-size: 0.72rem; padding: 0.3rem 0.75rem; margin-top: 0.3rem;"
+                                    onclick="approuverMilestone('/portail/contrat/{{ c.id }}/milestone/{{ loop.index0 }}/approuver')">
+                                ✅ Approuver
+                            </button>
+                            {% endif %}
                         </div>
                     </div>
                 </div>
@@ -164,4 +203,20 @@
     {% endif %}
 
 </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function approuverMilestone(url) {
+    fetch(url, {
+        method: 'POST',
+        credentials: 'same-origin',
+        redirect: 'manual'
+    }).then(() => {
+        window.location.href = '/portail/dashboard';
+    }).catch(() => {
+        window.location.reload();
+    });
+}
+</script>
 {% endblock %}

@@ -322,6 +322,15 @@
                             {% endif %}
                         </div>
                         <div style="display: flex; gap: 0.4rem; align-items: center;">
+                            {% if c.statut == 'envoyé' and client.email %}
+                            <form method="POST"
+                                  action="/clients/{{ client.id }}/contrat/{{ c.id }}/envoyer-email"
+                                  onclick="event.stopPropagation()">
+                                <button type="submit" class="btn btn-secondary"
+                                        style="font-size: 0.75rem; padding: 3px 8px;"
+                                        title="Envoyer le lien de signature par email">✉</button>
+                            </form>
+                            {% endif %}
                             <a href="/clients/{{ client.id }}/contrat/{{ c.id }}/print"
                                target="_blank" class="btn btn-ghost" style="font-size: 0.75rem;"
                                onclick="event.stopPropagation()">⎙</a>
@@ -342,22 +351,24 @@
                         <div class="timeline-scroll">
                             <div class="timeline" style="margin-bottom: 0.6rem;">
                                 {% for m in ms %}
-                                {% if m.statut in ['livré', 'payé'] %}
+                                {% if m.statut in ['livré', 'approuvé', 'payé'] %}
                                     {% set point_class = 'done' %}
                                 {% elif m.statut == 'en cours' %}
                                     {% set point_class = 'active' %}
                                 {% else %}
                                     {% set point_class = '' %}
                                 {% endif %}
-                                <div class="timeline-point {{ point_class }}">
+                                {% set prev_ok = (loop.index0 == 0) or (ms[loop.index0 - 1].statut == 'payé') %}
+                                {% set blocked = (not prev_ok) and (m.statut == 'en attente') %}
+                                <div class="timeline-point {{ point_class }} {% if blocked %}blocked{% endif %}">
                                     <div class="timeline-above">
                                         <div class="timeline-label">{{ m.titre or '—' }}</div>
                                     </div>
                                     <form method="POST"
                                           action="/clients/{{ client.id }}/contrat/{{ c.id }}/milestone/{{ loop.index0 }}/toggle">
                                         <button type="submit" class="timeline-dot-btn"
-                                                data-toggle-url="/clients/{{ client.id }}/contrat/{{ c.id }}/milestone/{{ loop.index0 }}/toggle"
-                                                title="Cliquer pour avancer le statut">
+                                                {% if not blocked %}data-toggle-url="/clients/{{ client.id }}/contrat/{{ c.id }}/milestone/{{ loop.index0 }}/toggle"{% endif %}
+                                                {% if blocked %}disabled title="Le milestone précédent doit être payé d'abord"{% else %}title="Cliquer pour avancer le statut"{% endif %}>
                                             <div class="timeline-dot"></div>
                                         </button>
                                     </form>
@@ -365,6 +376,17 @@
                                           style="margin-top: 0.3rem; font-size: 0.6rem;">{{ m.statut }}</span>
                                     {% if m.prix %}
                                     <div style="font-size: 0.66rem; color: var(--green); margin-top: 0.15rem;">{{ m.prix }}$</div>
+                                    {% endif %}
+                                    {% if m.statut == 'livré' %}
+                                    <form method="POST" enctype="multipart/form-data"
+                                          action="/clients/{{ client.id }}/contrat/{{ c.id }}/milestone/{{ loop.index0 }}/livrables/upload"
+                                          style="margin-top: 0.3rem;">
+                                        <label style="font-size: 0.6rem; color: var(--muted); cursor: pointer; display: block;">
+                                            📎 <input type="file" name="fichier" style="display:none;"
+                                                      onchange="this.closest('form').submit()">
+                                            Ajouter livrable
+                                        </label>
+                                    </form>
                                     {% endif %}
                                     {% if not loop.last and m.deadline %}
                                     <div class="timeline-deadline-at-mid">

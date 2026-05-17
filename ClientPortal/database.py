@@ -236,6 +236,25 @@ def migrate_db():
     except Exception:
         pass
 
+    try:
+        conn.execute('''CREATE TABLE IF NOT EXISTS leads (
+            id         INTEGER PRIMARY KEY AUTOINCREMENT,
+            nom        TEXT NOT NULL,
+            email      TEXT,
+            message    TEXT,
+            lu         INTEGER DEFAULT 0,
+            created_at TEXT DEFAULT (datetime('now'))
+        )''')
+        conn.commit()
+    except Exception:
+        pass
+
+    try:
+        conn.execute("ALTER TABLE fichiers ADD COLUMN milestone_index INTEGER")
+        conn.commit()
+    except Exception:
+        pass
+
     conn.executescript('''
         CREATE TABLE IF NOT EXISTS factures (
             id              INTEGER PRIMARY KEY AUTOINCREMENT,

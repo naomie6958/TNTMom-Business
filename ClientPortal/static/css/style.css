@@ -49,7 +49,7 @@
 .gold-mom::after {
     content: '';
     position: absolute;
-    top: 11px;
+    top: 7px;
     right: 1px;
     width: 4px;
     height: 4px;
@@ -121,6 +121,7 @@ a:hover { color: var(--accent); }
     position: sticky;
     top: 0;
     height: 100vh;
+    overflow: hidden;
 }
 
 .sidebar-logo {
@@ -145,6 +146,8 @@ a:hover { color: var(--accent); }
 .nav-bullet {
     position: relative;
     display: inline-block;
+    flex-shrink: 0;
+    margin-top: 0.1em;
     background: linear-gradient(135deg, var(--gold) 0%, var(--gold-light) 40%, #fffde0 55%, var(--gold) 80%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
@@ -173,6 +176,9 @@ a:hover { color: var(--accent); }
 }
 
 .sidebar-nav a {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.5rem;
     color: var(--muted);
     padding: 0.5rem 0.8rem;
     border-radius: var(--radius);
@@ -199,7 +205,9 @@ a:hover { color: var(--accent); }
 .main {
     padding: 2.5rem 2.8rem;
     overflow-y: auto;
+    scrollbar-width: none;
 }
+.main::-webkit-scrollbar { width: 0; height: 0; }
 
 /* ── PAGE HEADER ─────────────────────────────────────────────────────────── */
 .page-header {
@@ -327,6 +335,7 @@ a:hover { color: var(--accent); }
 .badge-en-cours   { background: rgba(217, 79, 189, 0.15);  color: var(--accent);  }
 .badge-livré      { background: rgba(135, 206, 235, 0.15); color: var(--accent2); }
 .badge-payé       { background: rgba(212, 175, 55, .15);   color: var(--gold-light); border-color: rgba(212,175,55,.3); animation: gold-pulse 2.5s ease-in-out infinite; }
+.badge-approuvé   { background: rgba(62, 207, 142, 0.15); color: var(--green); border-color: rgba(62,207,142,0.3); }
 
 /* ── BOUTONS ─────────────────────────────────────────────────────────────── */
 .btn {
@@ -997,25 +1006,27 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     border-bottom: 2px solid var(--border);
     margin-bottom: 1.2rem;
     overflow-x: auto;
+    overflow-y: visible;
     -webkit-overflow-scrolling: touch;
+    padding-bottom: 2px;
+    scrollbar-width: none;
     gap: 0;
 }
+.fiche-tabs::-webkit-scrollbar { width: 0; height: 0; }
 .tab-btn {
     background: none;
     border: none;
-    border-bottom: 2px solid transparent;
-    margin-bottom: -2px;
-    padding: 0.6rem 1.1rem;
+    padding: 1.25rem 1.1rem;
     color: var(--muted);
     font-size: 0.82rem;
     letter-spacing: 0.04em;
     cursor: pointer;
     white-space: nowrap;
     font-family: inherit;
-    transition: color 0.15s, border-color 0.15s;
+    transition: color 0.15s, box-shadow 0.15s;
 }
 .tab-btn:hover { color: var(--text); }
-.tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); font-weight: 600; }
+.tab-btn.active { color: var(--accent); font-weight: 600; box-shadow: inset 0 -3px 0 var(--accent); }
 .tab-count {
     display: inline-flex;
     align-items: center;
@@ -1366,8 +1377,10 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     background: var(--border);
     z-index: 0;
 }
-.ms-step.done:not(:last-child)::after { background: var(--green); opacity: 0.35; }
-.ms-step.active:not(:last-child)::after { background: var(--accent); opacity: 0.25; }
+.ms-step.done:not(:last-child)::after    { background: var(--green);  opacity: 0.35; }
+.ms-step.approuve:not(:last-child)::after { background: var(--green);  opacity: 0.25; }
+.ms-step.livre:not(:last-child)::after   { background: var(--accent2); opacity: 0.25; }
+.ms-step.active:not(:last-child)::after  { background: var(--accent);  opacity: 0.25; }
 
 .ms-icon {
     width: 28px;
@@ -1390,6 +1403,18 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     color: #0f0f14;
     font-weight: 900;
     font-size: 0.68rem;
+}
+.ms-step.approuve .ms-icon {
+    background: rgba(62,207,142,0.2);
+    border-color: var(--green);
+    color: var(--green);
+    font-size: 0.78rem;
+}
+.ms-step.livre .ms-icon {
+    background: rgba(135,206,235,0.15);
+    border-color: var(--accent2);
+    color: var(--accent2);
+    font-size: 0.78rem;
 }
 .ms-step.active .ms-icon {
     background: var(--accent);
@@ -1415,8 +1440,10 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     color: var(--muted);
     line-height: 1.35;
 }
-.ms-step.done .ms-titre   { color: var(--text); }
-.ms-step.active .ms-titre { color: var(--accent); font-weight: 600; }
+.ms-step.done .ms-titre    { color: var(--text); }
+.ms-step.approuve .ms-titre { color: var(--text); }
+.ms-step.livre .ms-titre   { color: var(--accent2); font-weight: 600; }
+.ms-step.active .ms-titre  { color: var(--accent); font-weight: 600; }
 
 .ms-meta {
     font-size: 0.7rem;
@@ -1437,8 +1464,10 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     font-size: 0.78rem;
     color: var(--muted);
 }
-.ms-step.done .ms-prix   { color: var(--green); }
-.ms-step.active .ms-prix { color: var(--accent); }
+.ms-step.done .ms-prix    { color: var(--green); }
+.ms-step.approuve .ms-prix { color: var(--green); }
+.ms-step.livre .ms-prix   { color: var(--accent2); }
+.ms-step.active .ms-prix  { color: var(--accent); }
 
 .ms-badge-step {
     font-size: 0.58rem;
@@ -1514,6 +1543,21 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     background: var(--accent);
     border-color: var(--accent);
     animation: dot-pulse 2s ease-in-out infinite;
+}
+
+.timeline-point.blocked .timeline-dot {
+    background: transparent;
+    border-color: rgba(255,255,255,0.12);
+    cursor: not-allowed;
+}
+
+.timeline-point.blocked .timeline-dot-btn {
+    cursor: not-allowed;
+    opacity: 0.4;
+}
+
+.timeline-point.blocked .timeline-label {
+    opacity: 0.4;
 }
 
 @keyframes dot-pulse {

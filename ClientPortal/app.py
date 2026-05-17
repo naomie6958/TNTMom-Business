@@ -19,8 +19,8 @@ load_dotenv()
 app = Flask(__name__)
 
 
-def send_notification_email(subject, body):
-    """Envoie un courriel de notification via Gmail SMTP. Silencieux si non configuré."""
+def send_notification_email(subject, body, to=None):
+    """Envoie un courriel via Gmail SMTP. `to` optionnel, défaut = Naomie."""
     gmail_user = os.getenv('GMAIL_USER')
     gmail_pass = os.getenv('GMAIL_APP_PASSWORD')
     if not gmail_user or not gmail_pass:
@@ -29,7 +29,7 @@ def send_notification_email(subject, body):
         msg = MIMEText(body, 'plain', 'utf-8')
         msg['Subject'] = subject
         msg['From']    = gmail_user
-        msg['To']      = 'naomiemt@tntm.ca'
+        msg['To']      = to or 'naomiemt@tntm.ca'
         with smtplib.SMTP('smtp.gmail.com', 587) as server:
             server.starttls()
             server.login(gmail_user, gmail_pass)
@@ -87,6 +87,7 @@ _MOIS = ['jan', 'fév', 'mar', 'avr', 'mai', 'juin', 'juil', 'août', 'sep', 'oc
 
 @app.context_processor
 def portail_badge_ctx():
+    ctx = {}
     if 'client_id' in session:
         try:
             conn = get_db()
@@ -97,8 +98,21 @@ def portail_badge_ctx():
             conn.close()
         except Exception:
             count = 0
-        return {'messages_non_lus': count}
-    return {'messages_non_lus': 0}
+        ctx['messages_non_lus'] = count
+    else:
+        ctx['messages_non_lus'] = 0
+    if 'user_id' in session:
+        try:
+            conn = get_db()
+            ctx['leads_non_lus'] = conn.execute(
+                "SELECT COUNT(*) FROM leads WHERE lu = 0"
+            ).fetchone()[0]
+            conn.close()
+        except Exception:
+            ctx['leads_non_lus'] = 0
+    else:
+        ctx['leads_non_lus'] = 0
+    return ctx
 
 @app.template_filter('fmt_date')
 def fmt_date(s):
@@ -269,6 +283,67 @@ def dashboard():
                            messages_nonlus=messages_nonlus,
                            factures_attente=factures_attente,
                            name=session['user_name'])
+
+
+# ─── COMMAND CENTER ───────────────────────────────────────────────────────────
+
+@app.route('/command-center')
+@login_required
+def command_center():
+    conn = get_db()
+    clients_all = conn.execute(
+        "SELECT * FROM clients WHERE statut IN ('actif', 'prospect', 'complété') ORDER BY statut, nom ASC"
+    ).fetchall()
+
+    rows = []
+    for c in clients_all:
+        contrats = conn.execute(
+            'SELECT * FROM contrats WHERE client_id = ? ORDER BY created_at DESC',
+            (c['id'],)
+        ).fetchall()
+
+        for contrat in contrats:
+            ms = json.loads(contrat['milestones']) if contrat['milestones'] else []
+            ms = _compute_deadlines(ms)
+
+            # Milestone en cours + prochaine action
+            action = None
+            for i, m in enumerate(ms):
+                s = m.get('statut', 'en attente')
+                if s == 'livré':
+                    action = {'type': 'attente_appro', 'label': f'Client doit approuver : {m["titre"]}', 'urgent': True}
+                    break
+                if s == 'approuvé':
+                    action = {'type': 'a_payer', 'label': f'À marquer payé : {m["titre"]}', 'urgent': True}
+                    break
+                if s == 'en cours':
+                    action = {'type': 'en_cours', 'label': f'En cours : {m["titre"]}', 'urgent': False}
+                    break
+            if not action:
+                for m in ms:
+                    if m.get('statut') == 'en attente':
+                        action = {'type': 'a_demarrer', 'label': f'À démarrer : {m["titre"]}', 'urgent': False}
+                        break
+            if not action and ms:
+                action = {'type': 'termine', 'label': 'Tous les milestones complétés', 'urgent': False}
+
+            faits = sum(1 for m in ms if m.get('statut') in ('payé', 'approuvé', 'livré'))
+            factures_att = conn.execute(
+                "SELECT COUNT(*) as n FROM factures WHERE contrat_id = ? AND statut != 'payée'",
+                (contrat['id'],)
+            ).fetchone()['n']
+
+            rows.append({
+                'client':         dict(c),
+                'contrat':        dict(contrat),
+                'ms_total':       len(ms),
+                'ms_faits':       faits,
+                'action':         action,
+                'factures_att':   factures_att,
+            })
+
+    conn.close()
+    return render_template('command_center.html', rows=rows)
 
 
 # ─── CLIENTS ──────────────────────────────────────────────────────────────────
@@ -707,6 +782,36 @@ def projet_new(client_id):
     return redirect(f'/clients/{client_id}/contrat/{contrat_id}')
 
 
+@app.route('/clients/<int:client_id>/contrat/<int:contrat_id>/envoyer-email', methods=['POST'])
+@login_required
+def contrat_envoyer_email(client_id, contrat_id):
+    conn = get_db()
+    client  = conn.execute('SELECT * FROM clients WHERE id = ?', (client_id,)).fetchone()
+    contrat = conn.execute(
+        'SELECT * FROM contrats WHERE id = ? AND client_id = ?', (contrat_id, client_id)
+    ).fetchone()
+    conn.close()
+    if not client or not contrat:
+        flash('Client ou contrat introuvable.', 'error')
+        return redirect(f'/clients/{client_id}')
+    if not client['email']:
+        flash('Ce client n\'a pas d\'adresse email enregistrée.', 'error')
+        return redirect(f'/clients/{client_id}')
+    nom_projet = contrat['nom'] or 'ton projet'
+    send_notification_email(
+        f'[TNTMom] Ton contrat est prêt à signer — {nom_projet}',
+        f'Bonjour {client["nom"]},\n\n'
+        f'Naomie a préparé un contrat pour toi :\n\n'
+        f'  ✍ {nom_projet}\n\n'
+        f'Connecte-toi à ton portail pour le lire et le signer :\n'
+        f'https://tntmom.pythonanywhere.com/portail/login\n\n'
+        f'— Naomie (TNTMom)',
+        to=client['email']
+    )
+    flash(f'Email envoyé à {client["email"]}.', 'success')
+    return redirect(f'/clients/{client_id}')
+
+
 @app.route('/clients/<int:client_id>/contrat/<int:contrat_id>/delete', methods=['POST'])
 @login_required
 def contrat_delete(client_id, contrat_id):
@@ -758,6 +863,7 @@ def toggle_milestone(client_id, contrat_id, index):
             'en attente': 'en cours',
             'en cours':   'livré',
             'livré':      'payé',
+            'approuvé':   'payé',
             'payé':       'en attente',
         }
         actuel = milestones[index].get('statut', 'en attente')
@@ -775,6 +881,11 @@ def toggle_milestone(client_id, contrat_id, index):
                 return redirect(f'/clients/{client_id}')
 
         milestones[index]['statut'] = nouveau
+
+        # Historique des changements de statut
+        hist = milestones[index].get('historique', [])
+        hist.append({'statut': nouveau, 'at': _now()[:10]})
+        milestones[index]['historique'] = hist
 
         # Auto-créer une facture quand le milestone passe à 'livré'
         if nouveau == 'livré':
@@ -794,6 +905,22 @@ def toggle_milestone(client_id, contrat_id, index):
                        VALUES (?, ?, ?, ?, ?, ?)''',
                     (client_id, contrat_id, numero, titre, montant,
                      datetime.date.today().isoformat())
+                )
+
+            # Email auto au client pour l'avertir que son livrable est prêt
+            client_notif = conn.execute(
+                'SELECT nom, email FROM clients WHERE id = ?', (client_id,)
+            ).fetchone()
+            if client_notif and client_notif['email']:
+                send_notification_email(
+                    f'[TNTMom] Ton livrable est prêt — {titre}',
+                    f'Bonjour {client_notif["nom"]},\n\n'
+                    f'Naomie vient de marquer ton livrable comme prêt :\n\n'
+                    f'  \U0001f4e6 {titre}\n\n'
+                    f'Connecte-toi à ton portail pour le consulter et l\'approuver :\n'
+                    f'https://tntmom.pythonanywhere.com/portail/dashboard\n\n'
+                    f'— Naomie (TNTMom)',
+                    to=client_notif['email']
                 )
 
     conn.execute(
@@ -1025,7 +1152,12 @@ def portail_dashboard():
     ).fetchall()
 
     fichiers = conn.execute(
-        'SELECT * FROM fichiers WHERE client_id = ? ORDER BY uploaded_at DESC',
+        'SELECT * FROM fichiers WHERE client_id = ? AND milestone_index IS NULL ORDER BY uploaded_at DESC',
+        (session['client_id'],)
+    ).fetchall()
+
+    livrables = conn.execute(
+        'SELECT * FROM fichiers WHERE client_id = ? AND milestone_index IS NOT NULL ORDER BY uploaded_at DESC',
         (session['client_id'],)
     ).fetchall()
 
@@ -1050,7 +1182,7 @@ def portail_dashboard():
     for c in contrats_all:
         m = _compute_deadlines(json.loads(c['milestones']) if c['milestones'] else [])
         total = sum(float(x.get('prix', 0)) for x in m)
-        faits = sum(1 for x in m if x.get('statut') in ['livré', 'payé'])
+        faits = sum(1 for x in m if x.get('statut') in ['livré', 'approuvé', 'payé'])
         projets.append({
             'contrat': dict(c),
             'milestones': m,
@@ -1079,6 +1211,21 @@ def portail_dashboard():
             'cta': 'Remplir maintenant',
             'url': f'/portail/formulaires/{formulaire_pending["id"]}',
         }
+
+    if not next_action:
+        for p in projets:
+            for i, m in enumerate(p['milestones']):
+                if m.get('statut') == 'livré':
+                    next_action = {
+                        'type': 'approuver',
+                        'icon': '✅',
+                        'label': f'« {m["titre"]} » est livré — approuve-le pour confirmer la réception.',
+                        'cta': 'Approuver',
+                        'url': f'/portail/contrat/{p["contrat"]["id"]}/milestone/{i}/approuver',
+                    }
+                    break
+            if next_action:
+                break
 
     if not next_action and facture_pending:
         try:
@@ -1112,6 +1259,7 @@ def portail_dashboard():
                             client=client,
                             projets=projets,
                             fichiers=fichiers,
+                            livrables=livrables,
                             next_action=next_action)
 
 
@@ -1167,6 +1315,34 @@ def portail_signer(contrat_id):
         )
         conn.commit()
         flash('Contrat signé. Merci !', 'success')
+    conn.close()
+    return redirect('/portail/dashboard')
+
+
+@app.route('/portail/contrat/<int:contrat_id>/milestone/<int:index>/approuver', methods=['POST'])
+@client_login_required
+def portail_approuver_milestone(contrat_id, index):
+    conn = get_db()
+    contrat = conn.execute(
+        'SELECT * FROM contrats WHERE id = ? AND client_id = ?',
+        (contrat_id, session['client_id'])
+    ).fetchone()
+
+    if contrat and contrat['milestones']:
+        milestones = json.loads(contrat['milestones'])
+        if 0 <= index < len(milestones) and milestones[index].get('statut') == 'livré':
+            milestones[index]['statut'] = 'approuvé'
+            milestones[index]['approuve_at'] = _now()
+            hist = milestones[index].get('historique', [])
+            hist.append({'statut': 'approuvé', 'at': _now()[:10]})
+            milestones[index]['historique'] = hist
+            conn.execute(
+                'UPDATE contrats SET milestones = ? WHERE id = ?',
+                (json.dumps(milestones, ensure_ascii=False), contrat_id)
+            )
+            conn.commit()
+            flash(f'✅ « {milestones[index]["titre"]} » approuvé. Merci !', 'success')
+
     conn.close()
     return redirect('/portail/dashboard')
 
@@ -1388,6 +1564,95 @@ def portail_facture_print(facture_id):
     if not facture:
         return redirect('/portail/factures')
     return render_template('facture_print.html', facture=facture, client=client)
+
+
+# ── LEADS (formulaire de contact public tntm.ca) ──────────────────────────────
+
+@app.route('/api/public/contact', methods=['POST', 'OPTIONS'])
+def api_public_contact():
+    # Preflight CORS
+    if request.method == 'OPTIONS':
+        resp = app.make_response('')
+        resp.headers['Access-Control-Allow-Origin']  = '*'
+        resp.headers['Access-Control-Allow-Methods'] = 'POST, OPTIONS'
+        resp.headers['Access-Control-Allow-Headers'] = 'Content-Type'
+        return resp, 204
+
+    data    = request.get_json(silent=True) or request.form
+    nom     = (data.get('nom') or '').strip()
+    email   = (data.get('email') or data.get('courriel') or '').strip()
+    message = (data.get('message') or '').strip()
+
+    if not nom or not message:
+        resp = jsonify({'error': 'Nom et message requis.'})
+        resp.headers['Access-Control-Allow-Origin'] = '*'
+        return resp, 400
+
+    conn = get_db()
+    conn.execute(
+        'INSERT INTO leads (nom, email, message) VALUES (?, ?, ?)',
+        (nom, email, message)
+    )
+    conn.commit()
+    conn.close()
+
+    send_notification_email(
+        f'[TNTMom] Nouveau message de {nom}',
+        f'Nom : {nom}\nCourriel : {email or "(non fourni)"}\n\n{message}'
+    )
+
+    resp = jsonify({'ok': True})
+    resp.headers['Access-Control-Allow-Origin'] = '*'
+    return resp
+
+
+@app.route('/leads')
+@login_required
+def leads_list():
+    conn = get_db()
+    leads = conn.execute('SELECT * FROM leads ORDER BY created_at DESC').fetchall()
+    conn.execute('UPDATE leads SET lu = 1 WHERE lu = 0')
+    conn.commit()
+    conn.close()
+    return render_template('leads.html', leads=leads)
+
+
+@app.route('/leads/<int:lead_id>/delete', methods=['POST'])
+@login_required
+def lead_delete(lead_id):
+    conn = get_db()
+    conn.execute('DELETE FROM leads WHERE id = ?', (lead_id,))
+    conn.commit()
+    conn.close()
+    return redirect('/leads')
+
+
+# ── GALERIE LIVRABLES ─────────────────────────────────────────────────────────
+
+@app.route('/clients/<int:client_id>/contrat/<int:contrat_id>/milestone/<int:index>/livrables/upload', methods=['POST'])
+@login_required
+def livrable_upload(client_id, contrat_id, index):
+    fichier = request.files.get('fichier')
+    if not fichier or fichier.filename == '':
+        flash('Aucun fichier sélectionné.', 'error')
+        return redirect(f'/clients/{client_id}')
+    nom_original = fichier.filename
+    ext          = os.path.splitext(nom_original)[1].lower()
+    nom_stocke   = str(uuid.uuid4()) + ext
+    dossier      = os.path.join('uploads', str(client_id))
+    os.makedirs(dossier, exist_ok=True)
+    fichier.save(os.path.join(dossier, nom_stocke))
+    conn = get_db()
+    conn.execute(
+        '''INSERT INTO fichiers (client_id, nom_original, nom_stocke, taille, milestone_index)
+           VALUES (?, ?, ?, ?, ?)''',
+        (client_id, nom_original, nom_stocke,
+         os.path.getsize(os.path.join(dossier, nom_stocke)), index)
+    )
+    conn.commit()
+    conn.close()
+    flash('Livrable ajouté.', 'success')
+    return redirect(f'/clients/{client_id}')
 
 
 # ── FORMULAIRES CUSTOM ────────────────────────────────────────────────────────

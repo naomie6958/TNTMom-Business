@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     {# block title : chaque template enfant peut personnaliser le titre de l'onglet #}
     <title>{% block title %}ClientPortal{% endblock %} — TNTMom</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}?v=40">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}?v=41">
     <link rel="icon" href="{{ url_for('static', filename='images/favicon.svg') }}" type="image/svg+xml">
     {# url_for('static', ...) génère le bon chemin peu importe où Flask est monté #}
     {% block head %}{% endblock %}
@@ -26,6 +26,15 @@
             <a href="/dashboard"
                {% if request.path == '/dashboard' %}class="active"{% endif %}>
                 <span class="nav-bullet">◈</span> Dashboard
+            </a>
+            <a href="/command-center"
+               {% if request.path == '/command-center' %}class="active"{% endif %}>
+                <span class="nav-bullet">◈</span> Command Center
+            </a>
+            <a href="/leads"
+               {% if request.path == '/leads' %}class="active"{% endif %}>
+                <span class="nav-bullet">◈</span> Leads
+                {% if leads_non_lus > 0 %}<span class="nav-badge">{{ leads_non_lus }}</span>{% endif %}
             </a>
             <a href="/formulaires"
                {% if request.path.startswith('/formulaires') %}class="active"{% endif %}>
@@ -71,6 +80,11 @@
        class="pbn-item {% if request.path == '/dashboard' %}active{% endif %}">
         <span class="pbn-icon">◈</span>
         <span class="pbn-label">Clients</span>
+    </a>
+    <a href="/command-center"
+       class="pbn-item {% if request.path == '/command-center' %}active{% endif %}">
+        <span class="pbn-icon">⌖</span>
+        <span class="pbn-label">Centre</span>
     </a>
     <a href="/formulaires"
        class="pbn-item {% if request.path.startswith('/formulaires') %}active{% endif %}">

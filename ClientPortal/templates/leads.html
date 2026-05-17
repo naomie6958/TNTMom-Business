@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+
+{% block title %}Leads{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1 class="page-title">Leads</h1>
+        <div class="page-sub">Messages reçus depuis tntm.ca</div>
+    </div>
+</div>
+
+{% if leads %}
+<div class="card" style="padding: 0; overflow: hidden;">
+    {% for lead in leads %}
+    <div style="padding: 1rem 1.25rem; border-bottom: 1px solid var(--border);
+                {% if not lead.lu %}background: rgba(217,79,189,0.04);{% endif %}">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem; flex-wrap: wrap;">
+            <div>
+                <div style="font-weight: 600; font-size: 0.9rem;">
+                    {{ lead.nom }}
+                    {% if not lead.lu %}<span class="nav-badge" style="margin-left: 0.4rem;">Nouveau</span>{% endif %}
+                </div>
+                {% if lead.email %}
+                <div style="font-size: 0.78rem; color: var(--muted); margin-top: 0.1rem;">
+                    <a href="mailto:{{ lead.email }}" style="color: var(--accent);">{{ lead.email }}</a>
+                </div>
+                {% endif %}
+                <div style="font-size: 0.75rem; color: var(--muted); margin-top: 0.1rem;">{{ lead.created_at[:10] }}</div>
+            </div>
+            <form method="POST" action="/leads/{{ lead.id }}/delete">
+                <button type="button" class="btn btn-danger" style="font-size: 0.72rem; padding: 0.2rem 0.6rem;"
+                        onclick="openDeleteModal('del-lead-{{ lead.id }}', 'Supprimer ce message de {{ lead.nom }} ?')">✕</button>
+            </form>
+            <form id="del-lead-{{ lead.id }}" method="POST" action="/leads/{{ lead.id }}/delete" style="display:none;"></form>
+        </div>
+        <div style="margin-top: 0.6rem; font-size: 0.85rem; color: rgba(240,238,255,0.75);
+                    white-space: pre-wrap; line-height: 1.6;">{{ lead.message }}</div>
+        {% if lead.email %}
+        <div style="margin-top: 0.6rem;">
+            <a href="mailto:{{ lead.email }}?subject=Re: Ton message sur tntm.ca"
+               class="btn btn-secondary" style="font-size: 0.75rem; padding: 0.25rem 0.75rem;">
+                Répondre →
+            </a>
+        </div>
+        {% endif %}
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<div class="card">
+    <div class="empty-state">Aucun lead pour le moment. Les messages de tntm.ca apparaîtront ici.</div>
+</div>
+{% endif %}
+{% endblock %}
