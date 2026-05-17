@@ -269,7 +269,7 @@ def dashboard():
                c.nom as client_nom, c.id as client_id
         FROM factures f
         JOIN clients c ON c.id = f.client_id
-        WHERE f.statut != 'payée'
+        WHERE f.statut != 'payée' AND c.demo = 0
         ORDER BY f.date_emission DESC
     ''').fetchall()
 
@@ -291,7 +291,7 @@ def dashboard():
 def command_center():
     conn = get_db()
     clients_all = conn.execute(
-        "SELECT * FROM clients WHERE statut IN ('actif', 'prospect', 'complété') ORDER BY statut, nom ASC"
+        "SELECT * FROM clients WHERE statut IN ('actif', 'prospect', 'complété') AND demo = 0 ORDER BY statut, nom ASC"
     ).fetchall()
 
     rows = []
@@ -538,6 +538,18 @@ def edit_client(client_id):
     conn.commit()
     conn.close()
     flash('Client mis à jour.', 'success')
+    return redirect(f'/clients/{client_id}')
+
+
+@app.route('/clients/<int:client_id>/toggle-demo', methods=['POST'])
+@login_required
+def toggle_demo(client_id):
+    conn = get_db()
+    current = conn.execute('SELECT demo FROM clients WHERE id = ?', (client_id,)).fetchone()
+    new_val = 0 if (current and current['demo']) else 1
+    conn.execute('UPDATE clients SET demo = ? WHERE id = ?', (new_val, client_id))
+    conn.commit()
+    conn.close()
     return redirect(f'/clients/{client_id}')
 
 
@@ -1948,6 +1960,7 @@ def comptabilite():
         SELECT f.*, c.nom as client_nom
         FROM factures f
         JOIN clients c ON c.id = f.client_id
+        WHERE c.demo = 0
         ORDER BY f.date_emission DESC
     ''').fetchall()
     conn.close()
