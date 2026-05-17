@@ -290,17 +290,44 @@ header h1 {
     margin: 1rem 0 2rem;
 }
 
+/* ── NAV (hamburger universel) ───────────────────────────────── */
+#menu-toggle {
+    display: block;
+    background: transparent;
+    border: none;
+    color: wheat;
+    font-size: 1.5rem;
+    cursor: pointer;
+}
+
+header { flex-wrap: wrap; }
+
 nav {
     display: flex;
-    gap: 0.75rem;
+    flex-direction: column;
+    gap: 0.5rem;
+    width: 100%;
+    max-height: 0;
+    overflow: hidden;
+    clip-path: inset(0 0 100% 0);
+    transition: max-height 0.35s ease-out, clip-path 0.35s ease-out;
+    order: 3;
+    padding: 0 4px;
+}
+
+nav.open {
+    max-height: 700px;
+    clip-path: inset(-10px -10px 0 -10px);
+    padding-top: 10px;
+    padding-bottom: 8px;
 }
 
 nav a {
     font-family: 'Orbitron', sans-serif;
     display: block;
-    padding: 0.45rem 1.1rem;
+    padding: 0.75rem 1.5rem;
     background: rgba(26, 26, 46, 0.6);
-    border: 1px solid rgba(135, 206, 235, 0.35);
+    border: 1px solid rgba(135, 206, 235, 0.25);
     border-radius: 20px;
     color: rgba(245, 222, 179, 0.8);
     text-decoration: none;
@@ -311,8 +338,8 @@ nav a {
 
 nav a:hover,
 nav a.active {
-    transform: scale(1.05);
-    box-shadow: 0 0 16px rgba(135, 206, 235, 0.6), 0 0 6px rgba(135, 206, 235, 0.3);
+    transform: translateY(-3px);
+    box-shadow: 0 6px 20px rgba(135, 206, 235, 0.7), 0 0 12px rgba(135, 206, 235, 0.4);
     border-color: #87CEEB;
     color: #87CEEB;
 }
@@ -330,66 +357,34 @@ nav a.nav-portail:hover {
     box-shadow: 0 0 16px rgba(217, 79, 189, 0.45), 0 0 6px rgba(217, 79, 189, 0.25);
 }
 
-#menu-toggle {
-    display: none;
-    background: transparent;
-    border: none;
-    color: wheat;
-    font-size: 1.5rem;
+/* ── NAV GROUPE (Mes projets + sous-menu) ─────────────────────── */
+.nav-group { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+.nav-group-link { flex: 1; }
+.nav-chevron-btn {
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    background: rgba(26, 26, 46, 0.6);
+    border: 1px solid rgba(135, 206, 235, 0.25);
+    border-radius: 20px;
+    color: rgba(245, 222, 179, 0.8);
+    font-size: 0.85rem;
+    padding: 0 0.9rem;
     cursor: pointer;
+    transition: all 0.2s;
 }
-
-@media (max-width: 920px) {
-    #menu-toggle {
-        display: block;
-    }
-
-    header{
-        flex-wrap: wrap;
-    }
-
-    h1 {
-        flex: 1;
-    }
-
-    nav {
-        display: flex;
-        flex-direction: column;
-        width: 100%;
-        overflow: visible;
-        max-height: 0;
-        clip-path: inset(0 0 100% 0);
-        transition: max-height 0.3s ease-out, clip-path 0.3s ease-out;
-        order: 3;
-        padding: 0 4px;
-    }
-
-    nav.open{
-        display: flex;
-        max-height: 400px;
-        clip-path: inset(-10px -10px 0 -10px);
-        padding-top: 10px;
-        padding-bottom: 8px;
-    }
-
-    nav a {
-        font-family: 'Orbitron', sans-serif;
-        display: block;
-        padding: 0.75rem 1.5rem;
-        background: rgba(26, 26, 46, 0.6);
-        border: 1px solid rgba(135, 206, 235, 0.25);
-        border-radius: 20px;
-        color: rgba(245, 222, 179, 0.8);
-        text-decoration: none;
-        transition: all 0.2s;
-    }
-
-    nav a:hover {
-        transform: translateY(-3px);
-        box-shadow: 0 6px 20px rgba(135, 206, 235, 0.7), 0 0 12px rgba(135, 206, 235, 0.4);
-        border-color: #87CEEB;
-        color: #87CEEB;
-    }
+.nav-chevron-btn:hover { border-color: #87CEEB; color: #87CEEB; }
+.nav-sub {
+    display: flex; flex-direction: column; gap: 0.3rem;
+    flex-basis: 100%; width: 100%;
+    max-height: 0; overflow: hidden;
+    transition: max-height 0.3s ease;
+}
+.nav-sub.open { max-height: 220px; }
+.nav-sub-item {
+    padding: 0.55rem 1.5rem 0.55rem 2.2rem !important;
+    font-size: 0.68rem !important;
+    opacity: 0.8;
+    border-radius: 15px !important;
 }
 
 body {

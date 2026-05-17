@@ -32,7 +32,26 @@ const nav = document.querySelector('nav')
 
 toggle.addEventListener('click', function() {
     nav.classList.toggle('open')
+    if (!nav.classList.contains('open')) {
+        const sub = document.querySelector('.nav-sub')
+        const chevron = document.querySelector('.nav-chevron-btn')
+        if (sub) sub.classList.remove('open')
+        if (chevron) { chevron.setAttribute('aria-expanded', 'false'); chevron.textContent = '▾'; }
+    }
 })
+
+// ── Sous-menu Mes projets ─────────────────────────────────────────────────
+const chevronBtn = document.querySelector('.nav-chevron-btn')
+const navSub = document.querySelector('.nav-sub')
+
+if (chevronBtn && navSub) {
+    chevronBtn.addEventListener('click', function() {
+        navSub.classList.toggle('open')
+        const isOpen = navSub.classList.contains('open')
+        chevronBtn.setAttribute('aria-expanded', String(isOpen))
+        chevronBtn.textContent = isOpen ? '▴' : '▾'
+    })
+}
 
 const currentPage = window.location.pathname.split('/').pop() || 'index.html';
 document.querySelectorAll('nav a').forEach(link => {
