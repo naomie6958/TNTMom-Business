@@ -60,7 +60,7 @@
                 {{ h }}h{{ '%02d' | format(m) }}
             </td>
             <td style="text-align: right; color: var(--accent);" class="mono">
-                {% if r.montant %}${{ '%.0f' | format(r.montant) }}{% else %}<span style="color:var(--muted)">—</span>{% endif %}
+                {{ '%.2f' | format(r.montant | float) | replace('.', ',') }} $
             </td>
             <td style="text-align: right; color: var(--muted);" class="mono">{{ r.nb_entrees }}</td>
         </tr>
@@ -95,7 +95,7 @@
                 {{ h }}h{{ '%02d' | format(m) }}
             </td>
             <td style="text-align: right; color: var(--accent);" class="mono">
-                {% if r.montant_facturable %}${{ '%.0f' | format(r.montant_facturable) }}{% else %}<span style="color:var(--muted)">—</span>{% endif %}
+                {{ '%.2f' | format(r.montant_facturable | float) | replace('.', ',') }} $
             </td>
         </tr>
         {% endfor %}
@@ -132,7 +132,7 @@
                 {{ h }}h{{ '%02d' | format(m) }}
             </td>
             <td style="text-align: right; color: var(--accent);" class="mono">
-                {% if r.montant %}${{ '%.0f' | format(r.montant) }}{% else %}<span style="color:var(--muted)">—</span>{% endif %}
+                {{ '%.2f' | format(r.montant | float) | replace('.', ',') }} $
             </td>
         </tr>
         {% endfor %}
