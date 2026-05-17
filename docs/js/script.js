@@ -137,3 +137,15 @@ fetch('data/projets.json')
             galerie.appendChild(card);
         });
     })
+
+// ── Animations IntersectionObserver ───────────────────────────────────────
+const animObserver = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+        if (e.isIntersecting) {
+            e.target.classList.add('visible');
+            animObserver.unobserve(e.target);
+        }
+    });
+}, { threshold: 0.12 });
+
+document.querySelectorAll('.anim-fade-up').forEach(el => animObserver.observe(el));

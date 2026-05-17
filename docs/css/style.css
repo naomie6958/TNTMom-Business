@@ -1628,3 +1628,161 @@ h3.projet-section-titre {
         padding: 2rem 1rem;
     }
 }
+
+/* ── ANIMATIONS INTERSECTION OBSERVER ────────────────────────────────────── */
+.anim-fade-up {
+    opacity: 0;
+    transform: translateY(28px);
+    transition: opacity 0.6s ease, transform 0.6s ease;
+}
+.anim-fade-up.visible {
+    opacity: 1;
+    transform: translateY(0);
+}
+.anim-fade-up:nth-child(2) { transition-delay: 0.1s; }
+.anim-fade-up:nth-child(3) { transition-delay: 0.2s; }
+.anim-fade-up:nth-child(4) { transition-delay: 0.3s; }
+.anim-fade-up:nth-child(5) { transition-delay: 0.4s; }
+
+/* ── PAGE COMMENT JE TRAVAILLE ───────────────────────────────────────────── */
+.process-hero {
+    background: linear-gradient(160deg, #0f0f14 60%, rgba(217,79,189,0.08));
+}
+
+.process-steps {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 3rem 2rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+}
+
+.process-step {
+    display: flex;
+    gap: 2rem;
+    position: relative;
+}
+
+.process-step:not(:last-child)::before {
+    content: '';
+    position: absolute;
+    left: 1.45rem;
+    top: 3rem;
+    bottom: -1px;
+    width: 1px;
+    background: linear-gradient(to bottom, rgba(217,79,189,0.5), rgba(135,206,235,0.15));
+}
+
+.process-num {
+    width: 2.9rem;
+    height: 2.9rem;
+    border-radius: 50%;
+    border: 1px solid rgba(217,79,189,0.5);
+    background: rgba(217,79,189,0.08);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Bebas Neue', cursive;
+    font-size: 1.15rem;
+    color: #d94fbd;
+    flex-shrink: 0;
+    position: relative;
+    z-index: 1;
+}
+
+.process-content {
+    padding: 0.2rem 0 2.5rem;
+}
+
+.process-content h3 {
+    font-family: 'Bebas Neue', cursive;
+    font-size: 1.35rem;
+    letter-spacing: 0.06em;
+    color: #f0eeff;
+    margin-bottom: 0.5rem;
+}
+
+.process-content p {
+    color: rgba(240,238,255,0.65);
+    font-size: 0.95rem;
+    line-height: 1.7;
+}
+
+.process-content .process-tag {
+    display: inline-block;
+    margin-top: 0.75rem;
+    font-size: 0.75rem;
+    padding: 0.2rem 0.65rem;
+    border-radius: 99px;
+    background: rgba(135,206,235,0.08);
+    border: 1px solid rgba(135,206,235,0.2);
+    color: #87CEEB;
+    letter-spacing: 0.04em;
+}
+
+/* ── TÉMOIGNAGES ──────────────────────────────────────────────────────────── */
+.temoignages-section {
+    padding: 3.5rem 2rem;
+    max-width: 1100px;
+    margin: 0 auto;
+}
+
+.temoignages-section h2 {
+    font-family: 'Bebas Neue', cursive;
+    font-size: 2rem;
+    letter-spacing: 0.08em;
+    color: #f0eeff;
+    margin-bottom: 2rem;
+}
+
+.temoignages-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1.5rem;
+}
+
+.temoignage-card {
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(135,206,235,0.12);
+    border-radius: 12px;
+    padding: 1.5rem;
+    position: relative;
+}
+
+.temoignage-card::before {
+    content: '"';
+    font-family: 'Bebas Neue', cursive;
+    font-size: 4rem;
+    color: rgba(217,79,189,0.2);
+    position: absolute;
+    top: 0.5rem;
+    left: 1rem;
+    line-height: 1;
+}
+
+.temoignage-texte {
+    color: rgba(240,238,255,0.75);
+    font-size: 0.9rem;
+    line-height: 1.7;
+    margin-bottom: 1rem;
+    padding-top: 1rem;
+}
+
+.temoignage-auteur {
+    font-size: 0.78rem;
+    color: rgba(240,238,255,0.45);
+    letter-spacing: 0.04em;
+}
+
+.temoignage-auteur strong {
+    color: #87CEEB;
+    display: block;
+    margin-bottom: 0.1rem;
+}
+
+@media (max-width: 600px) {
+    .process-steps { padding: 2rem 1rem; }
+    .temoignages-section { padding: 2rem 1rem; }
+}
+}

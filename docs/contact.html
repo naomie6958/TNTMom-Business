@@ -35,6 +35,7 @@
             <nav>
                 <a href="index.html">Accueil</a>
                 <a href="index.html#galerie">Mes projets</a>
+                <a href="process.html">Comment je travaille</a>
                 <a href="about.html">À propos</a>
                 <a href="contact.html">Contact</a>
                 <a href="https://tntmom.pythonanywhere.com/portail/login" target="_blank" class="nav-portail">Portail client →</a>
@@ -48,7 +49,7 @@
                 <p id="contact-sub">Une idée ? Un projet ? Un message ?</p>
             </section>
             <section id="contact-section">
-                <form action="https://formspree.io/f/xaqvwpnw" method="post">
+                <form id="contact-form">
                     <div class="form-group">
                         <label for="nom">Nom</label>
                         <input type="text" id="nom" name="nom" placeholder="Ton nom" required>
@@ -61,8 +62,44 @@
                         <label for="message">Message</label>
                         <textarea id="message" name="message" rows="6" placeholder="Ton message..." required></textarea>
                     </div>
-                    <button type="submit" class="btn-submit">Envoyer</button>
+                    <button type="submit" class="btn-submit" id="contact-submit">Envoyer</button>
+                    <div id="contact-feedback" style="display:none; margin-top:1rem; font-size:0.9rem;"></div>
                 </form>
+                <script>
+                document.getElementById('contact-form').addEventListener('submit', function(e) {
+                    e.preventDefault();
+                    const btn = document.getElementById('contact-submit');
+                    btn.disabled = true;
+                    btn.textContent = 'Envoi...';
+                    const data = {
+                        nom:     document.getElementById('nom').value,
+                        email:   document.getElementById('courriel').value,
+                        message: document.getElementById('message').value
+                    };
+                    fetch('https://tntmom.pythonanywhere.com/api/public/contact', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(data)
+                    })
+                    .then(r => r.json())
+                    .then(() => {
+                        document.getElementById('contact-form').reset();
+                        const fb = document.getElementById('contact-feedback');
+                        fb.style.display = 'block';
+                        fb.style.color = '#3ecf8e';
+                        fb.textContent = '✓ Message envoyé ! Naomie te revient sous peu.';
+                        btn.style.display = 'none';
+                    })
+                    .catch(() => {
+                        const fb = document.getElementById('contact-feedback');
+                        fb.style.display = 'block';
+                        fb.style.color = '#f87171';
+                        fb.textContent = 'Erreur — écris directement à naomiemt@tntm.ca';
+                        btn.disabled = false;
+                        btn.textContent = 'Envoyer';
+                    });
+                });
+                </script>
             </section>
         </main>
         <footer>
