@@ -240,12 +240,12 @@ def dashboard():
         'SELECT * FROM clients ORDER BY created_at DESC'
     ).fetchall()
 
-    # Statistiques pour la barre de résumé en haut du hub
+    # Statistiques pour la barre de résumé — exclut les clients démo
     stats = {
-        'total':     len(clients),
-        'prospects': sum(1 for c in clients if c['statut'] == 'prospect'),
-        'actifs':    sum(1 for c in clients if c['statut'] == 'actif'),
-        'completes': sum(1 for c in clients if c['statut'] == 'complété'),
+        'total':     sum(1 for c in clients if not c['demo']),
+        'prospects': sum(1 for c in clients if c['statut'] == 'prospect' and not c['demo']),
+        'actifs':    sum(1 for c in clients if c['statut'] == 'actif' and not c['demo']),
+        'completes': sum(1 for c in clients if c['statut'] == 'complété' and not c['demo']),
     }
 
     unread_rows = conn.execute(
