@@ -1274,7 +1274,16 @@ def repondre_message(client_id, message_id):
             (reponse, now, message_id, client_id)
         )
         conn.commit()
+        client_notif = conn.execute('SELECT nom, email FROM clients WHERE id = ?', (client_id,)).fetchone()
+        msg_row = conn.execute('SELECT sujet FROM messages_client WHERE id = ?', (message_id,)).fetchone()
         conn.close()
+        if client_notif and client_notif['email']:
+            sujet = msg_row['sujet'] if msg_row and msg_row['sujet'] else 'ton message'
+            send_notification_email(
+                f'[TNTMom] Naomie t\'a répondu — {sujet}',
+                f'Bonjour {client_notif["nom"]},\n\nNaomie vient de répondre à ton message « {sujet} ».\n\nConnecte-toi à ton portail pour lire la réponse :\nhttps://tntmom.pythonanywhere.com/portail/login\n\n— Naomie (TNTMom)',
+                to=client_notif['email']
+            )
         flash('Réponse envoyée.', 'success')
     return redirect(f'/clients/{client_id}')
 
@@ -1313,6 +1322,12 @@ def portail_signer(contrat_id):
             (now, contrat_id)
         )
         conn.commit()
+        client_notif = conn.execute('SELECT nom FROM clients WHERE id = ?', (session['client_id'],)).fetchone()
+        nom_projet = contrat['nom'] or 'Projet sans titre'
+        send_notification_email(
+            f'[ClientPortal] ✍ Contrat signé — {nom_projet}',
+            f'{client_notif["nom"] if client_notif else "Ton client"} vient de signer le contrat « {nom_projet} ».\n\nConnecte-toi pour voir les détails.'
+        )
         flash('Contrat signé. Merci !', 'success')
     conn.close()
     return redirect('/portail/dashboard')
@@ -1340,7 +1355,13 @@ def portail_approuver_milestone(contrat_id, index):
                 (json.dumps(milestones, ensure_ascii=False), contrat_id)
             )
             conn.commit()
-            flash(f'✅ « {milestones[index]["titre"]} » approuvé. Merci !', 'success')
+            titre = milestones[index]['titre']
+            client_notif = conn.execute('SELECT nom FROM clients WHERE id = ?', (session['client_id'],)).fetchone()
+            send_notification_email(
+                f'[ClientPortal] ✅ Milestone approuvé — {titre}',
+                f'{client_notif["nom"] if client_notif else "Ton client"} vient d\'approuver : « {titre} ».\n\nTu peux maintenant marquer la facture comme payée.'
+            )
+            flash(f'✅ « {titre} » approuvé. Merci !', 'success')
 
     conn.close()
     return redirect('/portail/dashboard')
