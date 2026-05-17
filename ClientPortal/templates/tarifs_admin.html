@@ -3,46 +3,6 @@
 
 {% block head %}
 <style>
-/* ── Glitch titre ─────────────────────────────────────────────────────────── */
-.glitch {
-    position: relative;
-    display: inline-block;
-}
-.glitch::before,
-.glitch::after {
-    content: attr(data-text);
-    position: absolute;
-    top: 0; left: 0;
-    width: 100%;
-    overflow: hidden;
-}
-.glitch::before {
-    color: #87CEEB;
-    animation: glitch-top 3.5s infinite linear;
-    clip-path: polygon(0 0, 100% 0, 100% 40%, 0 40%);
-    transform: translateX(-2px);
-}
-.glitch::after {
-    color: #d94fbd;
-    animation: glitch-bot 3.5s infinite linear;
-    clip-path: polygon(0 60%, 100% 60%, 100% 100%, 0 100%);
-    transform: translateX(2px);
-}
-@keyframes glitch-top {
-    0%, 88%   { transform: translateX(-2px); opacity: 1; }
-    89%        { transform: translateX(3px) skewX(-5deg); opacity: 0.8; }
-    90%        { transform: translateX(-3px); opacity: 0.6; }
-    91%        { transform: translateX(2px); opacity: 1; }
-    92%, 100%  { transform: translateX(-2px); opacity: 1; }
-}
-@keyframes glitch-bot {
-    0%, 88%   { transform: translateX(2px); opacity: 1; }
-    89%        { transform: translateX(-3px) skewX(5deg); opacity: 0.8; }
-    90%        { transform: translateX(3px); opacity: 0.6; }
-    91%        { transform: translateX(-2px); opacity: 1; }
-    92%, 100%  { transform: translateX(2px); opacity: 1; }
-}
-
 .tarif-header {
     cursor: pointer;
     display: flex;

@@ -227,6 +227,43 @@ a:hover { color: var(--accent); }
 .page-title span { color: var(--accent); }
 .page-title .client-nom { color: #87CEEB; }
 
+/* ── Glitch titre (partagé portail + admin) ──────────────────────────────── */
+.glitch { position: relative; display: inline-block; }
+.glitch::before,
+.glitch::after {
+    content: attr(data-text);
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%;
+    overflow: hidden;
+}
+.glitch::before {
+    color: #87CEEB;
+    clip-path: polygon(0 0, 100% 0, 100% 40%, 0 40%);
+    transform: translateX(-2px);
+    animation: glitch-top 3.5s infinite linear;
+}
+.glitch::after {
+    color: #d94fbd;
+    clip-path: polygon(0 60%, 100% 60%, 100% 100%, 0 100%);
+    transform: translateX(2px);
+    animation: glitch-bot 3.5s infinite linear;
+}
+@keyframes glitch-top {
+    0%, 88%  { transform: translateX(-2px); opacity: 1; }
+    89%      { transform: translateX(3px) skewX(-5deg); opacity: 0.8; }
+    90%      { transform: translateX(-3px); opacity: 0.6; }
+    91%      { transform: translateX(2px); opacity: 1; }
+    92%, 100%{ transform: translateX(-2px); opacity: 1; }
+}
+@keyframes glitch-bot {
+    0%, 88%  { transform: translateX(2px); opacity: 1; }
+    89%      { transform: translateX(-3px) skewX(5deg); opacity: 0.8; }
+    90%      { transform: translateX(3px); opacity: 0.6; }
+    91%      { transform: translateX(-2px); opacity: 1; }
+    92%, 100%{ transform: translateX(2px); opacity: 1; }
+}
+
 .page-sub {
     font-size: 0.8rem;
     color: var(--muted);
