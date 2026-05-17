@@ -133,6 +133,13 @@
                                 {% endfor %}
                             </div>
                             {% endif %}
+                            {% if m.get('lien_preview') and m.get('preview_visible') %}
+                            <a href="{{ m.lien_preview }}" target="_blank" rel="noopener"
+                               class="btn btn-secondary"
+                               style="font-size: 0.72rem; padding: 0.3rem 0.75rem; margin-top: 0.3rem; display: inline-block;">
+                                Voir la prévisualisation
+                            </a>
+                            {% endif %}
                             {% if m.statut == 'livré' %}
                             <button type="button" class="btn btn-primary"
                                     style="font-size: 0.72rem; padding: 0.3rem 0.75rem; margin-top: 0.3rem;"

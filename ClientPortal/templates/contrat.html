@@ -198,6 +198,20 @@ function render() {
             <button type="button" class="btn btn-ghost"
                     style="color: var(--red); padding: 0.3rem 0.5rem;"
                     onclick="removeMilestone(${i})">✕</button>
+            <div style="grid-column: 1 / -1; display: flex; gap: 0.6rem; align-items: center;
+                        padding-top: 0.3rem; border-top: 1px solid var(--border);">
+                <input type="url" placeholder="Lien de prévisualisation (optionnel)"
+                       value="${esc(m.lien_preview || '')}"
+                       oninput="milestones[${i}].lien_preview = this.value"
+                       style="flex: 1;">
+                <label style="display: flex; align-items: center; gap: 0.35rem; font-size: 0.78rem;
+                              white-space: nowrap; cursor: pointer; color: var(--muted);">
+                    <input type="checkbox" ${m.preview_visible ? 'checked' : ''}
+                           onchange="milestones[${i}].preview_visible = this.checked"
+                           style="width: auto; cursor: pointer;">
+                    Visible au client
+                </label>
+            </div>
         `;
         list.appendChild(row);
     });
@@ -212,7 +226,7 @@ function esc(str) {
 }
 
 function addMilestone() {
-    milestones.push({ titre: '', livrable: '', prix: '', date: '', statut: 'en attente' });
+    milestones.push({ titre: '', livrable: '', prix: '', date: '', statut: 'en attente', lien_preview: '', preview_visible: false });
     render();
 }
 

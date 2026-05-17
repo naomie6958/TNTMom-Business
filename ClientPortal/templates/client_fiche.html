@@ -339,6 +339,14 @@
                                     {% if m.prix %}
                                     <div style="font-size: 0.66rem; color: var(--green); margin-top: 0.15rem;">{{ m.prix }}$</div>
                                     {% endif %}
+                                    {% if m.get('lien_preview') %}
+                                    <div style="margin-top: 0.2rem;">
+                                        <a href="{{ m.lien_preview }}" target="_blank" rel="noopener"
+                                           style="font-size: 0.6rem; color: var(--accent); text-decoration: none;">
+                                            Aperçu{% if not m.get('preview_visible') %} <span style="color: var(--muted);">(masqué)</span>{% endif %}
+                                        </a>
+                                    </div>
+                                    {% endif %}
                                     {% if m.statut == 'livré' %}
                                     <form method="POST" enctype="multipart/form-data"
                                           action="/clients/{{ client.id }}/contrat/{{ c.id }}/milestone/{{ loop.index0 }}/livrables/upload"
