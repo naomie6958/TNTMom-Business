@@ -20,11 +20,11 @@ app = Flask(__name__)
 
 
 def send_notification_email(subject, body, to=None):
-    """Envoie un courriel via Gmail SMTP. `to` optionnel, défaut = Naomie."""
+    """Envoie un courriel via Gmail SMTP. Retourne True si envoyé, False sinon."""
     gmail_user = os.getenv('GMAIL_USER')
     gmail_pass = os.getenv('GMAIL_APP_PASSWORD')
     if not gmail_user or not gmail_pass:
-        return
+        return False
     try:
         msg = MIMEText(body, 'plain', 'utf-8')
         msg['Subject'] = subject
@@ -34,8 +34,11 @@ def send_notification_email(subject, body, to=None):
             server.starttls()
             server.login(gmail_user, gmail_pass)
             server.send_message(msg)
-    except Exception:
-        pass  # Ne jamais bloquer l'app si l'email échoue
+        return True
+    except Exception as e:
+        import sys
+        print(f'[EMAIL ERROR] {subject} → {to}: {e}', file=sys.stderr)
+        return False
 
 
 def _compute_deadlines(milestones):
@@ -809,7 +812,7 @@ def contrat_envoyer_email(client_id, contrat_id):
         flash('Ce client n\'a pas d\'adresse email enregistrée.', 'error')
         return redirect(f'/clients/{client_id}')
     nom_projet = contrat['nom'] or 'ton projet'
-    send_notification_email(
+    ok = send_notification_email(
         f'[TNTMom] Ton contrat est prêt à signer — {nom_projet}',
         f'Bonjour {client["nom"]},\n\n'
         f'Naomie a préparé un contrat pour toi :\n\n'
@@ -819,7 +822,10 @@ def contrat_envoyer_email(client_id, contrat_id):
         f'— Naomie (TNTMom)',
         to=client['email']
     )
-    flash(f'Email envoyé à {client["email"]}.', 'success')
+    if ok:
+        flash(f'Email envoyé à {client["email"]}.', 'success')
+    else:
+        flash(f'Échec de l\'envoi — vérifie les variables GMAIL dans le .env de PA.', 'error')
     return redirect(f'/clients/{client_id}')
 
 
