@@ -136,51 +136,7 @@
 
 <div id="tab-resume" class="tab-panel active">
 
-        {# ── QUESTIONNAIRE CLIENT (lien à envoyer) ──────────────────────── #}
-        <div class="card">
-            <div class="section-header">
-                <div class="section-title">Questionnaire client</div>
-            </div>
-            {% if questionnaire %}
-                <div class="flex gap-sm items-center">
-                    <span class="badge badge-actif">Soumis</span>
-                    <span class="text-muted">{{ questionnaire.submitted_at[:10] }}</span>
-                </div>
-                {# Afficher les réponses du client dans un collapsible #}
-                <details class="collapsible" style="margin-top: 0.8rem;">
-                    <summary>Voir les réponses</summary>
-                    <div class="collapsible-body">
-                        {% set r = questionnaire_rep %}
-                        {% if r.activite %}<div class="q-row"><div class="q-label">Ce qu'ils font</div><div class="q-value">{{ r.activite }}</div></div>{% endif %}
-                        {% if r.clientele %}<div class="q-row"><div class="q-label">Clientèle cible</div><div class="q-value">{{ r.clientele }}</div></div>{% endif %}
-                        {% if r.pourquoi_maintenant %}<div class="q-row"><div class="q-label">Pourquoi maintenant</div><div class="q-value">{{ r.pourquoi_maintenant }}</div></div>{% endif %}
-                        {% if r.type_projet %}<div class="q-row"><div class="q-label">Type de projet</div><div class="q-value">{{ r.type_projet }}</div></div>{% endif %}
-                        {% if r.vision %}<div class="q-row"><div class="q-label">Vision esthétique</div><div class="q-value">{{ r.vision }}</div></div>{% endif %}
-                        {% if r.budget %}<div class="q-row"><div class="q-label">Budget</div><div class="q-value">{{ r.budget }}</div></div>{% endif %}
-                        {% if r.deadline %}<div class="q-row"><div class="q-label">Deadline</div><div class="q-value">{{ r.deadline }}</div></div>{% endif %}
-                        {% if r.assets %}<div class="q-row"><div class="q-label">Assets existants</div><div class="q-value">{{ r.assets }}</div></div>{% endif %}
-                        {% if r.acces_technique %}<div class="q-row"><div class="q-label">Accès technique</div><div class="q-value">{{ r.acces_technique }}</div></div>{% endif %}
-                        {% if r.implication %}<div class="q-row"><div class="q-label">Niveau d'implication</div><div class="q-value">{{ r.implication }}</div></div>{% endif %}
-                    </div>
-                </details>
-            {% else %}
-                <div class="text-muted" style="margin-bottom: 0.8rem; font-size: 0.82rem;">
-                    Aucune réponse soumise. Envoie ce lien au client avant la réunion (optionnel).
-                </div>
-                <div class="flex gap-sm items-center" style="flex-wrap: wrap;">
-                    <code style="background: var(--surface2); padding: 0.35rem 0.6rem;
-                                 border-radius: var(--radius); font-size: 0.78rem; flex: 1; min-width: 0;
-                                 overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
-                        /q/{{ client.token }}
-                    </code>
-                    <button class="btn btn-secondary" onclick="copyQLink('{{ client.token }}')">
-                        Copier le lien
-                    </button>
-                </div>
-            {% endif %}
-        </div>
-
-        {# ── CONSULTATIONS ────────────────────────────────────────────── #}
+{# ── CONSULTATIONS ────────────────────────────────────────────── #}
         <div class="card">
             <div class="section-header">
                 <div class="section-title">Consultations</div>
