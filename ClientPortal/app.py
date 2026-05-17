@@ -515,7 +515,7 @@ def client_fiche(client_id):
     projets = []
     for c in contrats_all:
         m = _compute_deadlines(json.loads(c['milestones']) if c['milestones'] else [])
-        total = sum(float(x.get('prix', 0)) for x in m)
+        total = sum(float(x.get('prix', 0) or 0) for x in m)
         projets.append({'contrat': dict(c), 'milestones': m, 'total': total})
 
     # Garde contrat (le dernier) pour les sections qui n'ont pas encore migré
@@ -1255,7 +1255,7 @@ def portail_dashboard():
     projets = []
     for c in contrats_all:
         m = _compute_deadlines(json.loads(c['milestones']) if c['milestones'] else [])
-        total = sum(float(x.get('prix', 0)) for x in m)
+        total = sum(float(x.get('prix', 0) or 0) for x in m)
         faits = sum(1 for x in m if x.get('statut') in ['livré', 'approuvé', 'payé'])
         projets.append({
             'contrat': dict(c),
