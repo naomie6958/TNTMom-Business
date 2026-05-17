@@ -344,8 +344,28 @@ def command_center():
                 'factures_att':   factures_att,
             })
 
+    week_start  = (datetime.date.today() - datetime.timedelta(days=datetime.date.today().weekday())).isoformat()
+    month_start = datetime.date.today().replace(day=1).isoformat()
+
+    heures_semaine = conn.execute('''
+        SELECT COALESCE(SUM(duree_minutes), 0) as total_min,
+               COALESCE(SUM(CASE WHEN type_facturation='horaire' AND taux_applique IS NOT NULL
+                    THEN (duree_minutes / 60.0) * taux_applique ELSE 0 END), 0) as montant
+        FROM entrees_temps
+        WHERE date >= ? AND (heure_fin IS NOT NULL OR mode = 'manuel')
+    ''', (week_start,)).fetchone()
+
+    heures_mois = conn.execute('''
+        SELECT COALESCE(SUM(duree_minutes), 0) as total_min,
+               COALESCE(SUM(CASE WHEN type_facturation='horaire' AND taux_applique IS NOT NULL
+                    THEN (duree_minutes / 60.0) * taux_applique ELSE 0 END), 0) as montant
+        FROM entrees_temps
+        WHERE date >= ? AND (heure_fin IS NOT NULL OR mode = 'manuel')
+    ''', (month_start,)).fetchone()
+
     conn.close()
-    return render_template('command_center.html', rows=rows)
+    return render_template('command_center.html', rows=rows,
+                           heures_semaine=heures_semaine, heures_mois=heures_mois)
 
 
 # ─── CLIENTS ──────────────────────────────────────────────────────────────────
@@ -2033,7 +2053,7 @@ def comptabilite():
 @login_required
 def tarifs():
     conn = get_db()
-    rows = conn.execute('SELECT * FROM tarifs ORDER BY ordre, id').fetchall()
+    rows = conn.execute('SELECT * FROM tarifs ORDER BY id DESC').fetchall()
     conn.close()
     return render_template('tarifs_admin.html', tarifs=rows)
 
@@ -2107,6 +2127,293 @@ def api_public_tarifs():
     resp = jsonify([dict(r) for r in rows])
     resp.headers['Access-Control-Allow-Origin'] = '*'
     return resp
+
+
+# ─── HEURES ───────────────────────────────────────────────────────────────────
+
+@app.route('/heures')
+@login_required
+def heures():
+    conn = get_db()
+    categories = conn.execute(
+        'SELECT * FROM categories_temps WHERE actif=1 ORDER BY ordre, id'
+    ).fetchall()
+    clients = conn.execute(
+        "SELECT id, nom FROM clients WHERE statut != 'archivé' ORDER BY nom"
+    ).fetchall()
+    contrats = conn.execute('''
+        SELECT co.id, co.nom, co.client_id, cl.nom as client_nom
+        FROM contrats co JOIN clients cl ON cl.id = co.client_id
+        WHERE cl.statut != 'archivé'
+        ORDER BY cl.nom, co.nom
+    ''').fetchall()
+    timer_actif = conn.execute('''
+        SELECT e.*, c.nom as cat_nom, c.couleur as cat_couleur
+        FROM entrees_temps e
+        JOIN categories_temps c ON c.id = e.categorie_id
+        WHERE e.heure_fin IS NULL AND e.mode = 'timer'
+        ORDER BY e.created_at DESC LIMIT 1
+    ''').fetchone()
+    entrees = conn.execute('''
+        SELECT e.*, c.nom as cat_nom, c.couleur as cat_couleur, cl.nom as client_nom
+        FROM entrees_temps e
+        JOIN categories_temps c ON c.id = e.categorie_id
+        LEFT JOIN clients cl ON cl.id = e.client_id
+        WHERE e.heure_fin IS NOT NULL OR e.mode = 'manuel'
+        ORDER BY e.date DESC, e.created_at DESC
+        LIMIT 30
+    ''').fetchall()
+
+    week_start  = (datetime.date.today() - datetime.timedelta(days=datetime.date.today().weekday())).isoformat()
+    month_start = datetime.date.today().replace(day=1).isoformat()
+
+    stats_semaine = conn.execute('''
+        SELECT COALESCE(SUM(duree_minutes), 0) as total_min,
+               COALESCE(SUM(CASE WHEN type_facturation='horaire' AND taux_applique IS NOT NULL
+                    THEN (duree_minutes / 60.0) * taux_applique ELSE 0 END), 0) as montant
+        FROM entrees_temps
+        WHERE date >= ? AND (heure_fin IS NOT NULL OR mode = 'manuel')
+    ''', (week_start,)).fetchone()
+
+    stats_mois = conn.execute('''
+        SELECT COALESCE(SUM(duree_minutes), 0) as total_min,
+               COALESCE(SUM(CASE WHEN type_facturation='horaire' AND taux_applique IS NOT NULL
+                    THEN (duree_minutes / 60.0) * taux_applique ELSE 0 END), 0) as montant
+        FROM entrees_temps
+        WHERE date >= ? AND (heure_fin IS NOT NULL OR mode = 'manuel')
+    ''', (month_start,)).fetchone()
+
+    conn.close()
+    return render_template('heures.html',
+        categories=categories,
+        clients=clients,
+        contrats=contrats,
+        timer_actif=timer_actif,
+        entrees=entrees,
+        stats_semaine=stats_semaine,
+        stats_mois=stats_mois,
+        today=datetime.date.today().isoformat()
+    )
+
+
+@app.route('/heures/start', methods=['POST'])
+@login_required
+def heures_start():
+    conn = get_db()
+    if conn.execute("SELECT id FROM entrees_temps WHERE heure_fin IS NULL AND mode='timer'").fetchone():
+        conn.close()
+        return jsonify({'error': 'Un timer est déjà en cours.'}), 400
+
+    data       = request.json or {}
+    now_local  = datetime.datetime.now(_EASTERN)
+
+    conn.execute('''
+        INSERT INTO entrees_temps
+        (client_id, contrat_id, milestone_titre, categorie_id,
+         description, date, heure_debut, mode, type_facturation, taux_applique)
+        VALUES (?,?,?,?,?,?,?,?,?,?)
+    ''', (
+        data.get('client_id') or None,
+        data.get('contrat_id') or None,
+        data.get('milestone_titre') or None,
+        data['categorie_id'],
+        data.get('description') or None,
+        now_local.strftime('%Y-%m-%d'),
+        now_local.strftime('%H:%M'),
+        'timer',
+        data.get('type_facturation', 'horaire'),
+        data.get('taux_applique') or None,
+    ))
+    conn.commit()
+    conn.close()
+    return jsonify({'ok': True})
+
+
+@app.route('/heures/stop', methods=['POST'])
+@login_required
+def heures_stop():
+    conn = get_db()
+    entree = conn.execute(
+        "SELECT * FROM entrees_temps WHERE heure_fin IS NULL AND mode='timer' ORDER BY created_at DESC LIMIT 1"
+    ).fetchone()
+    if not entree:
+        conn.close()
+        return jsonify({'error': 'Aucun timer actif.'}), 404
+
+    now_local  = datetime.datetime.now(_EASTERN)
+    heure_fin  = now_local.strftime('%H:%M')
+    try:
+        debut_dt = datetime.datetime.strptime(entree['date'] + ' ' + entree['heure_debut'], '%Y-%m-%d %H:%M')
+        fin_dt   = datetime.datetime.strptime(entree['date'] + ' ' + heure_fin, '%Y-%m-%d %H:%M')
+        duree    = max(0, int((fin_dt - debut_dt).total_seconds() / 60))
+    except Exception:
+        duree = 0
+
+    conn.execute('UPDATE entrees_temps SET heure_fin=?, duree_minutes=? WHERE id=?',
+                 (heure_fin, duree, entree['id']))
+    conn.commit()
+    conn.close()
+    return jsonify({'ok': True, 'duree_minutes': duree})
+
+
+@app.route('/heures/manuel', methods=['POST'])
+@login_required
+def heures_manuel():
+    f = request.form
+    try:
+        duree = int(f.get('duree_minutes') or 0)
+        hd, hf = f.get('heure_debut') or None, f.get('heure_fin') or None
+        if hd and hf and not duree:
+            date_s   = f.get('date') or datetime.date.today().isoformat()
+            debut_dt = datetime.datetime.strptime(date_s + ' ' + hd, '%Y-%m-%d %H:%M')
+            fin_dt   = datetime.datetime.strptime(date_s + ' ' + hf, '%Y-%m-%d %H:%M')
+            duree    = max(0, int((fin_dt - debut_dt).total_seconds() / 60))
+    except Exception:
+        duree = 0
+
+    taux = None
+    try:
+        v = f.get('taux_applique')
+        if v:
+            taux = float(v) or None
+    except Exception:
+        pass
+
+    conn = get_db()
+    conn.execute('''
+        INSERT INTO entrees_temps
+        (client_id, contrat_id, milestone_titre, categorie_id,
+         description, date, heure_debut, heure_fin, duree_minutes,
+         mode, type_facturation, taux_applique)
+        VALUES (?,?,?,?,?,?,?,?,?,?,?,?)
+    ''', (
+        f.get('client_id') or None,
+        f.get('contrat_id') or None,
+        f.get('milestone_titre') or None,
+        f.get('categorie_id'),
+        f.get('description') or None,
+        f.get('date') or datetime.date.today().isoformat(),
+        f.get('heure_debut') or None,
+        f.get('heure_fin') or None,
+        duree,
+        'manuel',
+        f.get('type_facturation', 'horaire'),
+        taux,
+    ))
+    conn.commit()
+    conn.close()
+    flash('Entrée ajoutée.', 'success')
+    return redirect('/heures')
+
+
+@app.route('/heures/supprimer/<int:eid>', methods=['POST'])
+@login_required
+def heures_supprimer(eid):
+    conn = get_db()
+    conn.execute('DELETE FROM entrees_temps WHERE id=?', (eid,))
+    conn.commit()
+    conn.close()
+    return jsonify({'ok': True})
+
+
+@app.route('/heures/categories', methods=['POST'])
+@login_required
+def heures_categories():
+    nom = request.form.get('nom', '').strip()
+    if not nom:
+        flash('Le nom est requis.', 'error')
+        return redirect('/heures')
+    conn = get_db()
+    max_ordre = conn.execute('SELECT COALESCE(MAX(ordre), 0) FROM categories_temps').fetchone()[0]
+    taux_min = None
+    taux_max = None
+    try:
+        v = request.form.get('taux_min')
+        if v:
+            taux_min = float(v) or None
+    except Exception:
+        pass
+    try:
+        v = request.form.get('taux_max')
+        if v:
+            taux_max = float(v) or None
+    except Exception:
+        pass
+    conn.execute(
+        'INSERT INTO categories_temps (nom, description, taux_min, taux_max, couleur, ordre) VALUES (?,?,?,?,?,?)',
+        (nom, request.form.get('description', '').strip() or None,
+         taux_min, taux_max, request.form.get('couleur', '#d94fbd'), max_ordre + 1)
+    )
+    conn.commit()
+    conn.close()
+    flash('Catégorie ajoutée.', 'success')
+    return redirect('/heures')
+
+
+@app.route('/heures/rapports')
+@login_required
+def heures_rapports():
+    conn = get_db()
+    par_categorie = conn.execute('''
+        SELECT c.nom as cat_nom, c.couleur,
+               COALESCE(SUM(e.duree_minutes), 0) as total_min,
+               COALESCE(SUM(CASE WHEN e.type_facturation='horaire' AND e.taux_applique IS NOT NULL
+                    THEN (e.duree_minutes / 60.0) * e.taux_applique ELSE 0 END), 0) as montant,
+               COUNT(*) as nb_entrees
+        FROM entrees_temps e
+        JOIN categories_temps c ON c.id = e.categorie_id
+        WHERE e.heure_fin IS NOT NULL OR e.mode = 'manuel'
+        GROUP BY e.categorie_id
+        ORDER BY total_min DESC
+    ''').fetchall()
+
+    par_projet = conn.execute('''
+        SELECT cl.nom as client_nom, co.nom as projet_nom,
+               COALESCE(SUM(e.duree_minutes), 0) as total_min,
+               COALESCE(SUM(CASE WHEN e.type_facturation='horaire' AND e.taux_applique IS NOT NULL
+                    THEN (e.duree_minutes / 60.0) * e.taux_applique ELSE 0 END), 0) as montant_facturable
+        FROM entrees_temps e
+        LEFT JOIN clients cl ON cl.id = e.client_id
+        LEFT JOIN contrats co ON co.id = e.contrat_id
+        WHERE e.heure_fin IS NOT NULL OR e.mode = 'manuel'
+        GROUP BY e.contrat_id, e.client_id
+        ORDER BY total_min DESC
+    ''').fetchall()
+
+    par_semaine = conn.execute('''
+        SELECT strftime('%Y — sem. %W', e.date) as semaine,
+               strftime('%Y%W', e.date) as semaine_sort,
+               COALESCE(SUM(e.duree_minutes), 0) as total_min,
+               COALESCE(SUM(CASE WHEN e.type_facturation='horaire' AND e.taux_applique IS NOT NULL
+                    THEN (e.duree_minutes / 60.0) * e.taux_applique ELSE 0 END), 0) as montant
+        FROM entrees_temps e
+        WHERE e.heure_fin IS NOT NULL OR e.mode = 'manuel'
+        GROUP BY semaine_sort
+        ORDER BY semaine_sort DESC
+        LIMIT 8
+    ''').fetchall()
+
+    conn.close()
+    return render_template('heures_rapports.html',
+        par_categorie=par_categorie,
+        par_projet=par_projet,
+        par_semaine=par_semaine
+    )
+
+
+@app.route('/api/heures/milestones/<int:contrat_id>')
+@login_required
+def api_heures_milestones(contrat_id):
+    conn = get_db()
+    contrat = conn.execute('SELECT milestones FROM contrats WHERE id=?', (contrat_id,)).fetchone()
+    conn.close()
+    if not contrat or not contrat['milestones']:
+        return jsonify([])
+    try:
+        ms = json.loads(contrat['milestones'])
+        return jsonify([{'titre': m.get('titre', ''), 'statut': m.get('statut', '')} for m in ms])
+    except Exception:
+        return jsonify([])
 
 
 if __name__ == '__main__':

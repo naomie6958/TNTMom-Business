@@ -1,6 +1,21 @@
 {% extends "base.html" %}
 {% block title %}Tarifs{% endblock %}
 
+{% block head %}
+<style>
+.tarif-header {
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    user-select: none;
+}
+.tarif-header:hover .tarif-titre { color: var(--accent); }
+.tarif-arrow { color: var(--muted); font-size: 0.85rem; transition: transform 0.2s; }
+.tarif-body  { border-top: 1px solid var(--border); padding-top: 1rem; margin-top: 1rem; }
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="page-header">
     <div>
@@ -10,62 +25,87 @@
 </div>
 
 {% for t in tarifs %}
-<div class="card" style="margin-bottom: 1rem; {% if not t.actif %}opacity: 0.5;{% endif %}">
-    <form method="POST" action="/tarifs/{{ t.id }}/edit">
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 0.8rem;">
-            <div class="form-group" style="margin: 0;">
-                <label>Titre</label>
-                <input type="text" name="titre" value="{{ t.titre }}" required>
-            </div>
-            <div style="display: flex; gap: 0.5rem;">
-                <div class="form-group" style="margin: 0; flex: 1;">
-                    <label>Prix ($)</label>
-                    <input type="number" name="prix" value="{{ t.prix | int if t.prix else '' }}" placeholder="laisser vide = Sur devis" step="1" min="0">
+<div class="card" style="margin-bottom: 0.75rem; {% if not t.actif %}opacity: 0.55;{% endif %}">
+
+    {# ── En-tête cliquable ──────────────────────────────────────────────── #}
+    <div class="tarif-header" onclick="toggleTarif(this)">
+        <div style="display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;">
+            <span class="tarif-titre" style="font-weight: 600; transition: color 0.15s;">{{ t.titre }}</span>
+            {% if t.prix %}
+            <span style="color: var(--accent); font-family: 'DM Mono', monospace; font-size: 0.88rem;">
+                ${{ t.prix | int }} {{ t.unite or '/ projet' }}
+            </span>
+            {% else %}
+            <span style="color: var(--muted); font-size: 0.82rem;">Sur devis</span>
+            {% endif %}
+            {% if t.actif %}
+            <span style="color: var(--green, #6fcf97); font-size: 0.72rem;">● visible</span>
+            {% else %}
+            <span style="color: var(--muted); font-size: 0.72rem;">○ masqué</span>
+            {% endif %}
+        </div>
+        <span class="tarif-arrow">▼</span>
+    </div>
+
+    {# ── Corps (fermé par défaut) ───────────────────────────────────────── #}
+    <div class="tarif-body" style="display: none;">
+        <form method="POST" action="/tarifs/{{ t.id }}/edit">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 0.8rem;">
+                <div class="form-group" style="margin: 0;">
+                    <label>Titre</label>
+                    <input type="text" name="titre" value="{{ t.titre }}" required>
                 </div>
-                <div class="form-group" style="margin: 0; flex: 1;">
-                    <label>Unité</label>
-                    <input type="text" name="unite" value="{{ t.unite or '/ projet' }}" placeholder="/ projet">
+                <div style="display: flex; gap: 0.5rem;">
+                    <div class="form-group" style="margin: 0; flex: 1;">
+                        <label>Prix ($)</label>
+                        <input type="number" name="prix" value="{{ t.prix | int if t.prix else '' }}" placeholder="laisser vide = Sur devis" step="1" min="0">
+                    </div>
+                    <div class="form-group" style="margin: 0; flex: 1;">
+                        <label>Unité</label>
+                        <input type="text" name="unite" value="{{ t.unite or '/ projet' }}" placeholder="/ projet">
+                    </div>
                 </div>
             </div>
-        </div>
-        <div class="form-group">
-            <label>Description courte</label>
-            <input type="text" name="description" value="{{ t.description or '' }}" placeholder="Une ligne de présentation du service">
-        </div>
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 0.8rem;">
-            <div class="form-group" style="margin: 0;">
-                <label>✅ Ce qui est inclus <span style="color:var(--muted);font-size:0.72rem;">(une ligne par item)</span></label>
-                <textarea name="inclus" rows="4" placeholder="Design responsive&#10;1 révision incluse&#10;Mise en ligne">{{ t.inclus or '' }}</textarea>
+            <div class="form-group">
+                <label>Description courte</label>
+                <input type="text" name="description" value="{{ t.description or '' }}" placeholder="Une ligne de présentation du service">
             </div>
-            <div class="form-group" style="margin: 0;">
-                <label>✗ Non inclus <span style="color:var(--muted);font-size:0.72rem;">(une ligne par item)</span></label>
-                <textarea name="non_inclus" rows="4" placeholder="Hébergement&#10;Nom de domaine&#10;Contenu (textes, photos)">{{ t.non_inclus or '' }}</textarea>
-            </div>
-        </div>
-        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;">
-            <div style="display: flex; gap: 1rem; align-items: center;">
-                <label style="display: flex; align-items: center; gap: 0.4rem; font-size: 0.82rem; cursor: pointer;">
-                    <input type="checkbox" name="actif" {% if t.actif %}checked{% endif %}> Visible sur tntm.ca
-                </label>
-                <div class="form-group" style="margin: 0; display: flex; align-items: center; gap: 0.5rem;">
-                    <label style="font-size: 0.82rem;">Ordre</label>
-                    <input type="number" name="ordre" value="{{ t.ordre }}" style="width: 4rem;">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 0.8rem;">
+                <div class="form-group" style="margin: 0;">
+                    <label>✅ Ce qui est inclus <span style="color:var(--muted);font-size:0.72rem;">(une ligne par item)</span></label>
+                    <textarea name="inclus" rows="4" placeholder="Design responsive&#10;1 révision incluse&#10;Mise en ligne">{{ t.inclus or '' }}</textarea>
+                </div>
+                <div class="form-group" style="margin: 0;">
+                    <label>✗ Non inclus <span style="color:var(--muted);font-size:0.72rem;">(une ligne par item)</span></label>
+                    <textarea name="non_inclus" rows="4" placeholder="Hébergement&#10;Nom de domaine&#10;Contenu (textes, photos)">{{ t.non_inclus or '' }}</textarea>
                 </div>
             </div>
-            <div style="display: flex; gap: 0.5rem;">
-                <button type="submit" class="btn btn-primary">Sauvegarder</button>
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;">
+                <div style="display: flex; gap: 1rem; align-items: center;">
+                    <label style="display: flex; align-items: center; gap: 0.4rem; font-size: 0.82rem; cursor: pointer;">
+                        <input type="checkbox" name="actif" {% if t.actif %}checked{% endif %}> Visible sur tntm.ca
+                    </label>
+                    <div class="form-group" style="margin: 0; display: flex; align-items: center; gap: 0.5rem;">
+                        <label style="font-size: 0.82rem;">Ordre (site public)</label>
+                        <input type="number" name="ordre" value="{{ t.ordre }}" style="width: 4rem;">
+                    </div>
+                </div>
+                <div style="display: flex; gap: 0.5rem; align-items: center;">
+                    <button type="submit" class="btn btn-primary">Sauvegarder</button>
+                </div>
             </div>
-        </div>
-    </form>
-    <form method="POST" action="/tarifs/{{ t.id }}/delete" style="margin-top: 0.5rem; text-align: right;"
-          onsubmit="return confirm('Supprimer ce tarif ?')">
-        <button type="submit" class="btn btn-danger" style="font-size: 0.75rem; padding: 0.25rem 0.6rem;">Supprimer</button>
-    </form>
+        </form>
+        <form method="POST" action="/tarifs/{{ t.id }}/delete" style="margin-top: 0.75rem; text-align: right;"
+              onsubmit="return confirm('Supprimer ce tarif ?')">
+            <button type="submit" class="btn btn-danger" style="font-size: 0.75rem; padding: 0.25rem 0.6rem;">Supprimer</button>
+        </form>
+    </div>
 </div>
 {% else %}
 <div class="card"><div class="empty-state">Aucun tarif. Ajoutes-en un ci-dessous.</div></div>
 {% endfor %}
 
+{# ── Nouveau tarif ──────────────────────────────────────────────────────── #}
 <div class="card" style="margin-top: 1.5rem; border: 1px dashed var(--border);">
     <div class="section-title" style="margin-bottom: 1rem;">+ Nouveau tarif</div>
     <form method="POST" action="/tarifs/new">
@@ -107,4 +147,17 @@
         </div>
     </form>
 </div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+function toggleTarif(header) {
+    const body  = header.nextElementSibling;
+    const arrow = header.querySelector('.tarif-arrow');
+    const open  = body.style.display !== 'none';
+    body.style.display      = open ? 'none' : 'block';
+    arrow.style.transform   = open ? ''       : 'rotate(180deg)';
+}
+</script>
 {% endblock %}

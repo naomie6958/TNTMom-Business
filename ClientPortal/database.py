@@ -356,6 +356,59 @@ def migrate_db():
             pass
     conn.commit()
 
+    # Tables punch d'heures
+    try:
+        conn.executescript('''
+            CREATE TABLE IF NOT EXISTS categories_temps (
+                id          INTEGER PRIMARY KEY AUTOINCREMENT,
+                nom         TEXT NOT NULL,
+                description TEXT,
+                taux_min    REAL DEFAULT 0,
+                taux_max    REAL DEFAULT 0,
+                couleur     TEXT DEFAULT '#d94fbd',
+                actif       INTEGER DEFAULT 1,
+                ordre       INTEGER DEFAULT 0,
+                created_at  TEXT DEFAULT (datetime('now'))
+            );
+
+            CREATE TABLE IF NOT EXISTS entrees_temps (
+                id                INTEGER PRIMARY KEY AUTOINCREMENT,
+                client_id         INTEGER REFERENCES clients(id) ON DELETE SET NULL,
+                contrat_id        INTEGER REFERENCES contrats(id) ON DELETE SET NULL,
+                milestone_titre   TEXT,
+                categorie_id      INTEGER NOT NULL REFERENCES categories_temps(id),
+                description       TEXT,
+                date              TEXT NOT NULL,
+                heure_debut       TEXT,
+                heure_fin         TEXT,
+                duree_minutes     INTEGER DEFAULT 0,
+                mode              TEXT DEFAULT 'manuel',
+                type_facturation  TEXT DEFAULT 'horaire',
+                taux_applique     REAL,
+                created_at        TEXT DEFAULT (datetime('now'))
+            );
+        ''')
+        conn.commit()
+    except Exception:
+        pass
+
+    try:
+        if conn.execute('SELECT COUNT(*) FROM categories_temps').fetchone()[0] == 0:
+            cats = [
+                ('Développement & Architecture', 'Code Python/Flask, intégration API, base de données, déploiement, debug complexe', 70.0, 85.0, '#d94fbd', 1),
+                ('Design UI/UX & Conception', 'Maquettes, design responsive, architecture information, graphisme, tests UX', 60.0, 70.0, '#87CEEB', 2),
+                ('Intégration & Maintenance', 'Intégration contenu client, CSS/HTML, mises à jour, formulaires standards', 50.0, 60.0, '#D4AF37', 3),
+                ('Gestion, Admin & Consultation', 'Rencontres clients, appels, devis, support courriel, gestion de projet', 45.0, 55.0, '#4CAF50', 4),
+            ]
+            for nom, desc, tmin, tmax, couleur, ordre in cats:
+                conn.execute(
+                    'INSERT INTO categories_temps (nom, description, taux_min, taux_max, couleur, ordre) VALUES (?,?,?,?,?,?)',
+                    (nom, desc, tmin, tmax, couleur, ordre)
+                )
+            conn.commit()
+    except Exception:
+        pass
+
     conn.close()
 
 

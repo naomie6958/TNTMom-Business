@@ -104,6 +104,28 @@
 </div>
 {% endif %}
 
+{# ── WIDGET HEURES ────────────────────────────────────────────────────────── #}
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 1.5rem;">
+    <div class="card" style="padding: 1.25rem 1.5rem;">
+        <div style="color: var(--muted); font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 0.4rem;">Heures cette semaine</div>
+        <div style="font-size: 1.5rem; font-weight: 700; color: var(--text); font-family: 'DM Mono', monospace;">
+            {{ (heures_semaine.total_min or 0) // 60 }}h{{ '%02d' | format((heures_semaine.total_min or 0) % 60) }}
+        </div>
+        <div style="color: var(--accent); font-size: 0.82rem; margin-top: 0.2rem;">
+            ${{ '%.0f' | format(heures_semaine.montant or 0) }} facturable
+        </div>
+    </div>
+    <div class="card" style="padding: 1.25rem 1.5rem;">
+        <div style="color: var(--muted); font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 0.4rem;">Heures ce mois</div>
+        <div style="font-size: 1.5rem; font-weight: 700; color: var(--text); font-family: 'DM Mono', monospace;">
+            {{ (heures_mois.total_min or 0) // 60 }}h{{ '%02d' | format((heures_mois.total_min or 0) % 60) }}
+        </div>
+        <div style="margin-top: 0.2rem;">
+            <a href="/heures" style="color: var(--accent); font-size: 0.82rem; text-decoration: none;">Punch d'heures →</a>
+        </div>
+    </div>
+</div>
+
 {% endblock %}
 
 {% block head %}

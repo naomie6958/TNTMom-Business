@@ -1,0 +1,146 @@
+{% extends "base.html" %}
+
+{% block title %}Rapports d'heures{% endblock %}
+
+{% block head %}
+<style>
+.rapport-table { width: 100%; border-collapse: collapse; font-size: 0.83rem; }
+.rapport-table th {
+    padding: 0.6rem 0.75rem;
+    text-align: left;
+    color: var(--muted);
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    border-bottom: 1px solid var(--border);
+}
+.rapport-table td { padding: 0.7rem 0.75rem; border-bottom: 1px solid var(--border); }
+.rapport-table tr:last-child td { border-bottom: none; }
+.bar-bg   { background: var(--border); border-radius: 3px; height: 5px; margin-top: 0.35rem; }
+.bar-fill { height: 100%; border-radius: 3px; background: var(--accent); transition: width 0.3s; }
+.cat-dot  { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 0.4rem; vertical-align: middle; }
+.mono     { font-family: 'DM Mono', monospace; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1 class="page-title">Rapports d'heures</h1>
+        <div class="page-sub">Analyse de ton temps par catégorie, projet et semaine.</div>
+    </div>
+    <a href="/heures" class="btn btn-secondary">← Retour</a>
+</div>
+
+{# ── PAR CATÉGORIE ─────────────────────────────────────────────────────────── #}
+<div class="card" style="margin-bottom: 1.5rem;">
+    <div style="font-weight: 600; font-size: 0.95rem; margin-bottom: 1rem;">Par catégorie</div>
+    {% if par_categorie %}
+    {% set max_min = (par_categorie | map(attribute='total_min') | max) or 1 %}
+    <table class="rapport-table">
+        <thead>
+            <tr>
+                <th>Catégorie</th>
+                <th style="text-align: center;">Heures</th>
+                <th style="text-align: right;">Facturable</th>
+                <th style="text-align: right;">Entrées</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for r in par_categorie %}
+        {% set pct = ((r.total_min or 0) / max_min * 100) | int %}
+        <tr>
+            <td>
+                <span class="cat-dot" style="background: {{ r.couleur or '#d94fbd' }};"></span>
+                {{ r.cat_nom }}
+                <div class="bar-bg"><div class="bar-fill" style="width: {{ pct }}%; background: {{ r.couleur or 'var(--accent)' }};"></div></div>
+            </td>
+            <td style="text-align: center;" class="mono">
+                {% set h = (r.total_min or 0) // 60 %}{% set m = (r.total_min or 0) % 60 %}
+                {{ h }}h{{ '%02d' | format(m) }}
+            </td>
+            <td style="text-align: right; color: var(--accent);" class="mono">
+                {% if r.montant %}${{ '%.0f' | format(r.montant) }}{% else %}<span style="color:var(--muted)">—</span>{% endif %}
+            </td>
+            <td style="text-align: right; color: var(--muted);" class="mono">{{ r.nb_entrees }}</td>
+        </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <div class="empty-state">Aucune donnée.</div>
+    {% endif %}
+</div>
+
+{# ── PAR PROJET ────────────────────────────────────────────────────────────── #}
+<div class="card" style="margin-bottom: 1.5rem;">
+    <div style="font-weight: 600; font-size: 0.95rem; margin-bottom: 1rem;">Par projet / client</div>
+    {% if par_projet %}
+    <table class="rapport-table">
+        <thead>
+            <tr>
+                <th>Client</th>
+                <th>Projet</th>
+                <th style="text-align: center;">Heures</th>
+                <th style="text-align: right;">Facturable</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for r in par_projet %}
+        <tr>
+            <td style="font-size: 0.85rem;">{{ r.client_nom or '—' }}</td>
+            <td style="color: var(--muted); font-size: 0.82rem;">{{ r.projet_nom or 'Sans projet' }}</td>
+            <td style="text-align: center;" class="mono">
+                {% set h = (r.total_min or 0) // 60 %}{% set m = (r.total_min or 0) % 60 %}
+                {{ h }}h{{ '%02d' | format(m) }}
+            </td>
+            <td style="text-align: right; color: var(--accent);" class="mono">
+                {% if r.montant_facturable %}${{ '%.0f' | format(r.montant_facturable) }}{% else %}<span style="color:var(--muted)">—</span>{% endif %}
+            </td>
+        </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <div class="empty-state">Aucune donnée.</div>
+    {% endif %}
+</div>
+
+{# ── PAR SEMAINE ───────────────────────────────────────────────────────────── #}
+<div class="card">
+    <div style="font-weight: 600; font-size: 0.95rem; margin-bottom: 1rem;">Par semaine (8 dernières)</div>
+    {% if par_semaine %}
+    {% set max_min_s = (par_semaine | map(attribute='total_min') | max) or 1 %}
+    <table class="rapport-table">
+        <thead>
+            <tr>
+                <th>Semaine</th>
+                <th style="text-align: center;">Heures</th>
+                <th style="text-align: right;">Facturable</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for r in par_semaine %}
+        {% set pct = ((r.total_min or 0) / max_min_s * 100) | int %}
+        <tr>
+            <td>
+                {{ r.semaine }}
+                <div class="bar-bg"><div class="bar-fill" style="width: {{ pct }}%;"></div></div>
+            </td>
+            <td style="text-align: center;" class="mono">
+                {% set h = (r.total_min or 0) // 60 %}{% set m = (r.total_min or 0) % 60 %}
+                {{ h }}h{{ '%02d' | format(m) }}
+            </td>
+            <td style="text-align: right; color: var(--accent);" class="mono">
+                {% if r.montant %}${{ '%.0f' | format(r.montant) }}{% else %}<span style="color:var(--muted)">—</span>{% endif %}
+            </td>
+        </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <div class="empty-state">Aucune donnée.</div>
+    {% endif %}
+</div>
+
+{% endblock %}

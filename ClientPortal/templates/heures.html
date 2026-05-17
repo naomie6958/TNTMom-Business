@@ -1,0 +1,530 @@
+{% extends "base.html" %}
+
+{% block title %}Heures{% endblock %}
+
+{% block head %}
+<style>
+.timer-display {
+    font-family: 'DM Mono', monospace;
+    font-size: 2.8rem;
+    color: var(--accent);
+    letter-spacing: 0.06em;
+}
+@keyframes timer-pulse {
+    0%, 100% { opacity: 1; }
+    50%       { opacity: 0.6; }
+}
+.timer-running { animation: timer-pulse 1.5s infinite; }
+
+.heures-stats {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+.cat-dot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    margin-right: 0.4rem;
+    vertical-align: middle;
+}
+.entrees-table { width: 100%; border-collapse: collapse; font-size: 0.83rem; }
+.entrees-table th {
+    padding: 0.6rem 0.75rem;
+    text-align: left;
+    color: var(--muted);
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    border-bottom: 1px solid var(--border);
+}
+.entrees-table td { padding: 0.65rem 0.75rem; border-bottom: 1px solid var(--border); vertical-align: middle; }
+.entrees-table tr:last-child td { border-bottom: none; }
+.badge-horaire  { background: rgba(217,79,189,0.15); color: var(--accent); font-size: 0.68rem; padding: 0.15rem 0.45rem; border-radius: 3px; }
+.badge-package  { background: rgba(135,206,235,0.15); color: #87CEEB; font-size: 0.68rem; padding: 0.15rem 0.45rem; border-radius: 3px; }
+.badge-gratuit  { background: rgba(255,255,255,0.06); color: var(--muted); font-size: 0.68rem; padding: 0.15rem 0.45rem; border-radius: 3px; }
+.collapsible-toggle { cursor: pointer; user-select: none; display: flex; align-items: center; justify-content: space-between; }
+.collapsible-toggle:hover .toggle-label { color: var(--accent); }
+.form-row { display: grid; gap: 0.75rem; margin-bottom: 0.75rem; }
+.form-row-2 { grid-template-columns: 1fr 1fr; }
+.form-row-3 { grid-template-columns: 1fr 1fr 1fr; }
+.form-row-4 { grid-template-columns: 2fr 1fr 1fr 1fr; }
+@media (max-width: 640px) {
+    .heures-stats { grid-template-columns: 1fr; }
+    .form-row-2, .form-row-3, .form-row-4 { grid-template-columns: 1fr; }
+    .entrees-table .hide-mobile { display: none; }
+}
+.field-label { font-size: 0.72rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; display: block; margin-bottom: 0.3rem; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1 class="page-title">Punch d'heures</h1>
+        <div class="page-sub">Timer live, saisie manuelle, suivi par projet.</div>
+    </div>
+    <a href="/heures/rapports" class="btn btn-secondary">Rapports →</a>
+</div>
+
+{# ── STATS ─────────────────────────────────────────────────────────────────── #}
+<div class="heures-stats">
+    <div class="card" style="padding: 1.25rem 1.5rem;">
+        <div class="field-label">Cette semaine</div>
+        <div style="font-size: 1.7rem; font-weight: 700; font-family: 'DM Mono', monospace;">
+            {{ (stats_semaine.total_min or 0) // 60 }}h{{ '%02d' | format((stats_semaine.total_min or 0) % 60) }}
+        </div>
+        <div style="color: var(--accent); font-size: 0.85rem; margin-top: 0.25rem;">
+            ${{ '%.0f' | format(stats_semaine.montant or 0) }} facturable
+        </div>
+    </div>
+    <div class="card" style="padding: 1.25rem 1.5rem;">
+        <div class="field-label">Ce mois</div>
+        <div style="font-size: 1.7rem; font-weight: 700; font-family: 'DM Mono', monospace;">
+            {{ (stats_mois.total_min or 0) // 60 }}h{{ '%02d' | format((stats_mois.total_min or 0) % 60) }}
+        </div>
+        <div style="color: var(--accent); font-size: 0.85rem; margin-top: 0.25rem;">
+            ${{ '%.0f' | format(stats_mois.montant or 0) }} facturable
+        </div>
+    </div>
+</div>
+
+{# ── TIMER ─────────────────────────────────────────────────────────────────── #}
+<div class="card" style="margin-bottom: 1.5rem;">
+    {% if timer_actif %}
+    <div style="text-align: center; padding: 0.5rem 0 1rem;">
+        <div style="color: var(--muted); font-size: 0.73rem; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 0.75rem;">
+            Timer en cours —
+            <span class="cat-dot" style="background: {{ timer_actif.cat_couleur or '#d94fbd' }};"></span>
+            {{ timer_actif.cat_nom }}{% if timer_actif.description %} · {{ timer_actif.description }}{% endif %}
+        </div>
+        <div id="timer-display" class="timer-display timer-running">00:00:00</div>
+        <div style="margin-top: 1.25rem;">
+            <button class="btn" style="background: var(--red, #e05252); min-width: 150px;" onclick="stopTimer()">
+                Arrêter le timer
+            </button>
+        </div>
+    </div>
+    {% else %}
+    <div style="font-weight: 600; font-size: 0.95rem; margin-bottom: 1.1rem;">Démarrer un timer</div>
+
+    <div class="form-row form-row-2">
+        <div>
+            <label class="field-label">Catégorie *</label>
+            <select id="timer-cat" class="form-control" onchange="syncTaux('timer')">
+                <option value="">— Choisir —</option>
+                {% for cat in categories %}
+                <option value="{{ cat.id }}"
+                    data-taux-min="{{ cat.taux_min or 0 }}"
+                    data-taux-max="{{ cat.taux_max or 0 }}"
+                    data-couleur="{{ cat.couleur }}">
+                    {{ cat.nom }} ({{ cat.taux_min | int }}–{{ cat.taux_max | int }}$/h)
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+        <div>
+            <label class="field-label">Type de facturation</label>
+            <select id="timer-type" class="form-control">
+                <option value="horaire">Facturable à l'heure</option>
+                <option value="package">Inclus dans package</option>
+                <option value="gratuit">Gratuit (non facturé)</option>
+            </select>
+        </div>
+    </div>
+
+    <div class="form-row form-row-2">
+        <div>
+            <label class="field-label">Client (optionnel)</label>
+            <select id="timer-client" class="form-control" onchange="filterContrats('timer')">
+                <option value="">— Sans client —</option>
+                {% for c in clients %}
+                <option value="{{ c.id }}">{{ c.nom }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div>
+            <label class="field-label">Projet (optionnel)</label>
+            <select id="timer-contrat" class="form-control" onchange="loadMilestones('timer')">
+                <option value="">— Sans projet —</option>
+                {% for co in contrats %}
+                <option value="{{ co.id }}" data-client-id="{{ co.client_id or '' }}">
+                    {{ co.client_nom }} — {{ co.nom or 'Sans nom' }}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+    </div>
+
+    <div class="form-row form-row-2">
+        <div>
+            <label class="field-label">Milestone (optionnel)</label>
+            <select id="timer-milestone" class="form-control">
+                <option value="">— Aucun —</option>
+            </select>
+        </div>
+        <div>
+            <label class="field-label">Taux appliqué ($/h)</label>
+            <input type="number" id="timer-taux" class="form-control" placeholder="Ex: 75" step="5" min="0">
+        </div>
+    </div>
+
+    <div class="form-row" style="margin-bottom: 1rem;">
+        <div>
+            <label class="field-label">Description (optionnel)</label>
+            <input type="text" id="timer-desc" class="form-control" placeholder="Ex: Intégration page contact">
+        </div>
+    </div>
+
+    <button class="btn" style="background: var(--accent); min-width: 150px;" onclick="startTimer()">
+        Démarrer
+    </button>
+    {% endif %}
+</div>
+
+{# ── SAISIE MANUELLE ──────────────────────────────────────────────────────── #}
+<div class="card" style="margin-bottom: 1.5rem;">
+    <div class="collapsible-toggle" onclick="toggleSection('manuel-body', 'manuel-arrow')">
+        <span class="toggle-label" style="font-weight: 600; font-size: 0.95rem;">+ Saisie manuelle</span>
+        <span id="manuel-arrow" style="color: var(--muted); font-size: 0.85rem; transition: transform 0.2s;">▼</span>
+    </div>
+
+    <div id="manuel-body" style="display: none; margin-top: 1.25rem;">
+        <form action="/heures/manuel" method="POST">
+            <div class="form-row form-row-2">
+                <div>
+                    <label class="field-label">Catégorie *</label>
+                    <select name="categorie_id" class="form-control" required onchange="syncTaux('manuel')">
+                        <option value="">— Choisir —</option>
+                        {% for cat in categories %}
+                        <option value="{{ cat.id }}"
+                            data-taux-min="{{ cat.taux_min or 0 }}"
+                            data-taux-max="{{ cat.taux_max or 0 }}">
+                            {{ cat.nom }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div>
+                    <label class="field-label">Date *</label>
+                    <input type="date" name="date" id="man-date" class="form-control" value="{{ today }}" required>
+                </div>
+            </div>
+
+            <div class="form-row form-row-3">
+                <div>
+                    <label class="field-label">Heure début</label>
+                    <input type="time" name="heure_debut" id="man-debut" class="form-control" onchange="calcDuree()">
+                </div>
+                <div>
+                    <label class="field-label">Heure fin</label>
+                    <input type="time" name="heure_fin" id="man-fin" class="form-control" onchange="calcDuree()">
+                </div>
+                <div>
+                    <label class="field-label">Durée (min)</label>
+                    <input type="number" name="duree_minutes" id="man-duree" class="form-control" placeholder="Ex: 90" min="1">
+                </div>
+            </div>
+
+            <div class="form-row form-row-2">
+                <div>
+                    <label class="field-label">Client</label>
+                    <select name="client_id" class="form-control" onchange="filterContrats('manuel')">
+                        <option value="">— Sans client —</option>
+                        {% for c in clients %}
+                        <option value="{{ c.id }}">{{ c.nom }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div>
+                    <label class="field-label">Projet</label>
+                    <select name="contrat_id" id="manuel-contrat" class="form-control" onchange="loadMilestones('manuel')">
+                        <option value="">— Sans projet —</option>
+                        {% for co in contrats %}
+                        <option value="{{ co.id }}" data-client-id="{{ co.client_id or '' }}">
+                            {{ co.client_nom }} — {{ co.nom or 'Sans nom' }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+
+            <div class="form-row form-row-2">
+                <div>
+                    <label class="field-label">Milestone</label>
+                    <select name="milestone_titre" id="manuel-milestone" class="form-control">
+                        <option value="">— Aucun —</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="field-label">Type de facturation</label>
+                    <select name="type_facturation" class="form-control">
+                        <option value="horaire">Facturable à l'heure</option>
+                        <option value="package">Inclus dans package</option>
+                        <option value="gratuit">Gratuit (non facturé)</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="form-row form-row-2" style="margin-bottom: 1rem;">
+                <div>
+                    <label class="field-label">Description</label>
+                    <input type="text" name="description" class="form-control" placeholder="Ex: Configuration email SMTP">
+                </div>
+                <div>
+                    <label class="field-label">Taux ($/h)</label>
+                    <input type="number" name="taux_applique" id="man-taux" class="form-control" placeholder="75" step="5" min="0">
+                </div>
+            </div>
+
+            <button type="submit" class="btn btn-secondary">Ajouter l'entrée</button>
+        </form>
+    </div>
+</div>
+
+{# ── ENTRÉES RÉCENTES ─────────────────────────────────────────────────────── #}
+<div class="card" style="padding: 0; overflow: hidden; margin-bottom: 1.5rem;">
+    <div style="padding: 1rem 1.25rem; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between;">
+        <span style="font-weight: 600; font-size: 0.95rem;">Entrées récentes</span>
+        <span style="color: var(--muted); font-size: 0.73rem;">30 dernières</span>
+    </div>
+    {% if entrees %}
+    <table class="entrees-table">
+        <thead>
+            <tr>
+                <th>Date</th>
+                <th>Catégorie</th>
+                <th class="hide-mobile">Client / Milestone</th>
+                <th class="hide-mobile">Description</th>
+                <th style="text-align: center;">Durée</th>
+                <th style="text-align: right;">Montant</th>
+                <th style="text-align: right;" class="hide-mobile">Type</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for e in entrees %}
+        <tr>
+            <td style="white-space: nowrap; color: var(--muted); font-size: 0.8rem;">{{ e.date | fmt_date }}</td>
+            <td>
+                <span class="cat-dot" style="background: {{ e.cat_couleur or '#d94fbd' }};"></span>
+                <span style="font-size: 0.8rem;">{{ e.cat_nom }}</span>
+            </td>
+            <td class="hide-mobile" style="font-size: 0.79rem; color: var(--muted);">
+                {{ e.client_nom or '—' }}
+                {% if e.milestone_titre %}<br><span style="font-size: 0.71rem;">↳ {{ e.milestone_titre }}</span>{% endif %}
+            </td>
+            <td class="hide-mobile" style="font-size: 0.79rem; color: var(--muted); max-width: 160px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                {{ e.description or '—' }}
+            </td>
+            <td style="text-align: center; font-family: 'DM Mono', monospace; font-size: 0.82rem; white-space: nowrap;">
+                {% set h = (e.duree_minutes or 0) // 60 %}
+                {% set m = (e.duree_minutes or 0) % 60 %}
+                {% if h %}{{ h }}h{% endif %}{{ '%02d' | format(m) }}
+            </td>
+            <td style="text-align: right; font-family: 'DM Mono', monospace; font-size: 0.82rem;">
+                {% if e.type_facturation == 'horaire' and e.taux_applique %}
+                <span style="color: var(--accent);">${{ '%.0f' | format((e.duree_minutes or 0) / 60 * e.taux_applique) }}</span>
+                {% else %}
+                <span style="color: var(--muted);">—</span>
+                {% endif %}
+            </td>
+            <td class="hide-mobile" style="text-align: right;">
+                <span class="badge-{{ e.type_facturation }}">{{ e.type_facturation }}</span>
+            </td>
+            <td style="text-align: right; padding-right: 1rem;">
+                <button class="btn btn-secondary"
+                    style="font-size: 0.7rem; padding: 0.2rem 0.5rem; color: var(--muted);"
+                    onclick="openModal('Supprimer cette entrée', 'Cette action est irréversible.', 'Supprimer', 'btn-danger', () => deleteEntree({{ e.id }}))">
+                    ✕
+                </button>
+            </td>
+        </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <div class="empty-state" style="padding: 2rem;">Aucune entrée pour le moment.</div>
+    {% endif %}
+</div>
+
+{# ── CATÉGORIES ───────────────────────────────────────────────────────────── #}
+<div class="card">
+    <div class="collapsible-toggle" onclick="toggleSection('cat-body', 'cat-arrow')">
+        <span class="toggle-label" style="font-weight: 600; font-size: 0.95rem;">Catégories ({{ categories | length }})</span>
+        <span id="cat-arrow" style="color: var(--muted); font-size: 0.85rem;">▼</span>
+    </div>
+
+    <div id="cat-body" style="display: none; margin-top: 1.25rem;">
+        <div style="display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1.25rem;">
+            {% for cat in categories %}
+            <div style="display: flex; align-items: center; gap: 0.4rem;
+                        background: rgba(255,255,255,0.04); border: 1px solid var(--border);
+                        border-radius: var(--radius); padding: 0.35rem 0.75rem; font-size: 0.79rem;">
+                <span class="cat-dot" style="background: {{ cat.couleur }};"></span>
+                <strong>{{ cat.nom }}</strong>
+                <span style="color: var(--muted);">{{ cat.taux_min | int }}–{{ cat.taux_max | int }}$/h</span>
+            </div>
+            {% endfor %}
+        </div>
+
+        <div style="border-top: 1px solid var(--border); padding-top: 1rem;">
+            <div class="field-label" style="margin-bottom: 0.75rem;">Nouvelle catégorie</div>
+            <form action="/heures/categories" method="POST">
+                <div class="form-row form-row-4" style="align-items: end;">
+                    <div>
+                        <label class="field-label">Nom *</label>
+                        <input type="text" name="nom" class="form-control" required placeholder="Ex: Rédaction">
+                    </div>
+                    <div>
+                        <label class="field-label">Taux min ($/h)</label>
+                        <input type="number" name="taux_min" class="form-control" placeholder="40" step="5" min="0">
+                    </div>
+                    <div>
+                        <label class="field-label">Taux max ($/h)</label>
+                        <input type="number" name="taux_max" class="form-control" placeholder="60" step="5" min="0">
+                    </div>
+                    <div>
+                        <button type="submit" class="btn btn-secondary" style="width: 100%;">Ajouter</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+// ── Timer actif : calcul du temps écoulé ─────────────────────────────────────
+{% if timer_actif %}
+const _timerStart = new Date("{{ timer_actif.created_at }}".replace(' ', 'T') + 'Z').getTime();
+function _updateTimer() {
+    const elapsed = Math.floor((Date.now() - _timerStart) / 1000);
+    const h = Math.floor(elapsed / 3600);
+    const m = Math.floor((elapsed % 3600) / 60);
+    const s = elapsed % 60;
+    document.getElementById('timer-display').textContent =
+        String(h).padStart(2, '0') + ':' +
+        String(m).padStart(2, '0') + ':' +
+        String(s).padStart(2, '0');
+}
+_updateTimer();
+setInterval(_updateTimer, 1000);
+{% endif %}
+
+// ── Start timer ─────────────────────────────────────────────────────────────
+async function startTimer() {
+    const catEl = document.getElementById('timer-cat');
+    if (!catEl.value) { alert('Choisis une catégorie.'); return; }
+    const r = await fetch('/heures/start', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+            categorie_id:     parseInt(catEl.value),
+            client_id:        document.getElementById('timer-client').value || null,
+            contrat_id:       document.getElementById('timer-contrat').value || null,
+            milestone_titre:  document.getElementById('timer-milestone').value || null,
+            description:      document.getElementById('timer-desc').value.trim() || null,
+            type_facturation: document.getElementById('timer-type').value,
+            taux_applique:    parseFloat(document.getElementById('timer-taux').value) || null,
+        })
+    });
+    if (r.ok) { location.reload(); }
+    else { const d = await r.json(); alert(d.error || 'Erreur démarrage.'); }
+}
+
+// ── Stop timer ──────────────────────────────────────────────────────────────
+async function stopTimer() {
+    const r = await fetch('/heures/stop', { method: 'POST' });
+    if (r.ok) { location.reload(); }
+    else { alert('Erreur arrêt timer.'); }
+}
+
+// ── Supprimer une entrée ─────────────────────────────────────────────────────
+async function deleteEntree(id) {
+    const r = await fetch('/heures/supprimer/' + id, { method: 'POST' });
+    if (r.ok) { location.reload(); }
+}
+
+// ── Toggle sections ──────────────────────────────────────────────────────────
+function toggleSection(bodyId, arrowId) {
+    const body  = document.getElementById(bodyId);
+    const arrow = document.getElementById(arrowId);
+    const open  = body.style.display !== 'none';
+    body.style.display  = open ? 'none' : 'block';
+    if (arrow) arrow.style.transform = open ? '' : 'rotate(180deg)';
+}
+
+// ── Taux moyen auto depuis catégorie ─────────────────────────────────────────
+function syncTaux(ctx) {
+    const sel = ctx === 'timer'
+        ? document.getElementById('timer-cat')
+        : document.querySelector('[name="categorie_id"]');
+    const taux_el = ctx === 'timer'
+        ? document.getElementById('timer-taux')
+        : document.getElementById('man-taux');
+    if (!sel || !taux_el) return;
+    const opt  = sel.options[sel.selectedIndex];
+    const min  = parseFloat(opt.dataset.tauxMin || 0);
+    const max  = parseFloat(opt.dataset.tauxMax || 0);
+    const avg  = (min + max) / 2;
+    if (avg > 0) taux_el.value = Math.round(avg / 5) * 5;
+}
+
+// ── Calcul durée auto (saisie manuelle) ──────────────────────────────────────
+function calcDuree() {
+    const debut = document.getElementById('man-debut').value;
+    const fin   = document.getElementById('man-fin').value;
+    if (!debut || !fin) return;
+    const [dh, dm] = debut.split(':').map(Number);
+    const [fh, fm] = fin.split(':').map(Number);
+    const duree = (fh * 60 + fm) - (dh * 60 + dm);
+    if (duree > 0) document.getElementById('man-duree').value = duree;
+}
+
+// ── Filtre projets selon client sélectionné ──────────────────────────────────
+function filterContrats(ctx) {
+    const clientSel  = ctx === 'timer'
+        ? document.getElementById('timer-client')
+        : document.querySelector('[name="client_id"]');
+    const contratSel = ctx === 'timer'
+        ? document.getElementById('timer-contrat')
+        : document.getElementById('manuel-contrat');
+    if (!clientSel || !contratSel) return;
+    const clientId = clientSel.value;
+    Array.from(contratSel.options).forEach(opt => {
+        if (!opt.value) return;
+        opt.hidden = clientId ? String(opt.dataset.clientId) !== clientId : false;
+    });
+    contratSel.value = '';
+    loadMilestones(ctx);
+}
+
+// ── Chargement milestones selon projet sélectionné ───────────────────────────
+async function loadMilestones(ctx) {
+    const contratSel = ctx === 'timer'
+        ? document.getElementById('timer-contrat')
+        : document.getElementById('manuel-contrat');
+    const msSel = ctx === 'timer'
+        ? document.getElementById('timer-milestone')
+        : document.getElementById('manuel-milestone');
+    if (!contratSel || !msSel) return;
+    msSel.innerHTML = '<option value="">— Aucun —</option>';
+    if (!contratSel.value) return;
+    try {
+        const r  = await fetch('/api/heures/milestones/' + contratSel.value);
+        const ms = await r.json();
+        ms.forEach(m => {
+            const opt = document.createElement('option');
+            opt.value       = m.titre;
+            opt.textContent = m.titre + (m.statut ? ' (' + m.statut + ')' : '');
+            msSel.appendChild(opt);
+        });
+    } catch (e) {}
+}
+</script>
+{% endblock %}
