@@ -3,6 +3,46 @@
 
 {% block head %}
 <style>
+/* ── Glitch titre ─────────────────────────────────────────────────────────── */
+.glitch {
+    position: relative;
+    display: inline-block;
+}
+.glitch::before,
+.glitch::after {
+    content: attr(data-text);
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%;
+    overflow: hidden;
+}
+.glitch::before {
+    color: #87CEEB;
+    animation: glitch-top 3.5s infinite linear;
+    clip-path: polygon(0 0, 100% 0, 100% 40%, 0 40%);
+    transform: translateX(-2px);
+}
+.glitch::after {
+    color: #d94fbd;
+    animation: glitch-bot 3.5s infinite linear;
+    clip-path: polygon(0 60%, 100% 60%, 100% 100%, 0 100%);
+    transform: translateX(2px);
+}
+@keyframes glitch-top {
+    0%, 88%   { transform: translateX(-2px); opacity: 1; }
+    89%        { transform: translateX(3px) skewX(-5deg); opacity: 0.8; }
+    90%        { transform: translateX(-3px); opacity: 0.6; }
+    91%        { transform: translateX(2px); opacity: 1; }
+    92%, 100%  { transform: translateX(-2px); opacity: 1; }
+}
+@keyframes glitch-bot {
+    0%, 88%   { transform: translateX(2px); opacity: 1; }
+    89%        { transform: translateX(-3px) skewX(5deg); opacity: 0.8; }
+    90%        { transform: translateX(3px); opacity: 0.6; }
+    91%        { transform: translateX(-2px); opacity: 1; }
+    92%, 100%  { transform: translateX(2px); opacity: 1; }
+}
+
 .tarif-header {
     cursor: pointer;
     display: flex;
@@ -19,9 +59,52 @@
 {% block content %}
 <div class="page-header">
     <div>
-        <h1 class="page-title">Tarifs</h1>
+        <h1 class="page-title"><span class="glitch" data-text="Tarifs">Tarifs</span></h1>
         <div class="page-sub">Gère tes services et prix — affichés sur tntm.ca.</div>
     </div>
+</div>
+
+{# ── Nouveau tarif ──────────────────────────────────────────────────────── #}
+<div class="card" style="margin-bottom: 1.5rem; border: 1px dashed var(--border);">
+    <div class="section-title" style="margin-bottom: 1rem;">+ Nouveau tarif</div>
+    <form method="POST" action="/tarifs/new">
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 0.8rem;">
+            <div class="form-group" style="margin: 0;">
+                <label>Titre *</label>
+                <input type="text" name="titre" required placeholder="Ex: Site vitrine">
+            </div>
+            <div style="display: flex; gap: 0.5rem;">
+                <div class="form-group" style="margin: 0; flex: 1;">
+                    <label>Prix ($)</label>
+                    <input type="number" name="prix" placeholder="vide = Sur devis" step="1" min="0">
+                </div>
+                <div class="form-group" style="margin: 0; flex: 1;">
+                    <label>Unité</label>
+                    <input type="text" name="unite" placeholder="/ projet" value="/ projet">
+                </div>
+            </div>
+        </div>
+        <div class="form-group">
+            <label>Description courte</label>
+            <input type="text" name="description" placeholder="Une ligne de présentation du service">
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 0.8rem;">
+            <div class="form-group" style="margin: 0;">
+                <label>✅ Ce qui est inclus</label>
+                <textarea name="inclus" rows="4" placeholder="Design responsive&#10;1 révision incluse&#10;Mise en ligne"></textarea>
+            </div>
+            <div class="form-group" style="margin: 0;">
+                <label>✗ Non inclus</label>
+                <textarea name="non_inclus" rows="4" placeholder="Hébergement&#10;Nom de domaine&#10;Contenu (textes, photos)"></textarea>
+            </div>
+        </div>
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <label style="display: flex; align-items: center; gap: 0.4rem; font-size: 0.82rem; cursor: pointer;">
+                <input type="checkbox" name="actif" checked> Visible sur tntm.ca
+            </label>
+            <button type="submit" class="btn btn-primary">Ajouter</button>
+        </div>
+    </form>
 </div>
 
 {% for t in tarifs %}
@@ -104,49 +187,6 @@
 {% else %}
 <div class="card"><div class="empty-state">Aucun tarif. Ajoutes-en un ci-dessous.</div></div>
 {% endfor %}
-
-{# ── Nouveau tarif ──────────────────────────────────────────────────────── #}
-<div class="card" style="margin-top: 1.5rem; border: 1px dashed var(--border);">
-    <div class="section-title" style="margin-bottom: 1rem;">+ Nouveau tarif</div>
-    <form method="POST" action="/tarifs/new">
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 0.8rem;">
-            <div class="form-group" style="margin: 0;">
-                <label>Titre *</label>
-                <input type="text" name="titre" required placeholder="Ex: Site vitrine">
-            </div>
-            <div style="display: flex; gap: 0.5rem;">
-                <div class="form-group" style="margin: 0; flex: 1;">
-                    <label>Prix ($)</label>
-                    <input type="number" name="prix" placeholder="vide = Sur devis" step="1" min="0">
-                </div>
-                <div class="form-group" style="margin: 0; flex: 1;">
-                    <label>Unité</label>
-                    <input type="text" name="unite" placeholder="/ projet" value="/ projet">
-                </div>
-            </div>
-        </div>
-        <div class="form-group">
-            <label>Description courte</label>
-            <input type="text" name="description" placeholder="Une ligne de présentation du service">
-        </div>
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 0.8rem;">
-            <div class="form-group" style="margin: 0;">
-                <label>✅ Ce qui est inclus</label>
-                <textarea name="inclus" rows="4" placeholder="Design responsive&#10;1 révision incluse&#10;Mise en ligne"></textarea>
-            </div>
-            <div class="form-group" style="margin: 0;">
-                <label>✗ Non inclus</label>
-                <textarea name="non_inclus" rows="4" placeholder="Hébergement&#10;Nom de domaine&#10;Contenu (textes, photos)"></textarea>
-            </div>
-        </div>
-        <div style="display: flex; justify-content: space-between; align-items: center;">
-            <label style="display: flex; align-items: center; gap: 0.4rem; font-size: 0.82rem; cursor: pointer;">
-                <input type="checkbox" name="actif" checked> Visible sur tntm.ca
-            </label>
-            <button type="submit" class="btn btn-primary">Ajouter</button>
-        </div>
-    </form>
-</div>
 
 {% endblock %}
 
