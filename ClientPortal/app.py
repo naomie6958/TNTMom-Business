@@ -87,31 +87,30 @@ _MOIS = ['jan', 'fév', 'mar', 'avr', 'mai', 'juin', 'juil', 'août', 'sep', 'oc
 
 @app.context_processor
 def portail_badge_ctx():
-    ctx = {}
-    if 'client_id' in session:
-        try:
-            conn = get_db()
-            count = conn.execute(
-                "SELECT COUNT(*) FROM messages_client WHERE client_id=? AND lu_client=0 AND reponse IS NOT NULL",
-                (session['client_id'],)
-            ).fetchone()[0]
-            conn.close()
-        except Exception:
-            count = 0
-        ctx['messages_non_lus'] = count
-    else:
-        ctx['messages_non_lus'] = 0
-    if 'user_id' in session:
-        try:
-            conn = get_db()
-            ctx['leads_non_lus'] = conn.execute(
-                "SELECT COUNT(*) FROM leads WHERE lu = 0"
-            ).fetchone()[0]
-            conn.close()
-        except Exception:
-            ctx['leads_non_lus'] = 0
-    else:
-        ctx['leads_non_lus'] = 0
+    ctx = {'messages_non_lus': 0, 'leads_non_lus': 0}
+    try:
+        if 'client_id' in session:
+            try:
+                conn = get_db()
+                count = conn.execute(
+                    "SELECT COUNT(*) FROM messages_client WHERE client_id=? AND lu_client=0 AND reponse IS NOT NULL",
+                    (session['client_id'],)
+                ).fetchone()[0]
+                conn.close()
+            except Exception:
+                count = 0
+            ctx['messages_non_lus'] = count
+        if 'user_id' in session:
+            try:
+                conn = get_db()
+                ctx['leads_non_lus'] = conn.execute(
+                    "SELECT COUNT(*) FROM leads WHERE lu = 0"
+                ).fetchone()[0]
+                conn.close()
+            except Exception:
+                ctx['leads_non_lus'] = 0
+    except Exception:
+        pass
     return ctx
 
 @app.template_filter('fmt_date')
