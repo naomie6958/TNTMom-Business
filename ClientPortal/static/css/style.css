@@ -228,7 +228,7 @@ a:hover { color: var(--accent); }
 .page-title .client-nom { color: #87CEEB; }
 
 /* ── Glitch titre (partagé portail + admin) ──────────────────────────────── */
-.glitch { position: relative; display: inline-block; }
+.glitch { position: relative; display: inline-block; color: #87CEEB; }
 .glitch::before,
 .glitch::after {
     content: attr(data-text);
@@ -238,7 +238,7 @@ a:hover { color: var(--accent); }
     overflow: hidden;
 }
 .glitch::before {
-    color: #87CEEB;
+    color: #ffffff;
     clip-path: polygon(0 0, 100% 0, 100% 40%, 0 40%);
     transform: translateX(-2px);
     animation: glitch-top 3.5s infinite linear;
