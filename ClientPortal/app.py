@@ -874,7 +874,7 @@ def contrat_print(client_id, contrat_id):
     if not client or not contrat:
         return redirect(f'/clients/{client_id}')
     milestones = json.loads(contrat['milestones']) if contrat['milestones'] else []
-    total = sum(float(m.get('prix', 0)) for m in milestones)
+    total = sum(float(m.get('prix', 0) or 0) for m in milestones)
     return render_template('contrat_print.html',
                            client=client, contrat=contrat,
                            milestones=milestones, total=total)
@@ -1409,7 +1409,7 @@ def portail_contrat_print(contrat_id):
     if not contrat or contrat['statut'] != 'signé':
         return redirect('/portail/dashboard')
     milestones = json.loads(contrat['milestones']) if contrat['milestones'] else []
-    total = sum(float(m.get('prix', 0)) for m in milestones)
+    total = sum(float(m.get('prix', 0) or 0) for m in milestones)
     return render_template('contrat_print.html', client=client, contrat=contrat,
                            milestones=milestones, total=total)
 
