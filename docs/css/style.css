@@ -1791,3 +1791,138 @@ h3.projet-section-titre {
     .temoignages-section { padding: 2rem 1rem; }
 }
 }
+
+/* ── PAGE TARIFS ─────────────────────────────────────────────────────────────── */
+.tarifs-hero {
+    background: linear-gradient(160deg, #0f0f14 60%, rgba(217,79,189,0.08));
+}
+
+.tarifs-intro {
+    max-width: 680px;
+    margin: 0 auto;
+    padding: 2.5rem 2rem 0;
+    text-align: center;
+    color: rgba(240,238,255,0.62);
+    font-size: 0.95rem;
+    line-height: 1.75;
+}
+
+.tarifs-intro strong { color: #f0eeff; }
+
+.tarifs-grid {
+    max-width: 1100px;
+    margin: 2.5rem auto;
+    padding: 0 2rem;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 1.5rem;
+}
+
+.tarif-loading {
+    grid-column: 1 / -1;
+    text-align: center;
+    color: rgba(240,238,255,0.35);
+    font-size: 0.9rem;
+    padding: 3rem 0;
+}
+
+.tarif-card {
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 12px;
+    padding: 1.6rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.9rem;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.tarif-card:hover {
+    border-color: rgba(217,79,189,0.35);
+    box-shadow: 0 0 24px rgba(217,79,189,0.08);
+}
+
+.tarif-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.tarif-titre {
+    font-family: 'Bebas Neue', cursive;
+    font-size: 1.5rem;
+    letter-spacing: 0.05em;
+    color: #f0eeff;
+    line-height: 1;
+}
+
+.tarif-prix {
+    font-family: 'Bebas Neue', cursive;
+    font-size: 1.4rem;
+    color: #d94fbd;
+    white-space: nowrap;
+}
+
+.tarif-unite {
+    font-family: 'Open Sans', sans-serif;
+    font-size: 0.72rem;
+    color: rgba(217,79,189,0.7);
+    margin-left: 0.3rem;
+    font-weight: 400;
+}
+
+.tarif-desc {
+    font-size: 0.88rem;
+    color: rgba(240,238,255,0.55);
+    line-height: 1.6;
+}
+
+.tarif-lists {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+    margin-top: 0.2rem;
+    border-top: 1px solid rgba(255,255,255,0.06);
+    padding-top: 0.9rem;
+}
+
+.tarif-inclus,
+.tarif-non-inclus {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+}
+
+.tarif-inclus li,
+.tarif-non-inclus li {
+    font-size: 0.82rem;
+    display: flex;
+    gap: 0.5rem;
+    align-items: baseline;
+    line-height: 1.5;
+}
+
+.tarif-inclus li { color: rgba(240,238,255,0.75); }
+.tarif-non-inclus li { color: rgba(240,238,255,0.38); }
+
+.tarif-check { color: #3ecf8e; flex-shrink: 0; font-size: 0.75rem; }
+.tarif-cross  { color: rgba(240,238,255,0.25); flex-shrink: 0; font-size: 0.75rem; }
+
+.tarifs-note {
+    max-width: 680px;
+    margin: 0 auto 4rem;
+    padding: 0 2rem;
+    text-align: center;
+    color: rgba(240,238,255,0.45);
+    font-size: 0.88rem;
+    line-height: 1.7;
+}
+
+@media (max-width: 600px) {
+    .tarifs-grid { grid-template-columns: 1fr; padding: 0 1rem; }
+}

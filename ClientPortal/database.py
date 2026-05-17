@@ -255,6 +255,23 @@ def migrate_db():
     except Exception:
         pass
 
+    try:
+        conn.execute('''CREATE TABLE IF NOT EXISTS tarifs (
+            id         INTEGER PRIMARY KEY AUTOINCREMENT,
+            titre      TEXT NOT NULL,
+            description TEXT,
+            prix       REAL,
+            unite      TEXT DEFAULT '/ projet',
+            inclus     TEXT,
+            non_inclus TEXT,
+            actif      INTEGER DEFAULT 1,
+            ordre      INTEGER DEFAULT 0,
+            created_at TEXT DEFAULT (datetime('now'))
+        )''')
+        conn.commit()
+    except Exception:
+        pass
+
     conn.executescript('''
         CREATE TABLE IF NOT EXISTS factures (
             id              INTEGER PRIMARY KEY AUTOINCREMENT,

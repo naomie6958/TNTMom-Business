@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="fr">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta name="description" content="Tarifs et services de The Nerdy Trap Mom — développeuse web freelance.">
+        <meta property="og:title" content="Tarifs — The Nerdy Trap Mom">
+        <meta property="og:description" content="Des prix clairs, sans surprise. Ce qui est inclus, ce qui ne l'est pas.">
+        <meta property="og:image" content="https://tntm.ca/images/tntmom-banner.png">
+        <meta property="og:url" content="https://tntm.ca/tarifs.html">
+        <meta property="og:type" content="website">
+        <meta name="twitter:card" content="summary_large_image">
+        <title>TNTM — Tarifs</title>
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Nabla&family=Open+Sans:ital,wght@0,300..800;1,300..800&family=Orbitron:wght@400..900&display=swap" rel="stylesheet">
+        <link rel="stylesheet" href="css/style.css">
+        <link rel="icon" href="images/tntmom-icone-dark-magenta.svg" type="image/svg+xml">
+    </head>
+    <body>
+        <div class="sticky-header">
+        <header>
+            <div id="header-brand">
+                <a href="index.html" class="header-banner-link">
+                    <div class="header-banner">
+                        <span class="hb-tnt">TNT</span>
+                        <div class="hb-sep"></div>
+                        <div class="hb-right">
+                            <span class="hb-label">Développeuse</span>
+                            <span class="hb-mom">MOM</span>
+                        </div>
+                    </div>
+                </a>
+            </div>
+            <nav>
+                <a href="index.html">Accueil</a>
+                <a href="index.html#galerie">Mes projets</a>
+                <a href="process.html">Comment je travaille</a>
+                <a href="tarifs.html">Tarifs</a>
+                <a href="about.html">À propos</a>
+                <a href="contact.html">Contact</a>
+                <a href="https://tntmom.pythonanywhere.com/portail/login" target="_blank" class="nav-portail">Portail client →</a>
+            </nav>
+            <button id="menu-toggle">☰</button>
+        </header>
+        </div>
+        <main>
+            <section id="hero" class="page-hero tarifs-hero">
+                <p id="hero-tagline"><span class="hero-line1">Tarifs</span></p>
+                <p id="contact-sub">Des prix clairs, sans surprise — ce qui est inclus et ce qui ne l'est pas.</p>
+            </section>
+
+            <section id="tarifs-section">
+                <div class="tarifs-intro">
+                    <p>Tous mes projets fonctionnent par <strong>milestones</strong> : tu paies chaque étape une fois livrée et approuvée par toi. Pas de paiement en avance pour du travail pas encore fait.</p>
+                </div>
+                <div class="tarifs-grid" id="tarifs-grid">
+                    <div class="tarif-loading">Chargement des tarifs...</div>
+                </div>
+                <div class="tarifs-note">
+                    <p>Les prix indiqués sont des points de départ. Chaque projet est unique — une consultation gratuite permet d'établir un devis précis adapté à tes besoins.</p>
+                    <a href="contact.html" class="btn-submit" style="display:inline-block; text-decoration:none; margin-top:1.2rem;">Demander un devis →</a>
+                </div>
+            </section>
+        </main>
+        <footer>
+            <div id="footer-brand">
+                <img src="images/tntmom-favicon-bleu.svg" alt="TNTM" id="footer-favicon">
+                <span>The Nerdy Trap Mom</span>
+            </div>
+            <a href="https://buymeacoffee.com/tntm" target="_blank" class="bmc-btn">☕ Buy me a coffee</a>
+            <span id="footer-copy">© 2026 TNTM — Naomie McMahon Tanguay</span>
+        </footer>
+        <script src="js/script.js"></script>
+        <script>
+        fetch('https://tntmom.pythonanywhere.com/api/public/tarifs')
+            .then(r => r.json())
+            .then(tarifs => {
+                const grid = document.getElementById('tarifs-grid');
+                if (!tarifs.length) {
+                    grid.innerHTML = '<p style="text-align:center;color:rgba(240,238,255,0.45);grid-column:1/-1;">Tarifs à venir...</p>';
+                    return;
+                }
+                grid.innerHTML = tarifs.map(t => {
+                    const inclus = t.inclus ? t.inclus.split('\n').filter(l => l.trim()).map(l =>
+                        `<li><span class="tarif-check">✓</span>${l.trim()}</li>`).join('') : '';
+                    const nonInclus = t.non_inclus ? t.non_inclus.split('\n').filter(l => l.trim()).map(l =>
+                        `<li><span class="tarif-cross">✗</span>${l.trim()}</li>`).join('') : '';
+                    const prix = t.prix ? Number(t.prix).toLocaleString('fr-CA') + ' $' : 'Sur devis';
+                    const unite = t.unite && t.prix ? `<span class="tarif-unite">${t.unite}</span>` : '';
+                    return `
+                    <div class="tarif-card anim-fade-up">
+                        <div class="tarif-header">
+                            <div class="tarif-titre">${t.titre}</div>
+                            <div class="tarif-prix">${prix}${unite}</div>
+                        </div>
+                        ${t.description ? `<div class="tarif-desc">${t.description}</div>` : ''}
+                        ${inclus || nonInclus ? `<div class="tarif-lists">
+                            ${inclus ? `<ul class="tarif-inclus">${inclus}</ul>` : ''}
+                            ${nonInclus ? `<ul class="tarif-non-inclus">${nonInclus}</ul>` : ''}
+                        </div>` : ''}
+                    </div>`;
+                }).join('');
+                // Déclenche les animations
+                document.querySelectorAll('.anim-fade-up').forEach((el, i) => {
+                    setTimeout(() => el.classList.add('visible'), i * 80);
+                });
+            })
+            .catch(() => {
+                document.getElementById('tarifs-grid').innerHTML =
+                    '<p style="text-align:center;color:rgba(240,238,255,0.45);grid-column:1/-1;">Impossible de charger les tarifs. <a href="contact.html" style="color:#d94fbd;">Contacte-moi directement.</a></p>';
+            });
+        </script>
+    </body>
+</html>

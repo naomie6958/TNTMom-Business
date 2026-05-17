@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+{% block title %}Comptabilité{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1 class="page-title">Comptabilité</h1>
+        <div class="page-sub">Vue globale de toutes les factures.</div>
+    </div>
+</div>
+
+<div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-bottom: 2rem;">
+    <div class="card" style="text-align: center;">
+        <div style="font-size: 0.72rem; color: var(--muted); letter-spacing: 0.08em; margin-bottom: 0.4rem;">RÉALISÉ</div>
+        <div style="font-size: 1.8rem; font-family: 'Bebas Neue', sans-serif; color: var(--green);">{{ total_realise | int }}$</div>
+    </div>
+    <div class="card" style="text-align: center;">
+        <div style="font-size: 0.72rem; color: var(--muted); letter-spacing: 0.08em; margin-bottom: 0.4rem;">EN ATTENTE</div>
+        <div style="font-size: 1.8rem; font-family: 'Bebas Neue', sans-serif; color: var(--gold);">{{ total_attente | int }}$</div>
+    </div>
+    <div class="card" style="text-align: center;">
+        <div style="font-size: 0.72rem; color: var(--muted); letter-spacing: 0.08em; margin-bottom: 0.4rem;">TOTAL ÉMIS</div>
+        <div style="font-size: 1.8rem; font-family: 'Bebas Neue', sans-serif; color: var(--text);">{{ (total_realise + total_attente) | int }}$</div>
+    </div>
+</div>
+
+{% if mois %}
+    {% for mois_key, data in mois.items() %}
+    <div class="card" style="margin-bottom: 1rem;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.8rem; flex-wrap: wrap; gap: 0.5rem;">
+            <div class="section-title">{{ mois_key }}</div>
+            <div style="display: flex; gap: 1rem; font-size: 0.78rem;">
+                {% if data.total_payee %}
+                <span style="color: var(--green);">✓ {{ data.total_payee | int }}$ payé</span>
+                {% endif %}
+                {% if data.total_attente %}
+                <span style="color: var(--gold);">⏳ {{ data.total_attente | int }}$ en attente</span>
+                {% endif %}
+            </div>
+        </div>
+        <table style="width: 100%; border-collapse: collapse; font-size: 0.82rem;">
+            <thead>
+                <tr style="border-bottom: 1px solid var(--border);">
+                    <th style="text-align: left; padding: 0.4rem 0.5rem; color: var(--muted); font-weight: 400;">Date</th>
+                    <th style="text-align: left; padding: 0.4rem 0.5rem; color: var(--muted); font-weight: 400;">Client</th>
+                    <th style="text-align: left; padding: 0.4rem 0.5rem; color: var(--muted); font-weight: 400;">Description</th>
+                    <th style="text-align: right; padding: 0.4rem 0.5rem; color: var(--muted); font-weight: 400;">Montant</th>
+                    <th style="text-align: center; padding: 0.4rem 0.5rem; color: var(--muted); font-weight: 400;">Statut</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for f in data.factures %}
+                <tr style="border-bottom: 1px solid rgba(255,255,255,0.04);">
+                    <td style="padding: 0.5rem 0.5rem; color: var(--muted);">{{ f.date_emission or '—' }}</td>
+                    <td style="padding: 0.5rem 0.5rem;">
+                        <a href="/clients/{{ f.client_id }}" style="color: var(--accent2);">{{ f.client_nom }}</a>
+                    </td>
+                    <td style="padding: 0.5rem 0.5rem; color: var(--muted);">{{ f.milestone_titre or f.description or '—' }}</td>
+                    <td style="padding: 0.5rem 0.5rem; text-align: right; font-weight: 600;">{{ f.montant | int }}$</td>
+                    <td style="padding: 0.5rem 0.5rem; text-align: center;">
+                        <span class="badge badge-{{ 'actif' if f.statut == 'payée' else 'envoyé' }}">{{ f.statut }}</span>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endfor %}
+{% else %}
+    <div class="card"><div class="empty-state">Aucune facture pour le moment.</div></div>
+{% endif %}
+{% endblock %}

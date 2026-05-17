@@ -1043,14 +1043,25 @@ def set_client_password(client_id):
         return redirect(f'/clients/{client_id}')
 
     conn = get_db()
-    # generate_password_hash() transforme le mot de passe en hash sécurisé.
-    # Même logique que pour l'admin — on ne stocke jamais un mot de passe en clair.
     conn.execute(
         'UPDATE clients SET password = ? WHERE id = ?',
         (generate_password_hash(password), client_id)
     )
     conn.commit()
+    client_notif = conn.execute('SELECT nom, email FROM clients WHERE id = ?', (client_id,)).fetchone()
     conn.close()
+    if client_notif and client_notif['email']:
+        send_notification_email(
+            '[TNTMom] Ton accès au portail client est prêt ✨',
+            f'Bonjour {client_notif["nom"]},\n\n'
+            f'Naomie vient de configurer ton accès au portail client.\n\n'
+            f'Connecte-toi ici :\nhttps://tntmom.pythonanywhere.com/portail/login\n\n'
+            f'Ton courriel : {client_notif["email"]}\n'
+            f'Mot de passe : celui que Naomie t\'a communiqué\n\n'
+            f'Pour toute question, écris à naomiemt@tntm.ca\n\n'
+            f'— Naomie (TNTMom)',
+            to=client_notif['email']
+        )
     flash('Mot de passe mis à jour.', 'success')
     return redirect(f'/clients/{client_id}')
 
@@ -1924,6 +1935,126 @@ def portail_formulaire_submit(fid):
     conn.close()
     flash('Formulaire envoyé, merci !', 'success')
     return redirect('/portail/formulaires')
+
+
+# ── COMPTABILITÉ ──────────────────────────────────────────────────────────────
+
+@app.route('/comptabilite')
+@login_required
+def comptabilite():
+    from collections import OrderedDict
+    conn = get_db()
+    factures = conn.execute('''
+        SELECT f.*, c.nom as client_nom
+        FROM factures f
+        JOIN clients c ON c.id = f.client_id
+        ORDER BY f.date_emission DESC
+    ''').fetchall()
+    conn.close()
+
+    mois = OrderedDict()
+    total_realise = 0
+    total_attente = 0
+
+    for f in factures:
+        key = (f['date_emission'] or '')[:7] or 'Sans date'
+        if key not in mois:
+            mois[key] = {'factures': [], 'total_payee': 0, 'total_attente': 0}
+        mois[key]['factures'].append(dict(f))
+        montant = float(f['montant'] or 0)
+        if f['statut'] == 'payée':
+            mois[key]['total_payee'] += montant
+            total_realise += montant
+        else:
+            mois[key]['total_attente'] += montant
+            total_attente += montant
+
+    return render_template('comptabilite.html',
+                           mois=mois,
+                           total_realise=total_realise,
+                           total_attente=total_attente)
+
+
+# ── TARIFS ────────────────────────────────────────────────────────────────────
+
+@app.route('/tarifs')
+@login_required
+def tarifs():
+    conn = get_db()
+    rows = conn.execute('SELECT * FROM tarifs ORDER BY ordre, id').fetchall()
+    conn.close()
+    return render_template('tarifs_admin.html', tarifs=rows)
+
+
+@app.route('/tarifs/new', methods=['POST'])
+@login_required
+def tarif_new():
+    conn = get_db()
+    max_ordre = conn.execute('SELECT COALESCE(MAX(ordre), -1) FROM tarifs').fetchone()[0]
+    conn.execute(
+        'INSERT INTO tarifs (titre, description, prix, unite, inclus, non_inclus, actif, ordre) VALUES (?,?,?,?,?,?,?,?)',
+        (
+            request.form.get('titre', '').strip(),
+            request.form.get('description', '').strip() or None,
+            float(request.form.get('prix') or 0) or None,
+            request.form.get('unite', '/ projet').strip(),
+            request.form.get('inclus', '').strip() or None,
+            request.form.get('non_inclus', '').strip() or None,
+            1 if request.form.get('actif') else 0,
+            max_ordre + 1,
+        )
+    )
+    conn.commit()
+    conn.close()
+    flash('Tarif ajouté.', 'success')
+    return redirect('/tarifs')
+
+
+@app.route('/tarifs/<int:tid>/edit', methods=['POST'])
+@login_required
+def tarif_edit(tid):
+    conn = get_db()
+    conn.execute(
+        'UPDATE tarifs SET titre=?, description=?, prix=?, unite=?, inclus=?, non_inclus=?, actif=?, ordre=? WHERE id=?',
+        (
+            request.form.get('titre', '').strip(),
+            request.form.get('description', '').strip() or None,
+            float(request.form.get('prix') or 0) or None,
+            request.form.get('unite', '/ projet').strip(),
+            request.form.get('inclus', '').strip() or None,
+            request.form.get('non_inclus', '').strip() or None,
+            1 if request.form.get('actif') else 0,
+            int(request.form.get('ordre', 0)),
+            tid,
+        )
+    )
+    conn.commit()
+    conn.close()
+    flash('Tarif mis à jour.', 'success')
+    return redirect('/tarifs')
+
+
+@app.route('/tarifs/<int:tid>/delete', methods=['POST'])
+@login_required
+def tarif_delete(tid):
+    conn = get_db()
+    conn.execute('DELETE FROM tarifs WHERE id = ?', (tid,))
+    conn.commit()
+    conn.close()
+    flash('Tarif supprimé.', 'success')
+    return redirect('/tarifs')
+
+
+@app.route('/api/public/tarifs')
+def api_public_tarifs():
+    conn = get_db()
+    rows = conn.execute(
+        'SELECT titre, description, prix, unite, inclus, non_inclus FROM tarifs WHERE actif = 1 ORDER BY ordre, id'
+    ).fetchall()
+    conn.close()
+    resp = jsonify([dict(r) for r in rows])
+    resp.headers['Access-Control-Allow-Origin'] = '*'
+    return resp
 
 
 if __name__ == '__main__':
