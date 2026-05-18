@@ -309,15 +309,15 @@ nav {
     width: 100%;
     max-height: 0;
     overflow: hidden;
-    clip-path: inset(0 0 100% 0);
-    transition: max-height 0.35s ease-out, clip-path 0.35s ease-out;
+    opacity: 0;
+    transition: max-height 0.28s ease, opacity 0.22s ease;
     order: 3;
     padding: 0 4px;
 }
 
 nav.open {
-    max-height: 700px;
-    clip-path: inset(-10px -10px 0 -10px);
+    max-height: 420px;    /* plus proche du vrai contenu */
+    opacity: 1;
     padding-top: 10px;
     padding-bottom: 8px;
 }
@@ -338,8 +338,8 @@ nav a {
 
 nav a:hover,
 nav a.active {
-    transform: translateY(-3px);
-    box-shadow: 0 6px 20px rgba(135, 206, 235, 0.7), 0 0 12px rgba(135, 206, 235, 0.4);
+    transform: translateY(-2px);
+    box-shadow: 0 3px 12px rgba(135, 206, 235, 0.5), 0 0 7px rgba(135, 206, 235, 0.28);
     border-color: #87CEEB;
     color: #87CEEB;
 }
@@ -1948,76 +1948,105 @@ h3.projet-section-titre {
 
 /* ── NAV DESKTOP ─────────────────────────────────────────────────────────────── */
 @media (min-width: 900px) {
-    /* toggle visible sur tous les écrans */
-
-    header { flex-wrap: nowrap; }
+    header {
+        position: relative;
+        flex-wrap: nowrap;
+    }
 
     nav {
-        display: none;           /* caché par défaut — .open l'affiche */
-        flex-direction: row;
+        /* panel dropdown ancré sous le hamburger, côté droit */
+        position: absolute;
+        top: calc(100% + 6px);
+        right: 0;
+        z-index: 200;
+
+        display: flex;
+        flex-direction: column;
+        width: 27vw;
+        min-width: 220px;
+        max-width: 300px;
+        gap: 0.35rem;
+        padding: 0.65rem;
+
         max-height: none;
         overflow: visible;
         clip-path: none;
-        width: auto;
         order: 0;
-        padding: 0;
-        gap: 0.3rem;
-        align-items: center;
-        transition: none;
+
+        background: rgba(10,10,18,0.96);
+        border: 1px solid rgba(135,206,235,0.18);
+        border-radius: 14px;
+        box-shadow: 0 16px 48px rgba(0,0,0,0.7);
+        backdrop-filter: blur(18px);
+
+        opacity: 0;
+        pointer-events: none;
+        transform: translateY(-6px);
+        transition: opacity 0.22s ease, transform 0.22s ease;
     }
 
     nav.open {
-        display: flex;
-        padding-top: 0;
-        padding-bottom: 0;
+        opacity: 1;
+        pointer-events: auto;
+        transform: translateY(0);
     }
 
     nav a {
-        padding: 0.42rem 0.85rem;
-        font-size: 0.62rem;
+        padding: 0.55rem 1rem;
+        font-size: 0.65rem;
         white-space: nowrap;
-        border-radius: 20px;
+        border-radius: 10px;
     }
 
     .nav-group {
         position: relative;
-        flex-wrap: nowrap;
-        gap: 0;
+        flex-wrap: wrap;
+        gap: 0.35rem;
     }
 
-    .nav-group-link { flex: unset; border-radius: 20px 0 0 20px !important; border-right: none !important; }
-    .nav-chevron-btn { padding: 0 0.6rem; border-radius: 0 20px 20px 0 !important; border-left: 1px solid rgba(135,206,235,0.12) !important; height: 100%; }
+    .nav-group-link { flex: 1; border-radius: 10px !important; }
+    .nav-chevron-btn { padding: 0 0.7rem; border-radius: 10px !important; border-left: 1px solid rgba(135,206,235,0.12) !important; height: auto; }
 
+    /* sous-menu inline dans le panel (plus de floating absolu) */
     .nav-sub {
-        position: absolute;
-        top: calc(100% + 8px);
-        left: 0;
-        min-width: 200px;
+        position: static;
+        top: auto;
+        left: auto;
+        width: 100%;
+        flex-basis: 100%;
+        min-width: unset;
         flex-direction: column;
-        z-index: 200;
-        background: rgba(10,10,18,0.97);
-        border: 1px solid rgba(135,206,235,0.18);
-        border-radius: 12px;
-        padding: 0.45rem;
-        gap: 0.2rem;
-        box-shadow: 0 16px 48px rgba(0,0,0,0.65), 0 0 0 1px rgba(135,206,235,0.04);
-        backdrop-filter: blur(16px);
+        z-index: auto;
+        background: transparent;
+        border: none;
+        border-radius: 0;
+        padding: 0 0 0 0.5rem;
+        gap: 0.25rem;
+        box-shadow: none;
+        backdrop-filter: none;
+        max-height: 0;
+        overflow: hidden;
+        transition: max-height 0.28s ease, opacity 0.22s ease;
+        opacity: 0;
     }
 
-    .nav-sub.open { max-height: 300px; }
+    .nav-sub.open {
+        max-height: 200px;
+        opacity: 1;
+    }
 
     .nav-sub-item {
         border-radius: 8px !important;
-        padding: 0.5rem 0.9rem !important;
+        padding: 0.4rem 0.9rem !important;
         font-size: 0.6rem !important;
         opacity: 1;
-        border: none !important;
-        background: transparent !important;
+        border: 1px solid rgba(135,206,235,0.15) !important;
+        background: rgba(26,26,46,0.4) !important;
     }
 
     .nav-sub-item:hover {
         background: rgba(135,206,235,0.08) !important;
-        transform: none;
-        box-shadow: none;
+        transform: translateY(-2px);
+        box-shadow: 0 3px 10px rgba(135,206,235,0.35) !important;
     }
 }
