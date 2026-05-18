@@ -1,0 +1,227 @@
+{% extends "base.html" %}
+{% block title %}Package Builder{% endblock %}
+
+{% block head %}
+<style>
+.pkg-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+.pkg-cat label {
+    font-size: 0.78rem;
+    color: var(--muted);
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 0.3rem;
+}
+.pkg-cat .taux {
+    font-family: 'DM Mono', monospace;
+    color: var(--accent);
+    font-size: 0.72rem;
+}
+.prix-display {
+    background: rgba(217, 79, 189, 0.06);
+    border: 1px solid rgba(217, 79, 189, 0.2);
+    border-radius: 10px;
+    padding: 1rem 1.2rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.45rem;
+    margin-top: 1.2rem;
+}
+.prix-ligne {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.82rem;
+    color: var(--muted);
+}
+.prix-ligne span:last-child {
+    font-family: 'DM Mono', monospace;
+}
+.prix-final-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-top: 1px solid rgba(217, 79, 189, 0.25);
+    padding-top: 0.65rem;
+    margin-top: 0.1rem;
+}
+.prix-final-label { font-weight: 600; font-size: 0.88rem; }
+.prix-final-val {
+    font-family: 'DM Mono', monospace;
+    font-size: 1.5rem;
+    color: var(--accent);
+    font-weight: 700;
+}
+.pkg-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.9rem 1rem;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    margin-bottom: 0.6rem;
+    transition: border-color 0.15s;
+}
+.pkg-item:hover { border-color: rgba(217,79,189,0.35); }
+.pkg-meta {
+    font-size: 0.72rem;
+    color: var(--muted);
+    margin-top: 0.25rem;
+    line-height: 1.5;
+}
+@media (max-width: 640px) {
+    .pkg-grid { grid-template-columns: 1fr; }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1 class="page-title"><span class="glitch" data-text="Package Builder">Package Builder</span></h1>
+        <div class="page-sub">Conçois un forfait sur mesure — le prix se calcule en temps réel.</div>
+    </div>
+</div>
+
+{# ── Formulaire nouveau forfait ───────────────────────────────────────────── #}
+<div class="card" style="margin-bottom: 1.5rem; border: 1px dashed var(--border);">
+    <div class="section-title" style="margin-bottom: 1.2rem;">+ Nouveau forfait</div>
+    <form method="POST" action="/packages">
+
+        <div class="pkg-grid">
+            <div class="form-group" style="margin: 0;">
+                <label>Nom du forfait *</label>
+                <input type="text" name="nom" required placeholder="Ex: Site vitrine complet">
+            </div>
+            <div class="form-group" style="margin: 0;">
+                <label>Client *</label>
+                <select name="client_id" required>
+                    <option value="" disabled selected>— Sélectionner —</option>
+                    {% for c in clients %}
+                    <option value="{{ c.id }}">{{ c.nom }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+
+        <div class="section-title" style="font-size: 0.75rem; margin-bottom: 0.85rem; color: var(--muted); letter-spacing: 0.08em;">
+            HEURES PAR CATÉGORIE
+        </div>
+        <div class="pkg-grid">
+            <div class="pkg-cat">
+                <label>Développement <span class="taux">80 $/h</span></label>
+                <input type="number" name="h_dev" id="h_dev" min="0" step="0.5" value="0">
+            </div>
+            <div class="pkg-cat">
+                <label>Design UI/UX <span class="taux">65 $/h</span></label>
+                <input type="number" name="h_design" id="h_design" min="0" step="0.5" value="0">
+            </div>
+            <div class="pkg-cat">
+                <label>Intégration &amp; Maintenance <span class="taux">55 $/h</span></label>
+                <input type="number" name="h_integration" id="h_integration" min="0" step="0.5" value="0">
+            </div>
+            <div class="pkg-cat">
+                <label>Admin &amp; Gestion <span class="taux">50 $/h</span></label>
+                <input type="number" name="h_admin" id="h_admin" min="0" step="0.5" value="0">
+            </div>
+        </div>
+
+        <div class="form-group" style="margin-top: 0.5rem;">
+            <label>Marge de sécurité</label>
+            <select name="marge" id="marge">
+                <option value="0">0 % — prix brut</option>
+                <option value="10">10 %</option>
+                <option value="15">15 %</option>
+                <option value="20">20 %</option>
+            </select>
+        </div>
+
+        <div class="prix-display">
+            <div class="prix-ligne">
+                <span>Sous-total heures</span>
+                <span id="aff_sous_total">0 $</span>
+            </div>
+            <div class="prix-ligne">
+                <span>Avec marge</span>
+                <span id="aff_avec_marge">0 $</span>
+            </div>
+            <div class="prix-final-row">
+                <span class="prix-final-label">Prix forfait (arrondi)</span>
+                <span class="prix-final-val" id="aff_final">0 $</span>
+            </div>
+        </div>
+
+        <div style="display: flex; justify-content: flex-end; margin-top: 1.2rem;">
+            <button type="submit" class="btn btn-primary">Enregistrer le forfait</button>
+        </div>
+    </form>
+</div>
+
+{# ── Liste des forfaits ───────────────────────────────────────────────────── #}
+{% if packages %}
+<div class="section-title" style="margin-bottom: 1rem;">Forfaits enregistrés</div>
+{% for p in packages %}
+<div class="pkg-item">
+    <div>
+        <div style="font-weight: 600;">{{ p.nom }}</div>
+        <div class="pkg-meta">
+            {{ p.client_nom }}
+            &nbsp;·&nbsp; Dev {{ p.heures_dev | int }}h
+            &nbsp;· Design {{ p.heures_design | int }}h
+            &nbsp;· Intégration {{ p.heures_integration | int }}h
+            &nbsp;· Admin {{ p.heures_admin | int }}h
+            {% if p.marge %}&nbsp;· +{{ p.marge }}% marge{% endif %}
+            &nbsp;· {{ p.created_at[:10] }}
+        </div>
+    </div>
+    <div style="display: flex; align-items: center; gap: 1rem;">
+        <span style="font-family: 'DM Mono', monospace; font-size: 1.15rem; color: var(--accent); font-weight: 700;">
+            {{ p.prix_final | int }} $
+        </span>
+        <form method="POST" action="/packages/{{ p.id }}/delete"
+              onsubmit="return confirm('Supprimer le forfait « {{ p.nom }} » ?')">
+            <button type="submit" class="btn"
+                    style="padding: 0.25rem 0.6rem; font-size: 0.72rem; color: var(--muted); border-color: var(--border);">✕</button>
+        </form>
+    </div>
+</div>
+{% endfor %}
+{% else %}
+<div class="card" style="text-align: center; color: var(--muted); padding: 2rem;">
+    Aucun forfait enregistré pour l'instant.
+</div>
+{% endif %}
+
+<script>
+const TAUX = { h_dev: 80, h_design: 65, h_integration: 55, h_admin: 50 };
+
+function arrondir(montant) {
+    if (montant <= 0) return 0;
+    const centaine = Math.floor(montant / 100) * 100;
+    for (const c of [centaine + 50, centaine + 99, centaine + 150]) {
+        if (c >= montant) return c;
+    }
+    return centaine + 199;
+}
+
+function recalcul() {
+    let sous_total = 0;
+    for (const [id, taux] of Object.entries(TAUX)) {
+        sous_total += (parseFloat(document.getElementById(id).value) || 0) * taux;
+    }
+    const marge       = parseInt(document.getElementById('marge').value) || 0;
+    const avec_marge  = sous_total * (1 + marge / 100);
+    const final       = arrondir(avec_marge);
+
+    document.getElementById('aff_sous_total').textContent = sous_total.toFixed(0) + ' $';
+    document.getElementById('aff_avec_marge').textContent  = avec_marge.toFixed(2) + ' $';
+    document.getElementById('aff_final').textContent       = final + ' $';
+}
+
+document.querySelectorAll('input[type=number], #marge')
+        .forEach(el => el.addEventListener('input', recalcul));
+</script>
+{% endblock %}

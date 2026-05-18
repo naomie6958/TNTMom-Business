@@ -409,6 +409,24 @@ def migrate_db():
     except Exception:
         pass
 
+    try:
+        conn.execute('''CREATE TABLE IF NOT EXISTS packages (
+            id                  INTEGER PRIMARY KEY AUTOINCREMENT,
+            nom                 TEXT NOT NULL,
+            client_id           INTEGER NOT NULL,
+            heures_dev          REAL DEFAULT 0,
+            heures_design       REAL DEFAULT 0,
+            heures_integration  REAL DEFAULT 0,
+            heures_admin        REAL DEFAULT 0,
+            marge               INTEGER DEFAULT 0,
+            prix_final          REAL NOT NULL,
+            created_at          TEXT DEFAULT (datetime('now')),
+            FOREIGN KEY(client_id) REFERENCES clients(id) ON DELETE CASCADE
+        )''')
+        conn.commit()
+    except Exception:
+        pass
+
     conn.close()
 
 

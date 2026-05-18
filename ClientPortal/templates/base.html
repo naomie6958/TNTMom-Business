@@ -50,6 +50,10 @@
                {% if request.path.startswith('/tarifs') %}class="active"{% endif %}>
                 <span class="nav-bullet">◈</span> Tarifs
             </a>
+            <a href="/packages"
+               {% if request.path.startswith('/packages') %}class="active"{% endif %}>
+                <span class="nav-bullet">◈</span> Package Builder
+            </a>
             <a href="/heures"
                {% if request.path.startswith('/heures') %}class="active"{% endif %}>
                 <span class="nav-bullet">◈</span> Heures

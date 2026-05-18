@@ -2442,5 +2442,70 @@ def api_heures_milestones(contrat_id):
         return jsonify([])
 
 
+# ── PACKAGES ──────────────────────────────────────────────────────────────────
+
+@app.route('/packages', methods=['GET', 'POST'])
+@login_required
+def packages():
+    conn = get_db()
+    clients = conn.execute(
+        "SELECT id, nom FROM clients WHERE demo = 0 ORDER BY nom"
+    ).fetchall()
+
+    if request.method == 'POST':
+        nom           = request.form.get('nom', '').strip()
+        client_id     = int(request.form.get('client_id', 0))
+        h_dev         = float(request.form.get('h_dev') or 0)
+        h_design      = float(request.form.get('h_design') or 0)
+        h_integration = float(request.form.get('h_integration') or 0)
+        h_admin       = float(request.form.get('h_admin') or 0)
+        marge         = int(request.form.get('marge') or 0)
+
+        sous_total = h_dev * 80 + h_design * 65 + h_integration * 55 + h_admin * 50
+        avec_marge = sous_total * (1 + marge / 100)
+
+        def _arrondir(montant):
+            if montant <= 0:
+                return 0
+            centaine = int(montant // 100) * 100
+            for candidat in (centaine + 50, centaine + 99, centaine + 150):
+                if candidat >= montant:
+                    return candidat
+            return centaine + 199
+
+        prix_final = _arrondir(avec_marge)
+
+        conn.execute('''
+            INSERT INTO packages
+                (nom, client_id, heures_dev, heures_design, heures_integration, heures_admin, marge, prix_final)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        ''', (nom, client_id, h_dev, h_design, h_integration, h_admin, marge, prix_final))
+        conn.commit()
+        flash(f'Forfait "{nom}" enregistré — {prix_final:.0f}$', 'success')
+        conn.close()
+        return redirect('/packages')
+
+    packages_list = conn.execute('''
+        SELECT p.*, c.nom as client_nom
+        FROM packages p
+        JOIN clients c ON p.client_id = c.id
+        ORDER BY p.created_at DESC
+    ''').fetchall()
+    conn.close()
+
+    return render_template('packages.html', clients=clients, packages=packages_list)
+
+
+@app.route('/packages/<int:pkg_id>/delete', methods=['POST'])
+@login_required
+def package_delete(pkg_id):
+    conn = get_db()
+    conn.execute('DELETE FROM packages WHERE id = ?', (pkg_id,))
+    conn.commit()
+    conn.close()
+    flash('Forfait supprimé.', 'success')
+    return redirect('/packages')
+
+
 if __name__ == '__main__':
     app.run(debug=True)
