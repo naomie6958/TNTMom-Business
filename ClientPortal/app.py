@@ -2046,16 +2046,20 @@ def comptabilite():
         calculer_provision_fiscale,
     )
 
+    # ?demo=1 dans l'URL active le mode présentation (inclut Sophie Tremblay)
+    inclure_demo = request.args.get('demo', '0') == '1'
+
     # IMPORTANT : appeler en premier — met à jour les statuts "en retard"
     # en DB avant qu'on lise les factures pour le tableau mensuel.
-    alertes_retard = verifier_et_mettre_retards()
+    alertes_retard = verifier_et_mettre_retards(inclure_demo=inclure_demo)
 
     conn = get_db()
-    factures = conn.execute('''
+    filtre_demo_sql = '' if inclure_demo else 'AND c.demo = 0'
+    factures = conn.execute(f'''
         SELECT f.*, c.nom as client_nom
         FROM factures f
         JOIN clients c ON c.id = f.client_id
-        WHERE c.demo = 0
+        WHERE 1=1 {filtre_demo_sql}
         ORDER BY f.date_emission DESC
     ''').fetchall()
     conn.close()
@@ -2077,8 +2081,8 @@ def comptabilite():
             mois[key]['total_attente'] += montant
             total_attente += montant
 
-    tracker  = calculer_tax_tracker()
-    provision = calculer_provision_fiscale()
+    tracker  = calculer_tax_tracker(inclure_demo=inclure_demo)
+    provision = calculer_provision_fiscale(inclure_demo=inclure_demo)
 
     conn = get_db()
     depenses = conn.execute(
@@ -2094,7 +2098,8 @@ def comptabilite():
                            tracker=tracker,
                            provision=provision,
                            depenses=depenses,
-                           today=datetime.date.today().isoformat())
+                           today=datetime.date.today().isoformat(),
+                           inclure_demo=inclure_demo)
 
 
 @app.route('/depenses/new', methods=['POST'])

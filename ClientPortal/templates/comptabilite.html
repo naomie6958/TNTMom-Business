@@ -31,7 +31,26 @@
         <h1 class="page-title">Ma <span class="client-nom" style="font-size:inherit; display:inline-block;">comptabilité</span></h1>
         <div class="page-sub">Vue globale des finances de ton entreprise.</div>
     </div>
+    {# Bouton toggle démo — lien GET qui bascule ?demo=0/1 dans l'URL #}
+    <a href="?demo={{ '0' if inclure_demo else '1' }}"
+       class="btn {{ 'btn-danger' if inclure_demo else 'btn-secondary' }}"
+       style="font-size: 0.75rem; white-space: nowrap;"
+       title="{{ 'Retour aux vrais chiffres' if inclure_demo else 'Afficher avec le client démo (Sophie Tremblay)' }}">
+        {% if inclure_demo %}🎭 Démo ON{% else %}🎭 Démo{% endif %}
+    </a>
 </div>
+
+{# ── BANNIÈRE MODE DÉMO ──────────────────────────────────────── #}
+{% if inclure_demo %}
+<div style="background: rgba(217,79,189,0.12); border: 1px solid var(--accent);
+            border-radius: 8px; padding: 0.6rem 1rem; margin-bottom: 1.25rem;
+            font-size: 0.8rem; color: var(--accent); display: flex;
+            align-items: center; gap: 0.6rem;">
+    <span style="font-size: 1rem;">🎭</span>
+    <span><strong>Mode présentation actif</strong> — Les chiffres incluent le client démo (Sophie Tremblay). Ces données sont fictives.</span>
+    <a href="?demo=0" style="margin-left: auto; color: var(--accent); text-decoration: underline; white-space: nowrap;">Retour au réel →</a>
+</div>
+{% endif %}
 
 {# ── ALERTES RETARDS ─────────────────────────────────────────── #}
 {% if alertes_retard %}

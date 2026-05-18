@@ -2,51 +2,65 @@
 # LOGIQUE COMPTABILITÉ — TNTMom (version SQLite / Flask)
 # Ce module est importé par app.py dans la route /comptabilite.
 # Il contient les 5 fonctions de logique financière.
+#
+# Toutes les fonctions de calcul acceptent un paramètre :
+#   inclure_demo (bool, défaut False)
+#   False → exclut le client démo (id_client 4, c.demo = 1) → vrais chiffres
+#   True  → inclut tous les clients → mode présentation visuelle
 # ================================================================
 
 from datetime import date
 from database import get_db
 
 
+# ── UTILITAIRE INTERNE ────────────────────────────────────────────
+
+def _clause_demo(inclure_demo):
+    """Retourne le fragment SQL à ajouter dans un WHERE pour filtrer le démo."""
+    return '' if inclure_demo else 'AND c.demo = 0'
+
+
 # ── FONCTION 5 : DÉTECTION DES RETARDS ──────────────────────────
 
-def verifier_et_mettre_retards():
+def verifier_et_mettre_retards(inclure_demo=False):
     """
-    Parcourt toutes les factures avec statut 'envoyée' qui ont une
-    date_echeance dépassée, et les met automatiquement à 'en retard'
-    en base de données.
+    Met à jour en DB les factures 'envoyée' dont l'échéance est dépassée
+    → statut 'en retard'. TOUJOURS sur les vrais clients uniquement
+    (la mise à jour ne touche jamais les données démo).
 
-    Appelée EN PREMIER dans la route — elle met à jour les statuts
-    avant que les autres calculs lisent les données.
-
-    Retourne une liste d'alertes (jalons en retard détectés).
+    Retourne la liste des alertes à afficher (selon inclure_demo).
     """
     conn = get_db()
-    aujourd_hui = date.today().isoformat()  # Format SQLite : 'YYYY-MM-DD'
+    aujourd_hui = date.today().isoformat()
 
-    # On cherche les factures envoyées dont l'échéance est passée
-    # (on exclut les clients démo pour ne pas fausser les chiffres)
-    retardees = conn.execute('''
+    # Mise à jour permanente — jamais sur le client démo
+    conn.execute('''
+        UPDATE factures SET statut = 'en retard'
+        WHERE statut = 'envoyée'
+          AND date_echeance IS NOT NULL
+          AND date_echeance < ?
+          AND client_id IN (SELECT id FROM clients WHERE demo = 0)
+    ''', (aujourd_hui,))
+    conn.commit()
+
+    # Alertes affichées — respecte le mode démo
+    retardees = conn.execute(f'''
         SELECT f.id, f.montant, f.milestone_titre, f.description,
                f.date_echeance, c.nom as client_nom
         FROM factures f
         JOIN clients c ON c.id = f.client_id
-        WHERE f.statut = 'envoyée'
+        WHERE f.statut IN ('envoyée', 'en retard')
           AND f.date_echeance IS NOT NULL
           AND f.date_echeance < ?
-          AND c.demo = 0
+          {_clause_demo(inclure_demo)}
+        ORDER BY f.date_echeance ASC
     ''', (aujourd_hui,)).fetchall()
+    conn.close()
 
     alertes = []
     for f in retardees:
-        # Mise à jour permanente en DB — le statut sera visible dans le tableau
-        conn.execute(
-            "UPDATE factures SET statut = 'en retard' WHERE id = ?",
-            (f['id'],)
-        )
         echeance = date.fromisoformat(f['date_echeance'])
         jours_retard = (date.today() - echeance).days
-
         alertes.append({
             'client': f['client_nom'],
             'jalon': f['milestone_titre'] or f['description'] or '—',
@@ -55,29 +69,25 @@ def verifier_et_mettre_retards():
             'facture_id': f['id'],
         })
 
-    conn.commit()
-    conn.close()
     return alertes
 
 
 # ── FONCTION 3 : TAX TRACKER ─────────────────────────────────────
 
-def calculer_tax_tracker(seuil=30_000.0):
+def calculer_tax_tracker(seuil=30_000.0, inclure_demo=False):
     """
-    Calcule le chiffre d'affaires total facturé au client (peu importe
-    si payé ou non) et alerte si on approche du seuil TPS/TVQ.
+    Calcule le chiffre d'affaires total facturé et alerte si on approche
+    du seuil TPS/TVQ (30 000 $ par défaut).
 
-    Règle fiscale : les statuts 'envoyée', 'en retard' et 'payée'
-    comptent tous. Seules les factures jamais émises seraient exclues,
-    mais dans notre DB tout ce qui est créé est déjà "émis".
+    Règle fiscale : statuts 'envoyée', 'en retard' et 'payée' comptent tous.
     """
     conn = get_db()
-    row = conn.execute('''
+    row = conn.execute(f'''
         SELECT COALESCE(SUM(f.montant), 0) as total
         FROM factures f
         JOIN clients c ON c.id = f.client_id
         WHERE f.statut IN ('envoyée', 'en retard', 'payée')
-          AND c.demo = 0
+          {_clause_demo(inclure_demo)}
     ''').fetchone()
     conn.close()
 
@@ -88,8 +98,8 @@ def calculer_tax_tracker(seuil=30_000.0):
         'total_facture': total,
         'seuil': seuil,
         'pourcentage_vers_seuil': round(pourcentage, 1),
-        'alerte_taxes': total >= seuil * 0.80,  # Avertissement dès 80%
-        'seuil_depasse': total >= seuil,         # Inscription obligatoire
+        'alerte_taxes': total >= seuil * 0.80,   # Avertissement dès 80 %
+        'seuil_depasse': total >= seuil,          # Inscription obligatoire
     }
 
 
@@ -98,7 +108,7 @@ def calculer_tax_tracker(seuil=30_000.0):
 def calculer_total_depenses():
     """
     Additionne toutes les dépenses enregistrées, regroupées par catégorie.
-    Retourne le total global et un dict {catégorie: montant}.
+    Les dépenses ne sont pas liées à un client → pas de filtre démo.
     """
     conn = get_db()
 
@@ -123,28 +133,25 @@ def calculer_total_depenses():
 
 # ── FONCTION 2 : PROVISION FISCALE ──────────────────────────────
 
-def calculer_provision_fiscale(taux_provision=0.25):
+def calculer_provision_fiscale(taux_provision=0.25, inclure_demo=False):
     """
     Calcule combien mettre de côté pour les impôts, sur la base
     du REVENU NET (factures payées - dépenses d'entreprise).
 
     LOGIQUE :
-      Revenu brut  = toutes les factures au statut 'payée' (argent reçu)
-      Dépenses     = tout ce qui est dans la table 'depenses'
-      Revenu net   = Revenu brut - Dépenses  (le "profit" réel)
-      Provision    = Revenu net × 25%         → compte épargne fiscal
-      Disponible   = Revenu net - Provision   → ton salaire net
-
-    Pourquoi sur le net? Les impôts canadiens s'appliquent sur le profit,
-    pas le chiffre d'affaires brut. Calculer sur le net est plus précis.
+      Revenu brut  = factures au statut 'payée'
+      Dépenses     = table 'depenses' (pas de filtre client)
+      Revenu net   = Revenu brut - Dépenses
+      Provision    = Revenu net × 25%   → compte épargne fiscal
+      Disponible   = Revenu net - Provision
     """
     conn = get_db()
-    row = conn.execute('''
+    row = conn.execute(f'''
         SELECT COALESCE(SUM(f.montant), 0) as total
         FROM factures f
         JOIN clients c ON c.id = f.client_id
         WHERE f.statut = 'payée'
-          AND c.demo = 0
+          {_clause_demo(inclure_demo)}
     ''').fetchone()
     conn.close()
 
@@ -152,7 +159,6 @@ def calculer_provision_fiscale(taux_provision=0.25):
     info_dep = calculer_total_depenses()
     total_depenses = info_dep['total']
 
-    # max(0, ...) évite une provision négative si les dépenses dépassent les revenus
     revenu_net = max(0.0, revenu_brut - total_depenses)
     montant_provision = revenu_net * taux_provision
     montant_disponible = revenu_net - montant_provision
@@ -162,6 +168,6 @@ def calculer_provision_fiscale(taux_provision=0.25):
         'total_depenses': total_depenses,
         'revenu_net': revenu_net,
         'taux_provision_pct': int(taux_provision * 100),
-        'montant_provision': montant_provision,   # → compte épargne fiscal
-        'montant_disponible': montant_disponible, # → ton compte courant
+        'montant_provision': montant_provision,
+        'montant_disponible': montant_disponible,
     }
