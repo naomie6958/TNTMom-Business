@@ -171,6 +171,8 @@ body.sidebar-collapsed #nav-toggle { left: 0.6rem; }
     flex-direction: column;
     gap: 0.3rem;
     flex: 1;
+    min-height: 0;      /* permet au flex item de rétrécir et de scroller */
+    overflow-y: auto;
 }
 
 .nav-bullet {
