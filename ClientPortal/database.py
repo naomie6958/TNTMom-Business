@@ -449,6 +449,15 @@ def migrate_db():
     except Exception:
         pass
 
+    # Normalise les statuts de factures sans accent vers les valeurs canoniques.
+    # Les anciennes données démo étaient seedées avec 'payee'/'envoyee' (sans é).
+    try:
+        conn.execute("UPDATE factures SET statut = 'payée'   WHERE statut IN ('payee', 'pay\xe9e')")
+        conn.execute("UPDATE factures SET statut = 'envoyée' WHERE statut IN ('envoyee', 'envoy\xe9e', 'envoy\xc3\xa9e')")
+        conn.commit()
+    except Exception:
+        pass
+
     conn.close()
 
 
