@@ -25,6 +25,8 @@
         <div class="sidebar-logo"><span class="gold-title">TNT</span><span class="gold-title gold-mom">Mom</span></div>
 
         <nav class="sidebar-nav">
+
+            <div class="sidebar-cat">Clients</div>
             <a href="/dashboard"
                {% if request.path == '/dashboard' %}class="active"{% endif %}>
                 <span class="nav-bullet">◈</span> Dashboard
@@ -38,10 +40,14 @@
                 <span class="nav-bullet">◈</span> Leads
                 {% if leads_non_lus|default(0) > 0 %}<span class="nav-badge">{{ leads_non_lus }}</span>{% endif %}
             </a>
+
+            <div class="sidebar-cat">Projets</div>
             <a href="/formulaires"
                {% if request.path.startswith('/formulaires') %}class="active"{% endif %}>
                 <span class="nav-bullet">◈</span> Formulaires
             </a>
+
+            <div class="sidebar-cat">Finance</div>
             <a href="/comptabilite"
                {% if request.path == '/comptabilite' %}class="active"{% endif %}>
                 <span class="nav-bullet">◈</span> Comptabilité
@@ -54,10 +60,14 @@
                {% if request.path.startswith('/packages') %}class="active"{% endif %}>
                 <span class="nav-bullet">◈</span> Package Builder
             </a>
+
+            <div class="sidebar-cat">Temps</div>
             <a href="/heures"
                {% if request.path.startswith('/heures') %}class="active"{% endif %}>
                 <span class="nav-bullet">◈</span> Heures
             </a>
+
+            <div class="sidebar-cat">Stratégie</div>
             <a href="/plan"
                {% if request.path == '/plan' %}class="active"{% endif %}>
                 <span class="nav-bullet">◈</span> Plan d'affaires
@@ -66,6 +76,7 @@
                {% if request.path == '/roadmap' %}class="active"{% endif %}>
                 <span class="nav-bullet">◈</span> Feuille de route
             </a>
+
         </nav>
 
         <div class="sidebar-user">
@@ -92,6 +103,13 @@
 
 </div>
 
+{# ── Variables pour l'état actif du drawer ──────────────────────────────── #}
+{# On vérifie si la page courante est une page "Plus" (pas dans les onglets directs) #}
+{% set _plus_active = request.path in ['/leads','/formulaires','/tarifs','/packages','/plan','/roadmap']
+                      or request.path.startswith('/formulaires')
+                      or request.path.startswith('/tarifs')
+                      or request.path.startswith('/packages') %}
+
 {# ── BOTTOM TAB BAR ADMIN (mobile seulement) ─────────────────────────────── #}
 <nav class="admin-bottom-nav">
     <a href="/dashboard"
@@ -104,26 +122,189 @@
         <span class="pbn-icon">⌖</span>
         <span class="pbn-label">Centre</span>
     </a>
-    <a href="/formulaires"
-       class="pbn-item {% if request.path.startswith('/formulaires') %}active{% endif %}">
-        <span class="pbn-icon">≡</span>
-        <span class="pbn-label">Formulaires</span>
+    <a href="/comptabilite"
+       class="pbn-item {% if request.path == '/comptabilite' %}active{% endif %}">
+        <span class="pbn-icon">◎</span>
+        <span class="pbn-label">Finance</span>
     </a>
-    <a href="/plan"
-       class="pbn-item {% if request.path == '/plan' %}active{% endif %}">
-        <span class="pbn-icon">☰</span>
-        <span class="pbn-label">Plan</span>
+    <a href="/heures"
+       class="pbn-item {% if request.path.startswith('/heures') %}active{% endif %}">
+        <span class="pbn-icon">⏱</span>
+        <span class="pbn-label">Heures</span>
     </a>
-    <a href="/roadmap"
-       class="pbn-item {% if request.path == '/roadmap' %}active{% endif %}">
-        <span class="pbn-icon">↗</span>
-        <span class="pbn-label">Roadmap</span>
-    </a>
-    <a href="/logout" class="pbn-item pbn-logout">
-        <span class="pbn-icon">⏻</span>
-        <span class="pbn-label">Quitter</span>
-    </a>
+    <button type="button" id="pbn-more-btn"
+            class="pbn-item {% if _plus_active %}active{% endif %}"
+            data-page-active="{{ 'true' if _plus_active else 'false' }}"
+            onclick="toggleMoreDrawer()" aria-label="Plus de pages">
+        <span class="pbn-icon">···</span>
+        <span class="pbn-label">Plus</span>
+    </button>
 </nav>
+
+{# ── DRAWER "PLUS" ────────────────────────────────────────────────────────── #}
+<div id="pbn-backdrop" onclick="closeMoreDrawer()"></div>
+
+<div id="pbn-drawer" role="dialog" aria-label="Navigation — Plus de pages">
+    <div class="pbn-drawer-handle"></div>
+
+    <div class="pbn-drawer-cat">Clients &amp; Leads</div>
+    <div class="pbn-drawer-grid pbn-drawer-grid-1">
+        <a href="/leads"
+           class="pbn-drawer-item {% if request.path == '/leads' %}active{% endif %}">
+            <span class="pbn-drawer-icon">👥</span> Leads
+            {% if leads_non_lus|default(0) > 0 %}
+            <span class="nav-badge" style="margin-left: auto;">{{ leads_non_lus }}</span>
+            {% endif %}
+        </a>
+    </div>
+
+    <div class="pbn-drawer-cat">Projets</div>
+    <div class="pbn-drawer-grid pbn-drawer-grid-1">
+        <a href="/formulaires"
+           class="pbn-drawer-item {% if request.path.startswith('/formulaires') %}active{% endif %}">
+            <span class="pbn-drawer-icon">📄</span> Formulaires
+        </a>
+    </div>
+
+    <div class="pbn-drawer-cat">Finance</div>
+    <div class="pbn-drawer-grid pbn-drawer-grid-2">
+        <a href="/tarifs"
+           class="pbn-drawer-item {% if request.path.startswith('/tarifs') %}active{% endif %}">
+            <span class="pbn-drawer-icon">🏷</span> Tarifs
+        </a>
+        <a href="/packages"
+           class="pbn-drawer-item {% if request.path.startswith('/packages') %}active{% endif %}">
+            <span class="pbn-drawer-icon">📦</span> Package Builder
+        </a>
+    </div>
+
+    <div class="pbn-drawer-cat">Stratégie</div>
+    <div class="pbn-drawer-grid pbn-drawer-grid-2">
+        <a href="/plan"
+           class="pbn-drawer-item {% if request.path == '/plan' %}active{% endif %}">
+            <span class="pbn-drawer-icon">📊</span> Plan d'affaires
+        </a>
+        <a href="/roadmap"
+           class="pbn-drawer-item {% if request.path == '/roadmap' %}active{% endif %}">
+            <span class="pbn-drawer-icon">🗺</span> Feuille de route
+        </a>
+    </div>
+
+    <a href="/logout" class="pbn-drawer-logout">→ Déconnexion</a>
+</div>
+
+<style>
+/* ── Sidebar : en-têtes de catégorie ────────────────────────── */
+.sidebar-cat {
+    font-size: 0.6rem;
+    color: var(--muted);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    padding: 1rem 0.75rem 0.25rem;
+    opacity: 0.55;
+    pointer-events: none;
+    user-select: none;
+}
+.sidebar-nav a:first-of-type + .sidebar-cat,
+.sidebar-cat:first-child { padding-top: 0.25rem; }
+
+/* ── Drawer backdrop ─────────────────────────────────────────── */
+#pbn-backdrop {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.55);
+    z-index: 490;
+    backdrop-filter: blur(2px);
+    -webkit-backdrop-filter: blur(2px);
+}
+#pbn-backdrop.open { display: block; }
+
+/* ── Drawer panneau ──────────────────────────────────────────── */
+#pbn-drawer {
+    position: fixed;
+    bottom: 0;
+    left: 0; right: 0;
+    background: var(--surface);
+    border-top: 1px solid rgba(255,255,255,0.08);
+    border-radius: 18px 18px 0 0;
+    z-index: 495;
+    padding: 0 1rem calc(env(safe-area-inset-bottom, 0px) + 4.5rem) 1rem;
+    max-height: 80vh;
+    overflow-y: auto;
+    transform: translateY(100%);
+    transition: transform 0.28s cubic-bezier(0.32, 0.72, 0, 1);
+    box-shadow: 0 -8px 40px rgba(0,0,0,0.4);
+}
+#pbn-drawer.open { transform: translateY(0); }
+
+/* Poignée de fermeture visuelle */
+.pbn-drawer-handle {
+    width: 36px; height: 4px;
+    background: rgba(255,255,255,0.15);
+    border-radius: 2px;
+    margin: 0.75rem auto 1rem;
+}
+
+/* En-têtes de catégorie dans le drawer */
+.pbn-drawer-cat {
+    font-size: 0.62rem;
+    color: var(--muted);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding: 0.9rem 0 0.35rem;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+    margin-bottom: 0.35rem;
+}
+
+/* Grille d'items : 1 ou 2 colonnes */
+.pbn-drawer-grid { display: grid; gap: 0.4rem; margin-bottom: 0.25rem; }
+.pbn-drawer-grid-1 { grid-template-columns: 1fr; }
+.pbn-drawer-grid-2 { grid-template-columns: 1fr 1fr; }
+
+/* Item de lien dans le drawer */
+.pbn-drawer-item {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.75rem 0.75rem;
+    color: var(--text);
+    text-decoration: none;
+    font-size: 0.88rem;
+    border-radius: var(--radius, 8px);
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.05);
+    min-height: 48px;
+    transition: background 0.15s;
+}
+.pbn-drawer-item:active,
+.pbn-drawer-item:hover { background: rgba(255,255,255,0.07); }
+.pbn-drawer-item.active { color: var(--accent); border-color: rgba(217,79,189,0.25); }
+.pbn-drawer-icon { font-size: 1rem; flex-shrink: 0; }
+
+/* Déconnexion en bas du drawer */
+.pbn-drawer-logout {
+    display: block;
+    text-align: center;
+    padding: 0.9rem;
+    margin-top: 0.75rem;
+    color: var(--muted);
+    text-decoration: none;
+    font-size: 0.82rem;
+    border-top: 1px solid rgba(255,255,255,0.06);
+}
+.pbn-drawer-logout:hover { color: var(--text); }
+
+/* Bouton Plus dans la bottom nav */
+#pbn-more-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-family: inherit;
+}
+#pbn-more-btn.active .pbn-icon,
+#pbn-more-btn.active .pbn-label { color: var(--accent); }
+</style>
 
 {# ── MODAL DE CONFIRMATION GLOBAL ────────────────────────────────────────── #}
 <style>
@@ -178,6 +359,43 @@
     document.getElementById('confirm-modal').addEventListener('click', function(e) {
         if (e.target === this) closeModal();
     });
+
+    // Fermeture du modal avec la touche Échap
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') { closeModal(); closeMoreDrawer(); }
+    });
+
+    // ── DRAWER "PLUS" ──────────────────────────────────────────────────────
+    function toggleMoreDrawer() {
+        const drawer   = document.getElementById('pbn-drawer');
+        const backdrop = document.getElementById('pbn-backdrop');
+        const btn      = document.getElementById('pbn-more-btn');
+        if (drawer.classList.contains('open')) {
+            closeMoreDrawer();
+        } else {
+            drawer.classList.add('open');
+            backdrop.classList.add('open');
+            btn.classList.add('active');
+        }
+    }
+    function closeMoreDrawer() {
+        document.getElementById('pbn-drawer').classList.remove('open');
+        document.getElementById('pbn-backdrop').classList.remove('open');
+        // On garde la classe active si la page courante est dans le drawer
+        const btn = document.getElementById('pbn-more-btn');
+        if (btn && btn.dataset.pageActive !== 'true') {
+            btn.classList.remove('active');
+        }
+    }
+
+    // Auto-fermeture des flash messages après 4 secondes
+    setTimeout(function() {
+        document.querySelectorAll('.flash').forEach(function(el) {
+            el.style.transition = 'opacity 0.4s';
+            el.style.opacity = '0';
+            setTimeout(function() { el.remove(); }, 400);
+        });
+    }, 4000);
 </script>
 
 {% block scripts %}{% endblock %}

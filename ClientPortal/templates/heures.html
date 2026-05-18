@@ -70,7 +70,7 @@
 {% block content %}
 <div class="page-header">
     <div>
-        <h1 class="page-title">Punch d'heures</h1>
+        <h1 class="page-title">Mon <span class="client-nom" style="font-size:inherit; display:inline-block;">punch d'heures</span></h1>
         <div class="page-sub">Timer live, saisie manuelle, suivi par projet.</div>
     </div>
     <a href="/heures/rapports" class="btn btn-secondary">Rapports →</a>
@@ -108,6 +108,19 @@
             {{ timer_actif.cat_nom }}{% if timer_actif.description %} · {{ timer_actif.description }}{% endif %}
         </div>
         <div id="timer-display" class="timer-display timer-running">00:00:00</div>
+
+        {# Heure de départ — modifiable sans arrêter le timer #}
+        <div style="margin-top: 0.9rem; display: flex; align-items: center; justify-content: center; gap: 0.5rem; flex-wrap: wrap;">
+            <span style="font-size: 0.75rem; color: var(--muted);">Démarré à</span>
+            <input type="time" id="timer-start-input"
+                   value="{{ timer_actif.heure_debut }}"
+                   style="background: var(--surface-2, rgba(255,255,255,0.06)); border: 1px solid var(--border);
+                          border-radius: 6px; color: var(--text); padding: 0.2rem 0.5rem;
+                          font-size: 0.82rem; font-family: 'DM Mono', monospace; width: auto;"
+                   onchange="ajusterHeureDepart(this.value)">
+            <span id="timer-start-feedback" style="font-size: 0.72rem; color: var(--green); display: none;">✓ mis à jour</span>
+        </div>
+
         <div style="margin-top: 1.25rem;">
             <button class="btn" style="background: var(--red, #e05252); min-width: 150px;" onclick="stopTimer()">
                 Arrêter le timer
@@ -338,7 +351,12 @@
             <td class="hide-mobile" style="text-align: right;">
                 <span class="badge-{{ e.type_facturation }}">{{ e.type_facturation }}</span>
             </td>
-            <td style="text-align: right; padding-right: 1rem;">
+            <td style="text-align: right; padding-right: 0.75rem; white-space: nowrap;">
+                <button class="btn btn-secondary"
+                    style="font-size: 0.7rem; padding: 0.2rem 0.6rem; margin-right: 0.2rem;"
+                    onclick="ouvrirEditEntree({{ e.id }}, '{{ e.date }}', '{{ e.heure_debut or '' }}', '{{ e.heure_fin or '' }}', {{ e.duree_minutes or 0 }}, '{{ (e.description or '') | replace("'", "\\'") }}', '{{ e.type_facturation }}', {{ e.taux_applique or 0 }}, {{ e.categorie_id }})">
+                    ✎
+                </button>
                 <button class="btn btn-secondary"
                     style="font-size: 0.7rem; padding: 0.2rem 0.5rem; color: var(--muted);"
                     onclick="openModal('Supprimer cette entrée', 'Cette action est irréversible.', 'Supprimer', 'btn-danger', () => deleteEntree({{ e.id }}))">
@@ -399,15 +417,83 @@
     </div>
 </div>
 
+{# ── MODAL ÉDITION ENTRÉE ─────────────────────────────────────────────────── #}
+<div id="edit-entree-modal"
+     style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.7);
+            z-index:1000; align-items:center; justify-content:center; backdrop-filter:blur(3px);">
+    <div style="background:var(--surface); border:1px solid rgba(217,79,189,0.2);
+                border-radius:var(--radius-lg, 12px); padding:1.5rem; width:90%; max-width:500px;
+                box-shadow:0 24px 60px rgba(0,0,0,0.5); max-height:90vh; overflow-y:auto;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.25rem;">
+            <h3 style="font-size:1rem; color:var(--text);">Modifier l'entrée</h3>
+            <button onclick="fermerEditEntree()" style="background:none; border:none; color:var(--muted); cursor:pointer; font-size:1.2rem; padding:0.2rem 0.5rem;">✕</button>
+        </div>
+        <form id="edit-entree-form" method="POST" action="">
+            <div class="form-row form-row-2" style="margin-bottom:0.75rem;">
+                <div>
+                    <label class="field-label">Date</label>
+                    <input type="date" name="date" id="edit-date" class="form-control" required>
+                </div>
+                <div>
+                    <label class="field-label">Catégorie</label>
+                    <select name="categorie_id" id="edit-categorie" class="form-control">
+                        {% for cat in categories %}
+                        <option value="{{ cat.id }}">{{ cat.nom }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+            <div class="form-row form-row-3" style="margin-bottom:0.75rem;">
+                <div>
+                    <label class="field-label">Heure début</label>
+                    <input type="time" name="heure_debut" id="edit-debut" class="form-control" onchange="calcDureeEdit()">
+                </div>
+                <div>
+                    <label class="field-label">Heure fin</label>
+                    <input type="time" name="heure_fin" id="edit-fin" class="form-control" onchange="calcDureeEdit()">
+                </div>
+                <div>
+                    <label class="field-label">Durée (min)</label>
+                    <input type="number" name="duree_minutes" id="edit-duree" class="form-control" min="1">
+                </div>
+            </div>
+            <div class="form-row form-row-2" style="margin-bottom:0.75rem;">
+                <div>
+                    <label class="field-label">Type de facturation</label>
+                    <select name="type_facturation" id="edit-type" class="form-control">
+                        <option value="horaire">Facturable à l'heure</option>
+                        <option value="package">Inclus dans package</option>
+                        <option value="gratuit">Gratuit</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="field-label">Taux ($/h)</label>
+                    <input type="number" name="taux_applique" id="edit-taux" class="form-control" step="5" min="0">
+                </div>
+            </div>
+            <div style="margin-bottom:1.25rem;">
+                <label class="field-label">Description</label>
+                <input type="text" name="description" id="edit-desc" class="form-control" placeholder="Description">
+            </div>
+            <div style="display:flex; gap:0.75rem; justify-content:flex-end;">
+                <button type="button" class="btn btn-secondary" onclick="fermerEditEntree()">Annuler</button>
+                <button type="submit" class="btn btn-primary">Enregistrer</button>
+            </div>
+        </form>
+    </div>
+</div>
+
 {% endblock %}
 
 {% block scripts %}
 <script>
 // ── Timer actif : calcul du temps écoulé ─────────────────────────────────────
 {% if timer_actif %}
+let _timerStartOverride = null;
 const _timerStart = new Date("{{ timer_actif.created_at }}".replace(' ', 'T') + 'Z').getTime();
 function _updateTimer() {
-    const elapsed = Math.floor((Date.now() - _timerStart) / 1000);
+    const base    = _timerStartOverride !== null ? _timerStartOverride : _timerStart;
+    const elapsed = Math.floor((Date.now() - base) / 1000);
     const h = Math.floor(elapsed / 3600);
     const m = Math.floor((elapsed % 3600) / 60);
     const s = elapsed % 60;
@@ -452,6 +538,60 @@ async function stopTimer() {
 async function deleteEntree(id) {
     const r = await fetch('/heures/supprimer/' + id, { method: 'POST' });
     if (r.ok) { location.reload(); }
+}
+
+// ── Modal édition d'une entrée ────────────────────────────────────────────────
+function ouvrirEditEntree(id, date, debut, fin, duree, desc, type, taux, catId) {
+    document.getElementById('edit-entree-form').action = '/heures/' + id + '/edit';
+    document.getElementById('edit-date').value     = date;
+    document.getElementById('edit-debut').value    = debut;
+    document.getElementById('edit-fin').value      = fin;
+    document.getElementById('edit-duree').value    = duree || '';
+    document.getElementById('edit-desc').value     = desc;
+    document.getElementById('edit-type').value     = type;
+    document.getElementById('edit-taux').value     = taux || '';
+    document.getElementById('edit-categorie').value = catId;
+    document.getElementById('edit-entree-modal').style.display = 'flex';
+}
+function fermerEditEntree() {
+    document.getElementById('edit-entree-modal').style.display = 'none';
+}
+// Fermeture en cliquant sur le fond
+document.getElementById('edit-entree-modal').addEventListener('click', function(e) {
+    if (e.target === this) fermerEditEntree();
+});
+
+// Calcul auto de la durée dans le modal d'édition
+function calcDureeEdit() {
+    const debut = document.getElementById('edit-debut').value;
+    const fin   = document.getElementById('edit-fin').value;
+    if (!debut || !fin) return;
+    const [dh, dm] = debut.split(':').map(Number);
+    const [fh, fm] = fin.split(':').map(Number);
+    const duree = (fh * 60 + fm) - (dh * 60 + dm);
+    if (duree > 0) document.getElementById('edit-duree').value = duree;
+}
+
+// ── Ajustement de l'heure de départ du timer en cours ────────────────────────
+async function ajusterHeureDepart(nouvelleHeure) {
+    const feedback = document.getElementById('timer-start-feedback');
+    const r = await fetch('/heures/timer/start-time', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ heure_debut: nouvelleHeure })
+    });
+    if (r.ok) {
+        // Met à jour le point de départ du timer affiché sans recharger la page
+        const data = await r.json();
+        window._timerStartOverride = new Date(data.new_start + (data.new_start.includes('Z') ? '' : 'Z')).getTime();
+        feedback.style.display = 'inline';
+        setTimeout(() => { feedback.style.display = 'none'; }, 2000);
+    } else {
+        alert('Impossible de modifier l\'heure de départ.');
+        // Remet l'ancienne valeur
+        document.getElementById('timer-start-input').value =
+            '{{ timer_actif.heure_debut if timer_actif else "" }}';
+    }
 }
 
 // ── Toggle sections ──────────────────────────────────────────────────────────

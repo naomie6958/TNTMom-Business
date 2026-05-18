@@ -1,15 +1,64 @@
 {% extends "base.html" %}
 {% block title %}Comptabilité{% endblock %}
 
+{% block head %}
+<style>
+/* ── Responsive comptabilité ───────────────────────────── */
+.compta-stats-3    { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-bottom: 1rem; }
+.compta-panels-2   { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 2rem; }
+.compta-prov-inner { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; }
+.compta-dep-form   { display: grid; grid-template-columns: 1fr 2fr 1fr 1fr auto; gap: 0.5rem; align-items: end; margin-bottom: 1.2rem; }
+.compta-table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+.cc-alert-row      { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.4rem; }
+
+@media (max-width: 700px) {
+    .compta-stats-3  { grid-template-columns: 1fr 1fr; }
+    .compta-panels-2 { grid-template-columns: 1fr; }
+}
+@media (max-width: 500px) {
+    .compta-stats-3  { grid-template-columns: 1fr; }
+    .compta-dep-form { grid-template-columns: 1fr 1fr; }
+    .compta-dep-form .dep-form-desc { grid-column: 1 / -1; }
+    .compta-dep-form .dep-form-btn  { grid-column: 1 / -1; }
+    .cc-alert-row    { flex-direction: column; align-items: flex-start; }
+}
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="page-header">
     <div>
-        <h1 class="page-title">Comptabilité</h1>
-        <div class="page-sub">Vue globale de toutes les factures.</div>
+        <h1 class="page-title">Ma <span class="client-nom" style="font-size:inherit; display:inline-block;">comptabilité</span></h1>
+        <div class="page-sub">Vue globale des finances de ton entreprise.</div>
     </div>
 </div>
 
-<div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-bottom: 2rem;">
+{# ── ALERTES RETARDS ─────────────────────────────────────────── #}
+{% if alertes_retard %}
+<div class="card" style="margin-bottom: 1.5rem; border-left: 3px solid var(--red, #e05252);">
+    <div class="section-title" style="color: var(--red, #e05252); margin-bottom: 0.8rem;">
+        <span aria-hidden="true">⚠</span>
+        <span> {{ alertes_retard | length }} jalon(s) en retard de paiement — relancer le client</span>
+    </div>
+    {% for a in alertes_retard %}
+    <div class="cc-alert-row"
+         style="padding: 0.5rem 0; border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 0.82rem;">
+        <div>
+            <span style="color: var(--text); font-weight: 600;">{{ a.client }}</span>
+            <span style="color: var(--muted); margin: 0 0.4rem;">—</span>
+            <span style="color: var(--muted);">{{ a.jalon }}</span>
+        </div>
+        <div style="display: flex; gap: 1rem; align-items: center; white-space: nowrap;">
+            <span style="font-weight: 600;">{{ a.montant | int }}$</span>
+            <span style="color: var(--red, #e05252);">{{ a.jours_retard }} jour(s) de retard</span>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+
+{# ── LIGNE 1 : REVENUS ───────────────────────────────────────── #}
+<div class="compta-stats-3">
     <div class="card" style="text-align: center;">
         <div style="font-size: 0.72rem; color: var(--muted); letter-spacing: 0.08em; margin-bottom: 0.4rem;">RÉALISÉ</div>
         <div style="font-size: 1.8rem; font-family: 'Bebas Neue', sans-serif; color: var(--green);">{{ total_realise | int }}$</div>
@@ -24,46 +73,196 @@
     </div>
 </div>
 
-{% if mois %}
-    {% for mois_key, data in mois.items() %}
-    <div class="card" style="margin-bottom: 1rem;">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.8rem; flex-wrap: wrap; gap: 0.5rem;">
-            <div class="section-title">{{ mois_key }}</div>
-            <div style="display: flex; gap: 1rem; font-size: 0.78rem;">
-                {% if data.total_payee %}
-                <span style="color: var(--green);">✓ {{ data.total_payee | int }}$ payé</span>
-                {% endif %}
-                {% if data.total_attente %}
-                <span style="color: var(--gold);">⏳ {{ data.total_attente | int }}$ en attente</span>
-                {% endif %}
+{# ── LIGNE 2 : PROVISION + TAX TRACKER ──────────────────────── #}
+<div class="compta-panels-2">
+
+    {# Provision fiscale #}
+    <div class="card">
+        <div style="font-size: 0.72rem; color: var(--muted); letter-spacing: 0.08em; margin-bottom: 0.8rem;">
+            PROVISION FISCALE ({{ provision.taux_provision_pct }}%)
+        </div>
+        <div class="compta-prov-inner">
+            <div>
+                <div style="font-size: 0.7rem; color: var(--muted); margin-bottom: 0.2rem;">Revenu encaissé</div>
+                <div style="font-size: 1.05rem; font-weight: 600;">{{ provision.revenu_brut | int }}$</div>
+            </div>
+            <div>
+                <div style="font-size: 0.7rem; color: var(--muted); margin-bottom: 0.2rem;">Dépenses</div>
+                <div style="font-size: 1.05rem; font-weight: 600; color: var(--red, #e05252);">-{{ provision.total_depenses | int }}$</div>
+            </div>
+            <div>
+                <div style="font-size: 0.7rem; color: var(--muted); margin-bottom: 0.2rem;">À mettre de côté</div>
+                <div style="font-size: 1.05rem; font-weight: 600; color: var(--gold);">{{ provision.montant_provision | int }}$</div>
+            </div>
+            <div>
+                <div style="font-size: 0.7rem; color: var(--muted); margin-bottom: 0.2rem;">Ton salaire net</div>
+                <div style="font-size: 1.05rem; font-weight: 600; color: var(--green);">{{ provision.montant_disponible | int }}$</div>
             </div>
         </div>
-        <table style="width: 100%; border-collapse: collapse; font-size: 0.82rem;">
+    </div>
+
+    {# Tax Tracker #}
+    <div class="card">
+        <div style="font-size: 0.72rem; color: var(--muted); letter-spacing: 0.08em; margin-bottom: 0.8rem;">
+            TAX TRACKER — SEUIL TPS/TVQ
+        </div>
+        <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 0.5rem; flex-wrap: wrap; gap: 0.3rem;">
+            <span style="font-size: 1.2rem; font-weight: 600;">{{ tracker.total_facture | int }}$</span>
+            <span style="font-size: 0.75rem; color: var(--muted);">/ {{ tracker.seuil | int }}$</span>
+        </div>
+        <div role="progressbar"
+             aria-valuenow="{{ tracker.pourcentage_vers_seuil }}"
+             aria-valuemin="0" aria-valuemax="100"
+             aria-label="Progression vers le seuil TPS/TVQ"
+             style="background: rgba(255,255,255,0.08); border-radius: 4px; height: 10px; margin-bottom: 0.6rem; overflow: hidden;">
+            <div style="height: 100%; border-radius: 4px; width: {{ tracker.pourcentage_vers_seuil }}%;
+                        background: {% if tracker.seuil_depasse %}var(--red, #e05252){% elif tracker.alerte_taxes %}var(--gold){% else %}var(--green){% endif %};
+                        transition: width 0.4s ease;">
+            </div>
+        </div>
+        <div style="font-size: 0.78rem;">
+            {% if tracker.seuil_depasse %}
+                <span style="color: var(--red, #e05252); font-weight: 600;">Seuil dépassé — Inscription TPS/TVQ obligatoire!</span>
+            {% elif tracker.alerte_taxes %}
+                <span style="color: var(--gold);">{{ tracker.pourcentage_vers_seuil }}% — Prépare ton inscription TPS/TVQ</span>
+            {% else %}
+                <span style="color: var(--muted);">{{ tracker.pourcentage_vers_seuil }}% du seuil — Tu es OK pour l'instant.</span>
+            {% endif %}
+        </div>
+    </div>
+
+</div>
+
+{# ── SECTION DÉPENSES ────────────────────────────────────────── #}
+<div class="card" style="margin-bottom: 2rem;">
+    <div class="section-title" style="margin-bottom: 1rem;">Dépenses d'entreprise</div>
+
+    <form method="POST" action="/depenses/new" class="compta-dep-form">
+        <div>
+            <label style="font-size: 0.7rem; color: var(--muted); display: block; margin-bottom: 0.25rem;">Date</label>
+            <input type="date" name="date" required class="form-control"
+                   value="{{ today }}"
+                   style="width: 100%; padding: 0.45rem 0.6rem; font-size: 0.82rem;">
+        </div>
+        <div class="dep-form-desc">
+            <label style="font-size: 0.7rem; color: var(--muted); display: block; margin-bottom: 0.25rem;">Description</label>
+            <input type="text" name="description" required class="form-control"
+                   placeholder="ex: Abonnement GitHub"
+                   style="width: 100%; padding: 0.45rem 0.6rem; font-size: 0.82rem;">
+        </div>
+        <div>
+            <label style="font-size: 0.7rem; color: var(--muted); display: block; margin-bottom: 0.25rem;">Montant ($)</label>
+            <input type="number" name="montant" required class="form-control"
+                   placeholder="0.00" step="0.01" min="0"
+                   style="width: 100%; padding: 0.45rem 0.6rem; font-size: 0.82rem;">
+        </div>
+        <div>
+            <label style="font-size: 0.7rem; color: var(--muted); display: block; margin-bottom: 0.25rem;">Catégorie</label>
+            <select name="categorie" class="form-control"
+                    style="width: 100%; padding: 0.45rem 0.6rem; font-size: 0.82rem;">
+                <option value="Hébergement">Hébergement</option>
+                <option value="Logiciels">Logiciels</option>
+                <option value="Domaines">Domaines</option>
+                <option value="Formation">Formation</option>
+                <option value="Équipement">Équipement</option>
+                <option value="Marketing">Marketing</option>
+                <option value="Autre" selected>Autre</option>
+            </select>
+        </div>
+        <div class="dep-form-btn" style="align-self: end;">
+            <button type="submit" class="btn btn-primary" style="white-space: nowrap; min-height: 44px; padding: 0.45rem 1rem;">
+                + Ajouter
+            </button>
+        </div>
+    </form>
+
+    {% if depenses %}
+    <div class="compta-table-wrap">
+        <table style="width: 100%; border-collapse: collapse; font-size: 0.82rem; min-width: 480px;">
             <thead>
                 <tr style="border-bottom: 1px solid var(--border);">
                     <th style="text-align: left; padding: 0.4rem 0.5rem; color: var(--muted); font-weight: 400;">Date</th>
-                    <th style="text-align: left; padding: 0.4rem 0.5rem; color: var(--muted); font-weight: 400;">Client</th>
                     <th style="text-align: left; padding: 0.4rem 0.5rem; color: var(--muted); font-weight: 400;">Description</th>
+                    <th style="text-align: left; padding: 0.4rem 0.5rem; color: var(--muted); font-weight: 400;">Catégorie</th>
                     <th style="text-align: right; padding: 0.4rem 0.5rem; color: var(--muted); font-weight: 400;">Montant</th>
-                    <th style="text-align: center; padding: 0.4rem 0.5rem; color: var(--muted); font-weight: 400;">Statut</th>
+                    <th style="padding: 0.4rem 0.5rem;"></th>
                 </tr>
             </thead>
             <tbody>
-                {% for f in data.factures %}
+                {% for d in depenses %}
                 <tr style="border-bottom: 1px solid rgba(255,255,255,0.04);">
-                    <td style="padding: 0.5rem 0.5rem; color: var(--muted);">{{ f.date_emission or '—' }}</td>
-                    <td style="padding: 0.5rem 0.5rem;">
-                        <a href="/clients/{{ f.client_id }}" style="color: var(--accent2);">{{ f.client_nom }}</a>
-                    </td>
-                    <td style="padding: 0.5rem 0.5rem; color: var(--muted);">{{ f.milestone_titre or f.description or '—' }}</td>
-                    <td style="padding: 0.5rem 0.5rem; text-align: right; font-weight: 600;">{{ f.montant | int }}$</td>
+                    <td style="padding: 0.5rem 0.5rem; color: var(--muted); white-space: nowrap;">{{ d.date }}</td>
+                    <td style="padding: 0.5rem 0.5rem;">{{ d.description }}</td>
+                    <td style="padding: 0.5rem 0.5rem; color: var(--muted);">{{ d.categorie }}</td>
+                    <td style="padding: 0.5rem 0.5rem; text-align: right; color: var(--red, #e05252); font-weight: 600; white-space: nowrap;">-{{ d.montant | int }}$</td>
                     <td style="padding: 0.5rem 0.5rem; text-align: center;">
-                        <span class="badge badge-{{ 'actif' if f.statut == 'payée' else 'envoyé' }}">{{ f.statut }}</span>
+                        <form method="POST" action="/depenses/{{ d.id }}/delete"
+                              onsubmit="return confirm('Supprimer cette dépense?')" style="display: inline;">
+                            <button type="submit"
+                                    style="background: none; border: none; color: var(--muted); cursor: pointer;
+                                           font-size: 0.85rem; padding: 0.3rem 0.5rem; min-width: 32px; min-height: 32px;"
+                                    title="Supprimer">✕</button>
+                        </form>
                     </td>
                 </tr>
                 {% endfor %}
             </tbody>
         </table>
+    </div>
+    {% else %}
+    <div class="empty-state" style="padding: 1rem 0;">Aucune dépense enregistrée.</div>
+    {% endif %}
+</div>
+
+{# ── TABLEAU DES FACTURES PAR MOIS ───────────────────────────── #}
+{% if mois %}
+    {% for mois_key, data in mois.items() %}
+    <div class="card" style="margin-bottom: 1rem;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.8rem; flex-wrap: wrap; gap: 0.5rem;">
+            <div class="section-title">{{ mois_key }}</div>
+            <div style="display: flex; gap: 1rem; font-size: 0.78rem; flex-wrap: wrap;">
+                {% if data.total_payee %}
+                <span style="color: var(--green);">✓ {{ data.total_payee | int }}$ payé</span>
+                {% endif %}
+                {% if data.total_attente %}
+                <span style="color: var(--gold);">{{ data.total_attente | int }}$ en attente</span>
+                {% endif %}
+            </div>
+        </div>
+        <div class="compta-table-wrap">
+            <table style="width: 100%; border-collapse: collapse; font-size: 0.82rem; min-width: 420px;">
+                <thead>
+                    <tr style="border-bottom: 1px solid var(--border);">
+                        <th style="text-align: left; padding: 0.4rem 0.5rem; color: var(--muted); font-weight: 400;">Date</th>
+                        <th style="text-align: left; padding: 0.4rem 0.5rem; color: var(--muted); font-weight: 400;">Client</th>
+                        <th style="text-align: left; padding: 0.4rem 0.5rem; color: var(--muted); font-weight: 400;">Description</th>
+                        <th style="text-align: right; padding: 0.4rem 0.5rem; color: var(--muted); font-weight: 400;">Montant</th>
+                        <th style="text-align: center; padding: 0.4rem 0.5rem; color: var(--muted); font-weight: 400;">Statut</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for f in data.factures %}
+                    <tr style="border-bottom: 1px solid rgba(255,255,255,0.04);">
+                        <td style="padding: 0.5rem 0.5rem; color: var(--muted); white-space: nowrap;">{{ f.date_emission or '—' }}</td>
+                        <td style="padding: 0.5rem 0.5rem;">
+                            <a href="/clients/{{ f.client_id }}" style="color: var(--accent2);">{{ f.client_nom }}</a>
+                        </td>
+                        <td style="padding: 0.5rem 0.5rem; color: var(--muted);">{{ f.milestone_titre or f.description or '—' }}</td>
+                        <td style="padding: 0.5rem 0.5rem; text-align: right; font-weight: 600; white-space: nowrap;">{{ f.montant | int }}$</td>
+                        <td style="padding: 0.5rem 0.5rem; text-align: center; white-space: nowrap;">
+                            {% if f.statut == 'payée' %}
+                                <span class="badge badge-actif">payée</span>
+                            {% elif f.statut == 'en retard' %}
+                                <span class="badge" style="background: rgba(224,82,82,0.15); color: var(--red, #e05252);">en retard</span>
+                            {% else %}
+                                <span class="badge badge-envoyé">{{ f.statut }}</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
     </div>
     {% endfor %}
 {% else %}

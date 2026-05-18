@@ -2,6 +2,36 @@
 
 {% block title %}{{ formulaire.titre }}{% endblock %}
 
+{% block head %}
+<style>
+/* Boutons ↑↓ pour réordonner les questions sur mobile */
+.q-mobile-order {
+    display: none;   /* cachés sur desktop, drag-drop disponible */
+    gap: 0.25rem;
+    flex-direction: column;
+    margin-right: 0.5rem;
+}
+.q-mobile-order button {
+    background: var(--surface-2, rgba(255,255,255,0.06));
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    color: var(--muted);
+    cursor: pointer;
+    font-size: 0.85rem;
+    min-width: 28px;
+    min-height: 28px;
+    padding: 0;
+    line-height: 1;
+}
+.q-mobile-order button:active { background: var(--accent); color: #fff; }
+
+@media (max-width: 640px) {
+    .q-drag-handle  { display: none; }     /* Poignée drag inutile sur mobile */
+    .q-mobile-order { display: flex; }     /* Boutons ↑↓ visibles sur mobile */
+}
+</style>
+{% endblock %}
+
 {% block content %}
 
 {% set prefill_options = [
@@ -109,6 +139,11 @@
             {% for q in questions %}
             <div class="q-card" draggable="true" data-qid="{{ q.id }}" id="qc-{{ q.id }}">
                 <div class="q-drag-handle" title="Glisser pour réordonner">⠿</div>
+                {# Boutons ↑↓ uniquement sur mobile (drag-drop indisponible sur tactile) #}
+                <div class="q-mobile-order">
+                    <button type="button" onclick="moveCard('{{ q.id }}', -1)" title="Monter" aria-label="Monter cette question">↑</button>
+                    <button type="button" onclick="moveCard('{{ q.id }}', 1)"  title="Descendre" aria-label="Descendre cette question">↓</button>
+                </div>
                 <div class="q-body">
                     <div class="q-header">
                         <span class="q-type-badge q-type-{{ q.type }}">
@@ -310,6 +345,18 @@
             card.classList.remove('drag-over');
         });
     });
+
+    // Boutons ↑↓ pour mobile (l'API drag-drop HTML5 ne fonctionne pas sur tactile)
+    function moveCard(qid, direction) {
+        const card  = document.getElementById('qc-' + qid);
+        const cards = [...document.querySelectorAll('.q-card[data-qid]')];
+        const idx   = cards.indexOf(card);
+        const target = cards[idx + direction];
+        if (!target) return; // Déjà en bout de liste
+        if (direction === -1) target.before(card);
+        else target.after(card);
+        saveOrder();
+    }
 
     function saveOrder() {
         const ids = [...document.querySelectorAll('.q-card[data-qid]')].map(el => parseInt(el.dataset.qid));

@@ -5,13 +5,13 @@
 {% block content %}
 <div class="page-header">
     <div>
-        <h1 class="page-title">Command Center</h1>
+        <h1 class="page-title">Mon <span class="client-nom" style="font-size:inherit; display:inline-block;">command center</span></h1>
         <div class="page-sub">Vue d'ensemble de tous les projets actifs.</div>
     </div>
 </div>
 
 {% if rows %}
-<div class="card" style="padding: 0; overflow: hidden;">
+<div class="card cc-table-wrap" style="padding: 0; overflow: hidden;">
     <table style="width: 100%; border-collapse: collapse; font-size: 0.84rem;">
         <thead>
             <tr style="background: var(--surface-2, rgba(255,255,255,0.03));
@@ -32,13 +32,13 @@
             style="border-bottom: 1px solid var(--border);">
 
             {# Client #}
-            <td style="padding: 0.8rem 1rem;">
+            <td data-label="Client" style="padding: 0.8rem 1rem;">
                 <div style="font-weight: 600;">{{ r.client.nom }}</div>
                 <span class="badge badge-{{ r.client.statut }}" style="font-size: 0.62rem; margin-top: 0.2rem;">{{ r.client.statut }}</span>
             </td>
 
             {# Projet #}
-            <td style="padding: 0.8rem 0.5rem; color: var(--muted);">
+            <td data-label="Projet" style="padding: 0.8rem 0.5rem; color: var(--muted);">
                 {{ r.contrat.nom or '—' }}
                 <div style="font-size: 0.7rem; color: var(--muted); margin-top: 0.15rem;">
                     <span class="badge badge-{{ r.contrat.statut }}" style="font-size: 0.6rem;">{{ r.contrat.statut }}</span>
@@ -46,11 +46,11 @@
             </td>
 
             {# Progrès #}
-            <td style="padding: 0.8rem 0.5rem; text-align: center; white-space: nowrap;">
+            <td data-label="Progrès" style="padding: 0.8rem 0.5rem; text-align: center; white-space: nowrap;">
                 {% if r.ms_total > 0 %}
                 {% set pct = ((r.ms_faits / r.ms_total) * 100) | int %}
-                <div style="font-size: 0.75rem; color: var(--muted); margin-bottom: 0.3rem;">{{ r.ms_faits }}/{{ r.ms_total }}</div>
-                <div style="width: 80px; height: 4px; background: var(--border); border-radius: 2px; margin: 0 auto;">
+                <div style="font-size: 0.75rem; color: var(--muted); margin-bottom: 0.3rem;">{{ r.ms_faits }}/{{ r.ms_total }} ({{ pct }}%)</div>
+                <div style="width: 80px; height: 6px; background: var(--border); border-radius: 2px; margin: 0 auto;">
                     <div style="width: {{ pct }}%; height: 100%; background: var(--accent); border-radius: 2px;"></div>
                 </div>
                 {% else %}
@@ -59,7 +59,7 @@
             </td>
 
             {# Prochaine action #}
-            <td style="padding: 0.8rem 0.5rem;">
+            <td data-label="Action" style="padding: 0.8rem 0.5rem;">
                 {% if a %}
                 {% if a.type == 'attente_appro' %}
                 <span style="color: var(--gold); font-size: 0.78rem;">⏳ {{ a.label }}</span>
@@ -78,17 +78,18 @@
             </td>
 
             {# Factures #}
-            <td style="padding: 0.8rem 0.5rem; text-align: center;">
+            <td data-label="Factures" style="padding: 0.8rem 0.5rem; text-align: center;">
                 {% if r.factures_att > 0 %}
                 <span style="color: var(--gold); font-weight: 600; font-size: 0.8rem;">{{ r.factures_att }} en attente</span>
                 {% else %}
-                <span style="color: var(--green); font-size: 0.78rem;">✓</span>
+                <span style="color: var(--green); font-size: 0.78rem;">✓ OK</span>
                 {% endif %}
             </td>
 
             {# Actions #}
             <td style="padding: 0.8rem 1rem; text-align: right; white-space: nowrap;">
-                <a href="/clients/{{ r.client.id }}" class="btn btn-secondary" style="font-size: 0.75rem; padding: 0.25rem 0.7rem;">
+                <a href="/clients/{{ r.client.id }}" class="btn btn-secondary"
+                   style="font-size: 0.75rem; padding: 0.35rem 0.7rem; min-height: 36px; display: inline-flex; align-items: center;">
                     Fiche →
                 </a>
             </td>
@@ -105,7 +106,7 @@
 {% endif %}
 
 {# ── WIDGET HEURES ────────────────────────────────────────────────────────── #}
-<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 1.5rem;">
+<div class="cc-heures-grid">
     <div class="card" style="padding: 1.25rem 1.5rem;">
         <div style="color: var(--muted); font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 0.4rem;">Heures cette semaine</div>
         <div style="font-size: 1.5rem; font-weight: 700; color: var(--text); font-family: 'DM Mono', monospace;">
@@ -133,5 +134,44 @@
 .cc-row { transition: background 0.15s; }
 .cc-row:hover { background: rgba(255,255,255,0.02); }
 .cc-urgent { border-left: 3px solid var(--gold) !important; }
+.cc-table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+.cc-table-wrap table { min-width: 640px; }
+.cc-heures-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 1.5rem; }
+
+/* Mobile : table en carte par ligne */
+@media (max-width: 640px) {
+    .cc-heures-grid { grid-template-columns: 1fr; }
+
+    /* On cache les en-têtes du tableau sur mobile */
+    .cc-table-wrap thead { display: none; }
+
+    /* Chaque ligne devient une carte */
+    .cc-table-wrap tr {
+        display: flex;
+        flex-direction: column;
+        border: 1px solid var(--border) !important;
+        border-radius: var(--radius, 8px);
+        margin-bottom: 0.75rem;
+        padding: 0.75rem;
+        background: var(--surface-2, rgba(255,255,255,0.02));
+    }
+    .cc-table-wrap td {
+        display: flex;
+        padding: 0.2rem 0 !important;
+        border: none !important;
+        font-size: 0.82rem;
+    }
+    /* Étiquette automatique avant chaque cellule via data-label */
+    .cc-table-wrap td[data-label]::before {
+        content: attr(data-label) " ";
+        color: var(--muted);
+        font-size: 0.7rem;
+        min-width: 100px;
+        flex-shrink: 0;
+    }
+    /* Le bouton "Fiche →" prend toute la largeur */
+    .cc-table-wrap td:last-child { margin-top: 0.5rem; }
+    .cc-table-wrap td:last-child a { width: 100%; text-align: center; }
+}
 </style>
 {% endblock %}

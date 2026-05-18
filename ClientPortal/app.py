@@ -2040,6 +2040,16 @@ def portail_formulaire_submit(fid):
 @login_required
 def comptabilite():
     from collections import OrderedDict
+    from compta_logic import (
+        verifier_et_mettre_retards,
+        calculer_tax_tracker,
+        calculer_provision_fiscale,
+    )
+
+    # IMPORTANT : appeler en premier — met à jour les statuts "en retard"
+    # en DB avant qu'on lise les factures pour le tableau mensuel.
+    alertes_retard = verifier_et_mettre_retards()
+
     conn = get_db()
     factures = conn.execute('''
         SELECT f.*, c.nom as client_nom
@@ -2067,10 +2077,64 @@ def comptabilite():
             mois[key]['total_attente'] += montant
             total_attente += montant
 
+    tracker  = calculer_tax_tracker()
+    provision = calculer_provision_fiscale()
+
+    conn = get_db()
+    depenses = conn.execute(
+        'SELECT * FROM depenses ORDER BY date DESC'
+    ).fetchall()
+    conn.close()
+
     return render_template('comptabilite.html',
                            mois=mois,
                            total_realise=total_realise,
-                           total_attente=total_attente)
+                           total_attente=total_attente,
+                           alertes_retard=alertes_retard,
+                           tracker=tracker,
+                           provision=provision,
+                           depenses=depenses,
+                           today=datetime.date.today().isoformat())
+
+
+@app.route('/depenses/new', methods=['POST'])
+@login_required
+def depense_new():
+    date_dep   = request.form.get('date', '').strip()
+    description = request.form.get('description', '').strip()
+    montant    = request.form.get('montant', '0').strip()
+    categorie  = request.form.get('categorie', 'Autre').strip()
+
+    if not date_dep or not description or not montant:
+        flash('Tous les champs sont requis.', 'error')
+        return redirect('/comptabilite')
+
+    try:
+        montant = float(montant)
+    except ValueError:
+        flash('Montant invalide.', 'error')
+        return redirect('/comptabilite')
+
+    conn = get_db()
+    conn.execute(
+        'INSERT INTO depenses (date, description, montant, categorie) VALUES (?,?,?,?)',
+        (date_dep, description, montant, categorie or 'Autre')
+    )
+    conn.commit()
+    conn.close()
+    flash('Dépense ajoutée.', 'success')
+    return redirect('/comptabilite')
+
+
+@app.route('/depenses/<int:dep_id>/delete', methods=['POST'])
+@login_required
+def depense_delete(dep_id):
+    conn = get_db()
+    conn.execute('DELETE FROM depenses WHERE id = ?', (dep_id,))
+    conn.commit()
+    conn.close()
+    flash('Dépense supprimée.', 'success')
+    return redirect('/comptabilite')
 
 
 # ── TARIFS ────────────────────────────────────────────────────────────────────
@@ -2340,6 +2404,86 @@ def heures_supprimer(eid):
     conn.commit()
     conn.close()
     return jsonify({'ok': True})
+
+
+@app.route('/heures/<int:eid>/edit', methods=['POST'])
+@login_required
+def heures_edit(eid):
+    """Modifie une entrée existante dans l'historique."""
+    f = request.form
+
+    # Recalcul de la durée si les heures sont fournies
+    hd = f.get('heure_debut') or None
+    hf = f.get('heure_fin') or None
+    try:
+        duree = int(f.get('duree_minutes') or 0)
+        if hd and hf and not duree:
+            date_s   = f.get('date') or datetime.date.today().isoformat()
+            debut_dt = datetime.datetime.strptime(date_s + ' ' + hd, '%Y-%m-%d %H:%M')
+            fin_dt   = datetime.datetime.strptime(date_s + ' ' + hf, '%Y-%m-%d %H:%M')
+            duree    = max(0, int((fin_dt - debut_dt).total_seconds() / 60))
+    except Exception:
+        duree = 0
+
+    taux = None
+    try:
+        v = f.get('taux_applique')
+        if v:
+            taux = float(v) or None
+    except Exception:
+        pass
+
+    conn = get_db()
+    conn.execute('''
+        UPDATE entrees_temps
+        SET date=?, heure_debut=?, heure_fin=?, duree_minutes=?,
+            description=?, type_facturation=?, taux_applique=?, categorie_id=?
+        WHERE id=?
+    ''', (
+        f.get('date') or datetime.date.today().isoformat(),
+        hd, hf, duree,
+        f.get('description') or None,
+        f.get('type_facturation', 'horaire'),
+        taux,
+        f.get('categorie_id') or None,
+        eid,
+    ))
+    conn.commit()
+    conn.close()
+    flash('Entrée mise à jour.', 'success')
+    return redirect('/heures')
+
+
+@app.route('/heures/timer/start-time', methods=['POST'])
+@login_required
+def heures_timer_start_time():
+    """Ajuste l'heure de départ du timer en cours sans arrêter le timer."""
+    nouvelle_heure = (request.json or {}).get('heure_debut', '')
+    if not nouvelle_heure:
+        return jsonify({'error': 'Heure manquante.'}), 400
+
+    conn = get_db()
+    entree = conn.execute(
+        "SELECT * FROM entrees_temps WHERE heure_fin IS NULL AND mode='timer' ORDER BY created_at DESC LIMIT 1"
+    ).fetchone()
+    if not entree:
+        conn.close()
+        return jsonify({'error': 'Aucun timer actif.'}), 404
+
+    # Reconstruire le datetime de départ avec la nouvelle heure (même date)
+    try:
+        debut_dt = datetime.datetime.strptime(entree['date'] + ' ' + nouvelle_heure, '%Y-%m-%d %H:%M')
+    except ValueError:
+        conn.close()
+        return jsonify({'error': 'Format invalide (HH:MM attendu).'}), 400
+
+    conn.execute(
+        'UPDATE entrees_temps SET heure_debut=?, created_at=? WHERE id=?',
+        (nouvelle_heure, debut_dt.strftime('%Y-%m-%d %H:%M:%S'), entree['id'])
+    )
+    conn.commit()
+    conn.close()
+    return jsonify({'ok': True, 'new_start': debut_dt.isoformat()})
 
 
 @app.route('/heures/categories', methods=['POST'])

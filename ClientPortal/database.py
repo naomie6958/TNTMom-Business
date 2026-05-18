@@ -427,6 +427,28 @@ def migrate_db():
     except Exception:
         pass
 
+    # Ajoute la date d'échéance sur les factures (pour détecter les retards de paiement)
+    try:
+        conn.execute("ALTER TABLE factures ADD COLUMN date_echeance TEXT")
+        conn.commit()
+    except Exception:
+        pass  # Colonne déjà présente
+
+    # Table des dépenses d'entreprise (abonnements, outils, domaines, etc.)
+    # Permet de calculer le revenu net et la provision fiscale réelle.
+    try:
+        conn.execute('''CREATE TABLE IF NOT EXISTS depenses (
+            id          INTEGER PRIMARY KEY AUTOINCREMENT,
+            date        TEXT NOT NULL,
+            description TEXT NOT NULL,
+            montant     REAL NOT NULL DEFAULT 0,
+            categorie   TEXT DEFAULT 'Autre',
+            created_at  TEXT DEFAULT (datetime('now'))
+        )''')
+        conn.commit()
+    except Exception:
+        pass
+
     conn.close()
 
 
