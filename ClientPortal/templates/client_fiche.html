@@ -405,6 +405,34 @@
             </form>
         </div>
 
+        {# ── BANQUE D'HEURES ─────────────────────────────────────────── #}
+        <div class="card" style="margin-bottom: 1.2rem;">
+            <div class="section-header">
+                <div class="section-title">Banque d'heures maintenance</div>
+                <form method="POST" action="/clients/{{ client.id }}/banque-heures/new">
+                    <button type="submit" class="btn btn-primary" style="font-size: 0.78rem; padding: 0.3rem 0.8rem;">
+                        + Ajouter 5h (325$)
+                    </button>
+                </form>
+            </div>
+            {% if banques_heures %}
+                {% for b in banques_heures %}
+                <div style="display: flex; justify-content: space-between; align-items: center;
+                            padding: 0.6rem 0; border-bottom: 1px solid var(--border); font-size: 0.82rem;">
+                    <span>{{ b.date_achat }} — <strong>{{ b.statut }}</strong></span>
+                    <span style="font-family: 'DM Mono', monospace; color: var(--accent);">
+                        {{ b.minutes_total - b.minutes_utilisees }} min restantes / {{ b.minutes_total }} min
+                    </span>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div style="color: var(--muted); font-size: 0.82rem; padding: 0.5rem 0;">
+                    Aucune banque d'heures active.
+                </div>
+            {% endif %}
+        </div>
+
+
         {# ── FICHIERS PARTAGÉS ────────────────────────────────────────── #}
         <div class="card">
             <div class="section-header">
@@ -799,20 +827,8 @@
 
             if (!resp.ok) return;
 
-            const point = btn.closest('.timeline-point');
-            const { statut } = data;
-
-            // Mettre à jour la classe du point
-            point.classList.remove('done', 'active');
-            if (statut === 'livré' || statut === 'payé') point.classList.add('done');
-            else if (statut === 'en cours') point.classList.add('active');
-
-            // Mettre à jour le badge statut
-            const badge = point.querySelector('.badge');
-            if (badge) {
-                badge.textContent = statut;
-                badge.className = 'badge badge-' + statut.replace(' ', '-');
-            }
+            // Rechargement de la page pour refléter le nouveau statut + factures auto-créées
+            location.reload();
         });
     });
 

@@ -11,6 +11,7 @@ from zoneinfo import ZoneInfo
 _EASTERN = ZoneInfo('America/Montreal')
 import os
 import uuid
+import secrets
 import smtplib
 from email.mime.text import MIMEText
 
@@ -473,6 +474,12 @@ def client_fiche(client_id):
         (client_id,)
     )
     conn.commit()
+
+    banques_heures = conn.execute(
+        'SELECT * FROM banque_heures WHERE client_id = ? ORDER BY date_achat DESC',
+        (client_id,)
+    ).fetchall()
+
     conn.close()
 
     # Pareil pour les consultations — parse le JSON de chaque consultation
@@ -539,6 +546,7 @@ def client_fiche(client_id):
                            form_reponses=form_reponses,
                            formulaires_assignes=formulaires_assignes,
                            formulaires_disponibles=formulaires_disponibles,
+                           banques_heures=banques_heures,
                            name=session['user_name'])
 
 
@@ -859,6 +867,25 @@ def contrat_delete(client_id, contrat_id):
     conn.commit()
     conn.close()
     flash('Projet supprimé.', 'success')
+    return redirect(f'/clients/{client_id}')
+
+@app.route('/clients/<int:client_id>/banque-heures/new', methods=['POST'])
+@login_required
+def banque_heures_new(client_id):
+    conn = get_db()
+    client = conn.execute('SELECT * FROM clients WHERE id = ?', (client_id,)).fetchone()
+    if not client:
+        conn.close()
+        return redirect('/dashboard')
+
+    conn.execute(
+        """INSERT INTO banque_heures (client_id, minutes_total, minutes_utilisees, date_achat, statut)
+           VALUES (?, 300, 0, date('now'), 'actif')""",
+        (client_id,)
+    )
+    conn.commit()
+    conn.close()
+    flash(f'Banque de 5h ajoutée pour {client["nom"]}.', 'success')
     return redirect(f'/clients/{client_id}')
 
 
@@ -1475,6 +1502,29 @@ def portail_approuver_milestone(contrat_id, index):
     return redirect('/portail/dashboard')
 
 
+def projet_est_clos(client_id, conn):
+    # On vérifie le dernier contrat du client — le dernier milestone payé = projet clos
+    contrat = conn.execute(
+        'SELECT milestones FROM contrats WHERE client_id = ? ORDER BY created_at DESC LIMIT 1',
+        (client_id,)
+    ).fetchone()
+    if not contrat or not contrat['milestones']:
+        return False
+    milestones = json.loads(contrat['milestones'])
+    return bool(milestones) and milestones[-1].get('statut') == 'payé'
+
+
+def get_banque_active(client_id, conn):
+    # Retourne la banque active avec minutes restantes, ou None
+    return conn.execute(
+        """SELECT * FROM banque_heures
+           WHERE client_id = ? AND statut = 'actif'
+           AND (minutes_total - minutes_utilisees) > 0
+           ORDER BY date_achat DESC LIMIT 1""",
+        (client_id,)
+    ).fetchone()
+
+
 @app.route('/portail/contact', methods=['GET', 'POST'])
 @client_login_required
 def portail_contact():
@@ -1486,27 +1536,38 @@ def portail_contact():
     if request.method == 'POST':
         sujet   = request.form.get('sujet', '').strip()
         message = request.form.get('message', '').strip()
-        if message:
-            conn.execute(
-                'INSERT INTO messages_client (client_id, sujet, message) VALUES (?,?,?)',
-                (session['client_id'], sujet, message)
-            )
-            conn.commit()
-            conn.close()
-            send_notification_email(
-                f'[ClientPortal] Nouveau message de {session["client_nom"]}',
-                f'Client : {session["client_nom"]}\nSujet : {sujet or "(aucun)"}\n\n{message}'
-            )
-            flash('Message envoyé. Naomie te reviendra sous peu !', 'success')
-        else:
+
+        if not message:
             conn.close()
             flash('Le message ne peut pas être vide.', 'error')
+            return redirect('/portail/contact')
+
+        # Si projet terminé, vérifier que le client a une banque d'heures active
+        if projet_est_clos(session['client_id'], conn):
+            banque = get_banque_active(session['client_id'], conn)
+            if not banque:
+                conn.close()
+                flash('Ton projet est terminé 🎉 Pour toute nouvelle demande, tu dois acheter un bloc de maintenance. Contacte Naomie !', 'info')
+                return redirect('/portail/contact')
+
+        conn.execute(
+            'INSERT INTO messages_client (client_id, sujet, message) VALUES (?,?,?)',
+            (session['client_id'], sujet, message)
+        )
+        conn.commit()
+        conn.close()
+        send_notification_email(
+            f'[ClientPortal] Nouveau message de {session["client_nom"]}',
+            f'Client : {session["client_nom"]}\nSujet : {sujet or "(aucun)"}\n\n{message}'
+        )
+        flash('Message envoyé. Naomie te reviendra sous peu !', 'success')
         return redirect('/portail/contact')
 
     conn.execute(
         "UPDATE messages_client SET lu_client=1 WHERE client_id=? AND lu_client=0",
         (session['client_id'],)
     )
+
     conn.commit()
     historique = conn.execute(
         'SELECT * FROM messages_client WHERE client_id = ? ORDER BY created_at ASC',
@@ -1717,17 +1778,30 @@ def api_public_contact():
         return resp, 400
 
     conn = get_db()
+
+    token        = secrets.token_urlsafe(32)
+    token_expiry = (datetime.datetime.now() + datetime.timedelta(days=7)).strftime('%Y-%m-%d %H:%M:%S')
+
     conn.execute(
-        'INSERT INTO leads (nom, email, message) VALUES (?, ?, ?)',
-        (nom, email, message)
+        'INSERT INTO leads (nom, email, message, access_token, token_expiry) VALUES (?, ?, ?, ?, ?)',
+        (nom, email, message, token, token_expiry)
     )
     conn.commit()
     conn.close()
 
+    # Courriel à Naomie — notification interne
     send_notification_email(
         f'[TNTMom] Nouveau message de {nom}',
         f'Nom : {nom}\nCourriel : {email or "(non fourni)"}\n\n{message}'
     )
+
+    # Courriel automatique au client — seulement si un email a été fourni
+    if email:
+        send_notification_email(
+            'Merci pour ton message — TNTMom',
+            f'Bonjour {nom},\n\nMerci pour ton message ! Je l\'ai bien reçu et je te répondrai dans les 24-48h.\n\nÀ très bientôt,\nNaomie — TNTMom\ntntm.ca',
+            to=email
+        )
 
     resp = jsonify({'ok': True})
     resp.headers['Access-Control-Allow-Origin'] = '*'
@@ -2655,6 +2729,65 @@ def package_delete(pkg_id):
     flash('Forfait supprimé.', 'success')
     return redirect('/packages')
 
+@app.route('/packages/<int:pkg_id>/creer-contrat', methods=['POST'])
+@login_required
+def package_creer_contrat(pkg_id):
+    conn = get_db()
+    pkg = conn.execute(
+        'SELECT p.*, c.nom as client_nom FROM packages p JOIN clients c ON c.id = p.client_id WHERE p.id = ?',
+        (pkg_id,)
+    ).fetchone()
+
+    if not pkg:
+        conn.close()
+        flash('Forfait introuvable.', 'error')
+        return redirect('/packages')
+
+    prix = pkg['prix_final']
+
+    # 4 milestones pré-remplis avec la répartition standard 25/25/35/15%
+    milestones = [
+        {'titre': 'M1 — Démarrage & Contrat', 'livrable': 'Acompte initial — lancement du projet', 'prix': str(round(prix * 0.25)), 'date': '', 'statut': 'en attente', 'lien_preview': '', 'preview_visible': False},
+        {'titre': 'M2 — Design & Maquettes', 'livrable': 'Maquettes approuvées par le client', 'prix': str(round(prix * 0.25)), 'date': '', 'statut': 'en attente', 'lien_preview': '', 'preview_visible': False},
+        {'titre': 'M3 — Développement', 'livrable': 'Site fonctionnel livré en prévisualisation', 'prix': str(round(prix * 0.35)), 'date': '', 'statut': 'en attente', 'lien_preview': '', 'preview_visible': False},
+        {'titre': 'M4 — Livraison finale', 'livrable': 'Mise en ligne + passation de dossier', 'prix': str(round(prix * 0.15)), 'date': '', 'statut': 'en attente', 'lien_preview': '', 'preview_visible': False},
+    ]
+
+    snapshot = {
+        'nom': pkg['nom'],
+        'heures_dev': pkg['heures_dev'],
+        'heures_design': pkg['heures_design'],
+        'heures_integration': pkg['heures_integration'],
+        'heures_admin': pkg['heures_admin'],
+        'marge': pkg['marge'],
+        'prix_final': pkg['prix_final'],
+    }
+
+    scope_auto = (
+        f"Développement web complet — {pkg['nom']}\n\n"
+        f"• Développement : {pkg['heures_dev']}h\n"
+        f"• Design UI/UX : {pkg['heures_design']}h\n"
+        f"• Intégration & Maintenance : {pkg['heures_integration']}h\n"
+        f"• Admin & Gestion : {pkg['heures_admin']}h"
+    )
+
+    cursor = conn.execute(
+        'INSERT INTO contrats (client_id, nom, scope, milestones, statut, package_snapshot) VALUES (?,?,?,?,?,?)',
+        (
+            pkg['client_id'],
+            pkg['nom'],
+            scope_auto,
+            json.dumps(milestones, ensure_ascii=False),
+            'draft',
+            json.dumps(snapshot, ensure_ascii=False),
+        )
+    )
+    contrat_id = cursor.lastrowid
+    conn.commit()
+    conn.close()
+
+    flash(f'Contrat créé depuis le forfait « {pkg["nom"]} ». Révise et envoie au client !', 'success')
+    return redirect(f'/clients/{pkg["client_id"]}/contrat/{contrat_id}')
 
 if __name__ == '__main__':
     app.run(debug=True)

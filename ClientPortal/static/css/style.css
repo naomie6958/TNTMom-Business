@@ -1084,6 +1084,12 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     color: var(--red);
 }
 
+.flash-info {
+    background: rgba(135, 206, 235, 0.12);
+    border: 1px solid #87CEEB;
+    color: #87CEEB;
+}
+
 /* ── TABS FICHE CLIENT ───────────────────────────────────────────────────── */
 .fiche-tabs {
     display: flex;
