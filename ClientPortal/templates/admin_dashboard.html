@@ -1,14 +1,44 @@
 {% extends "base.html" %}
-
 {% block title %}Dashboard{% endblock %}
+
+{% block head %}
+<style>
+/* ── Projets actifs ──────────────────────────────────────────────────────── */
+.cc-row { transition: background 0.15s; }
+.cc-row:hover { background: rgba(255,255,255,0.02); }
+.cc-urgent { border-left: 3px solid var(--gold) !important; }
+.cc-table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+.cc-table-wrap table { min-width: 600px; }
+
+/* ── KPI grid ────────────────────────────────────────────────────────────── */
+.dash-kpi-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 1rem; }
+
+/* ── Mobile ─────────────────────────────────────────────────────────────── */
+@media (max-width: 640px) {
+    .dash-kpi-grid { grid-template-columns: 1fr; }
+    .cc-table-wrap thead { display: none; }
+    .cc-table-wrap tr {
+        display: flex; flex-direction: column;
+        border: 1px solid var(--border) !important;
+        border-radius: var(--radius, 8px);
+        margin-bottom: 0.75rem; padding: 0.75rem;
+        background: var(--surface-2, rgba(255,255,255,0.02));
+    }
+    .cc-table-wrap td { display: flex; padding: 0.2rem 0 !important; border: none !important; font-size: 0.82rem; }
+    .cc-table-wrap td[data-label]::before { content: attr(data-label) " "; color: var(--muted); font-size: 0.7rem; min-width: 90px; flex-shrink: 0; }
+    .cc-table-wrap td:last-child { margin-top: 0.5rem; }
+    .cc-table-wrap td:last-child a { width: 100%; text-align: center; }
+}
+</style>
+{% endblock %}
 
 {% block content %}
 
 {# ── EN-TÊTE ─────────────────────────────────────────────────────────────── #}
 <div class="page-header">
     <div>
-        <h1 class="page-title">Mes <span class="client-nom" style="font-size:inherit; display:inline-block; animation-delay:0.4s;">clients</span></h1>
-        <div class="page-sub">{{ stats.total }} client{{ 's' if stats.total != 1 }} enregistré{{ 's' if stats.total != 1 }}</div>
+        <h1 class="page-title">Mon <span class="client-nom" style="font-size:inherit; display:inline-block; animation-delay:0.4s;">dashboard</span></h1>
+        <div class="page-sub">{{ stats.total }} client{{ 's' if stats.total != 1 }} · vue d'ensemble complète</div>
     </div>
 </div>
 
@@ -32,9 +62,166 @@
     </div>
 </div>
 
-{# ── COMMAND CENTER ───────────────────────────────────────────────────────── #}
+{# ── PROJETS ACTIFS ───────────────────────────────────────────────────────── #}
+{% if rows %}
+<div style="font-weight: 600; font-size: 0.72rem; color: var(--muted); text-transform: uppercase;
+            letter-spacing: 0.08em; margin: 1.5rem 0 0.5rem;">Projets actifs</div>
+<div class="card cc-table-wrap" style="padding: 0; overflow: hidden;">
+    <table style="width: 100%; border-collapse: collapse; font-size: 0.84rem;">
+        <thead>
+            <tr style="background: var(--surface-2, rgba(255,255,255,0.03));
+                        color: var(--muted); font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.06em;">
+                <th style="padding: 0.75rem 1rem; text-align: left; border-bottom: 1px solid var(--border);">Client</th>
+                <th style="padding: 0.75rem 0.5rem; text-align: left; border-bottom: 1px solid var(--border);">Projet</th>
+                <th style="padding: 0.75rem 0.5rem; text-align: center; border-bottom: 1px solid var(--border);">Progrès</th>
+                <th style="padding: 0.75rem 0.5rem; text-align: left; border-bottom: 1px solid var(--border);">Prochaine action</th>
+                <th style="padding: 0.75rem 0.5rem; text-align: center; border-bottom: 1px solid var(--border);">Factures</th>
+                <th style="padding: 0.75rem 1rem; border-bottom: 1px solid var(--border);"></th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for r in rows %}
+        {% set a = r.action %}
+        <tr class="cc-row {% if a and a.urgent %}cc-urgent{% endif %}"
+            style="border-bottom: 1px solid var(--border);">
+            <td data-label="Client" style="padding: 0.8rem 1rem;">
+                <div style="font-weight: 600;">{{ r.client.nom }}</div>
+                <span class="badge badge-{{ r.client.statut }}" style="font-size: 0.62rem; margin-top: 0.2rem;">{{ r.client.statut }}</span>
+            </td>
+            <td data-label="Projet" style="padding: 0.8rem 0.5rem; color: var(--muted);">
+                {{ r.contrat.nom or '—' }}
+                <div style="font-size: 0.7rem; margin-top: 0.15rem;">
+                    <span class="badge badge-{{ r.contrat.statut }}" style="font-size: 0.6rem;">{{ r.contrat.statut }}</span>
+                </div>
+            </td>
+            <td data-label="Progrès" style="padding: 0.8rem 0.5rem; text-align: center; white-space: nowrap;">
+                {% if r.ms_total > 0 %}
+                {% set pct = ((r.ms_faits / r.ms_total) * 100) | int %}
+                <div style="font-size: 0.75rem; color: var(--muted); margin-bottom: 0.3rem;">{{ r.ms_faits }}/{{ r.ms_total }} ({{ pct }}%)</div>
+                <div style="width: 80px; height: 6px; background: var(--border); border-radius: 2px; margin: 0 auto;">
+                    <div style="width: {{ pct }}%; height: 100%; background: var(--accent); border-radius: 2px;"></div>
+                </div>
+                {% else %}
+                <span style="color: var(--muted); font-size: 0.75rem;">—</span>
+                {% endif %}
+            </td>
+            <td data-label="Action" style="padding: 0.8rem 0.5rem;">
+                {% if a %}
+                {% if a.type == 'attente_appro' %}<span style="color: var(--gold); font-size: 0.78rem;">⏳ {{ a.label }}</span>
+                {% elif a.type == 'a_payer' %}<span style="color: var(--accent); font-size: 0.78rem;">💳 {{ a.label }}</span>
+                {% elif a.type == 'en_cours' %}<span style="color: var(--text); font-size: 0.78rem;">⚙ {{ a.label }}</span>
+                {% elif a.type == 'a_demarrer' %}<span style="color: var(--muted); font-size: 0.78rem;">○ {{ a.label }}</span>
+                {% elif a.type == 'termine' %}<span style="color: var(--green); font-size: 0.78rem;">✓ {{ a.label }}</span>
+                {% endif %}
+                {% else %}
+                <span style="color: var(--muted); font-size: 0.78rem;">—</span>
+                {% endif %}
+            </td>
+            <td data-label="Factures" style="padding: 0.8rem 0.5rem; text-align: center;">
+                {% if r.factures_att > 0 %}
+                <span style="color: var(--gold); font-weight: 600; font-size: 0.8rem;">{{ r.factures_att }} en attente</span>
+                {% else %}
+                <span style="color: var(--green); font-size: 0.78rem;">✓ OK</span>
+                {% endif %}
+            </td>
+            <td style="padding: 0.8rem 1rem; text-align: right; white-space: nowrap;">
+                <a href="/clients/{{ r.client.id }}" class="btn btn-secondary"
+                   style="font-size: 0.75rem; padding: 0.35rem 0.7rem; min-height: 36px; display: inline-flex; align-items: center;">
+                    Fiche →
+                </a>
+            </td>
+        </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endif %}
+
+{# ── KPI GRID ─────────────────────────────────────────────────────────────── #}
+<div class="dash-kpi-grid">
+
+    {# Heures cette semaine #}
+    <div class="card" style="padding: 1.25rem 1.5rem;">
+        <div style="color: var(--muted); font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 0.4rem;">Heures cette semaine</div>
+        <div style="font-size: 1.5rem; font-weight: 700; font-family: 'DM Mono', monospace;">
+            {{ (heures_semaine.total_min or 0) // 60 }}h{{ '%02d' | format((heures_semaine.total_min or 0) % 60) }}
+        </div>
+        <div style="color: var(--accent); font-size: 0.82rem; margin-top: 0.2rem;">
+            ${{ '%.0f' | format(heures_semaine.montant or 0) }} facturable
+        </div>
+    </div>
+
+    {# Heures ce mois #}
+    <div class="card" style="padding: 1.25rem 1.5rem;">
+        <div style="color: var(--muted); font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 0.4rem;">Heures ce mois</div>
+        <div style="font-size: 1.5rem; font-weight: 700; font-family: 'DM Mono', monospace;">
+            {{ (heures_mois.total_min or 0) // 60 }}h{{ '%02d' | format((heures_mois.total_min or 0) % 60) }}
+        </div>
+        <div style="margin-top: 0.2rem;">
+            <a href="/heures" style="color: var(--accent); font-size: 0.82rem; text-decoration: none;">Punch d'heures →</a>
+        </div>
+    </div>
+
+    {# Ratio efficacité #}
+    <div class="card" style="padding: 1.25rem 1.5rem;">
+        <div style="color: var(--muted); font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 1rem;">Ratio efficacité — mois</div>
+        {% if ratio_data and ratio_data.min_total > 0 %}
+        {% set pct_client  = ((ratio_data.min_client  / ratio_data.min_total) * 100) | int %}
+        {% set pct_interne = ((ratio_data.min_interne / ratio_data.min_total) * 100) | int %}
+        <div style="display: flex; align-items: center; gap: 0.6rem; margin-bottom: 0.6rem;">
+            <div style="font-size: 0.71rem; color: var(--muted); min-width: 70px;">Client</div>
+            <div style="flex: 1; height: 8px; background: var(--border); border-radius: 4px; overflow: hidden;">
+                <div style="width: {{ pct_client }}%; height: 100%; background: var(--accent); border-radius: 4px;"></div>
+            </div>
+            <div style="font-family: 'DM Mono', monospace; font-size: 0.82rem; color: var(--accent); min-width: 36px; text-align: right;">{{ pct_client }}%</div>
+        </div>
+        <div style="display: flex; align-items: center; gap: 0.6rem;">
+            <div style="font-size: 0.71rem; color: var(--muted); min-width: 70px;">R&amp;D / interne</div>
+            <div style="flex: 1; height: 8px; background: var(--border); border-radius: 4px; overflow: hidden;">
+                <div style="width: {{ pct_interne }}%; height: 100%; background: #87CEEB; border-radius: 4px;"></div>
+            </div>
+            <div style="font-family: 'DM Mono', monospace; font-size: 0.82rem; color: #87CEEB; min-width: 36px; text-align: right;">{{ pct_interne }}%</div>
+        </div>
+        <div style="margin-top: 0.85rem; font-size: 0.71rem; color: var(--muted);">
+            {{ (ratio_data.min_client // 60) }}h{{ '%02d' | format(ratio_data.min_client % 60) }} client
+            &nbsp;·&nbsp;
+            {{ (ratio_data.min_interne // 60) }}h{{ '%02d' | format(ratio_data.min_interne % 60) }} interne
+        </div>
+        {% else %}
+        <div style="color: var(--muted); font-size: 0.82rem;">Aucune entrée ce mois.</div>
+        {% endif %}
+    </div>
+
+    {# Santé banque d'heures #}
+    <div class="card" style="padding: 1.25rem 1.5rem;">
+        <div style="color: var(--muted); font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 1rem;">Santé banque d'heures</div>
+        {% if banques_actives %}
+        {% for b in banques_actives %}
+        {% set pct_reste = ((b.minutes_restantes / b.minutes_total) * 100) | int if b.minutes_total > 0 else 0 %}
+        {% set couleur = 'var(--green, #4ade80)' if pct_reste >= 60 else ('#fbbf24' if pct_reste >= 30 else '#f87171') %}
+        <div style="margin-bottom: 0.9rem;">
+            <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 0.3rem;">
+                <div style="font-size: 0.8rem; font-weight: 600;">{{ b.client_nom }}</div>
+                <div style="font-family: 'DM Mono', monospace; font-size: 0.74rem; color: {{ couleur }};">
+                    {{ (b.minutes_restantes // 60) }}h{{ '%02d' | format(b.minutes_restantes % 60) }}
+                    <span style="color: var(--muted);">/ {{ (b.minutes_total // 60) }}h{{ '%02d' | format(b.minutes_total % 60) }}</span>
+                </div>
+            </div>
+            <div style="height: 6px; background: var(--border); border-radius: 3px; overflow: hidden;">
+                <div style="width: {{ pct_reste }}%; height: 100%; background: {{ couleur }}; border-radius: 3px;"></div>
+            </div>
+        </div>
+        {% endfor %}
+        {% else %}
+        <div style="color: var(--muted); font-size: 0.82rem;">Aucune banque d'heures active.</div>
+        {% endif %}
+    </div>
+
+</div>
+
+{# ── ALERTES ──────────────────────────────────────────────────────────────── #}
 {% if messages_nonlus or factures_attente %}
-<div class="cmd-center">
+<div class="cmd-center" style="margin-top: 1rem;">
 
     <div class="cmd-section">
         <div class="cmd-section-title">✉ Messages sans réponse
@@ -85,9 +272,8 @@
 </div>
 {% endif %}
 
-{# ── FORMULAIRE NOUVEAU CLIENT (collapsible) ──────────────────────────────── #}
-{# <details> est un élément HTML natif qui se toggle sans JS — pratique! #}
-<details class="collapsible" id="new-client-form">
+{# ── NOUVEAU CLIENT ───────────────────────────────────────────────────────── #}
+<details class="collapsible" id="new-client-form" style="margin-top: 1rem;">
     <summary>＋ Nouveau client</summary>
     <div class="collapsible-body">
         <form method="POST" action="/clients/new">
@@ -121,10 +307,11 @@
     </div>
 </details>
 
-{# ── LISTE DES CLIENTS ────────────────────────────────────────────────────── #}
+{# ── LISTE CLIENTS ────────────────────────────────────────────────────────── #}
+<div style="font-weight: 600; font-size: 0.72rem; color: var(--muted); text-transform: uppercase;
+            letter-spacing: 0.08em; margin: 1.5rem 0 0.5rem;">Tous les clients</div>
 <div class="card">
     {% if clients %}
-        {# client-table-wrap permet le scroll horizontal sur mobile sans casser le layout #}
         <div class="client-table-wrap">
         <table class="client-table">
             <thead>
@@ -137,7 +324,6 @@
                 </tr>
             </thead>
             <tbody>
-                {# loop.index = numéro de l'itération (commence à 1 en Jinja2) #}
                 {% for client in clients %}
                 <tr onclick="window.location='/clients/{{ client.id }}'">
                     <td>
@@ -145,30 +331,23 @@
                         {% if unread_counts.get(client.id, 0) > 0 %}
                             <span class="badge-unread">{{ unread_counts[client.id] }} ✉</span>
                         {% endif %}
+                        {% if client.demo %}<span class="badge" style="font-size:0.58rem; background:rgba(200,150,62,0.15); color:var(--gold); border:1px solid rgba(200,150,62,0.3);">démo</span>{% endif %}
+                        {% if client.rnd %}<span class="badge" style="font-size:0.58rem; background:rgba(135,206,235,0.12); color:#87CEEB; border:1px solid rgba(135,206,235,0.3);">R&D</span>{% endif %}
                         {% if client.email %}
                             <div class="text-muted">{{ client.email }}</div>
                         {% endif %}
                     </td>
                     <td>{{ client.entreprise or '—' }}</td>
                     <td>{{ client.secteur or '—' }}</td>
-                    <td>
-                        <span class="badge badge-{{ client.statut }}">
-                            {{ client.statut }}
-                        </span>
-                    </td>
-                    <td class="text-muted">
-                        {# Affiche seulement la date (pas l'heure) #}
-                        {{ client.created_at[:10] if client.created_at else '—' }}
-                    </td>
+                    <td><span class="badge badge-{{ client.statut }}">{{ client.statut }}</span></td>
+                    <td class="text-muted">{{ client.created_at[:10] if client.created_at else '—' }}</td>
                 </tr>
                 {% endfor %}
             </tbody>
         </table>
         </div>
     {% else %}
-        <div class="empty-state">
-            Aucun client pour l'instant. Utilise le formulaire ci-dessus pour en ajouter un.
-        </div>
+        <div class="empty-state">Aucun client pour l'instant.</div>
     {% endif %}
 </div>
 
@@ -176,8 +355,6 @@
 
 {% block scripts %}
 <script>
-    // Si l'URL contient #new-client-form (ex: après une erreur de validation),
-    // on ouvre automatiquement le formulaire collapsible
     if (window.location.hash === '#new-client-form') {
         document.getElementById('new-client-form').open = true;
     }

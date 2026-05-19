@@ -31,10 +31,6 @@
                {% if request.path == '/dashboard' %}class="active"{% endif %}>
                 <span class="nav-bullet">◈</span> Dashboard
             </a>
-            <a href="/command-center"
-               {% if request.path == '/command-center' %}class="active"{% endif %}>
-                <span class="nav-bullet">◈</span> Command Center
-            </a>
             <a href="/leads"
                {% if request.path == '/leads' %}class="active"{% endif %}>
                 <span class="nav-bullet">◈</span> Leads
@@ -63,18 +59,18 @@
 
             <div class="sidebar-cat">Temps</div>
             <a href="/heures"
-               {% if request.path.startswith('/heures') %}class="active"{% endif %}>
+               {% if request.path == '/heures' %}class="active"{% endif %}>
                 <span class="nav-bullet">◈</span> Heures
+            </a>
+            <a href="/heures/rapports"
+               {% if request.path == '/heures/rapports' %}class="active"{% endif %}>
+                <span class="nav-bullet">◈</span> Rapports
             </a>
 
             <div class="sidebar-cat">Stratégie</div>
             <a href="/plan"
                {% if request.path == '/plan' %}class="active"{% endif %}>
-                <span class="nav-bullet">◈</span> Plan d'affaires
-            </a>
-            <a href="/roadmap"
-               {% if request.path == '/roadmap' %}class="active"{% endif %}>
-                <span class="nav-bullet">◈</span> Feuille de route
+                <span class="nav-bullet">◈</span> Vision &amp; Projets
             </a>
 
         </nav>
@@ -105,7 +101,7 @@
 
 {# ── Variables pour l'état actif du drawer ──────────────────────────────── #}
 {# On vérifie si la page courante est une page "Plus" (pas dans les onglets directs) #}
-{% set _plus_active = request.path in ['/leads','/formulaires','/tarifs','/packages','/plan','/roadmap']
+{% set _plus_active = request.path in ['/formulaires','/tarifs','/packages','/plan','/heures/rapports']
                       or request.path.startswith('/formulaires')
                       or request.path.startswith('/tarifs')
                       or request.path.startswith('/packages') %}
@@ -117,10 +113,10 @@
         <span class="pbn-icon">◈</span>
         <span class="pbn-label">Clients</span>
     </a>
-    <a href="/command-center"
-       class="pbn-item {% if request.path == '/command-center' %}active{% endif %}">
-        <span class="pbn-icon">⌖</span>
-        <span class="pbn-label">Centre</span>
+    <a href="/leads"
+       class="pbn-item {% if request.path == '/leads' %}active{% endif %}">
+        <span class="pbn-icon">👥</span>
+        <span class="pbn-label">Leads{% if leads_non_lus|default(0) > 0 %} ·{% endif %}</span>
     </a>
     <a href="/comptabilite"
        class="pbn-item {% if request.path == '/comptabilite' %}active{% endif %}">
@@ -128,7 +124,7 @@
         <span class="pbn-label">Finance</span>
     </a>
     <a href="/heures"
-       class="pbn-item {% if request.path.startswith('/heures') %}active{% endif %}">
+       class="pbn-item {% if request.path == '/heures' %}active{% endif %}">
         <span class="pbn-icon">⏱</span>
         <span class="pbn-label">Heures</span>
     </a>
@@ -146,17 +142,6 @@
 
 <div id="pbn-drawer" role="dialog" aria-label="Navigation — Plus de pages">
     <div class="pbn-drawer-handle"></div>
-
-    <div class="pbn-drawer-cat">Clients &amp; Leads</div>
-    <div class="pbn-drawer-grid pbn-drawer-grid-1">
-        <a href="/leads"
-           class="pbn-drawer-item {% if request.path == '/leads' %}active{% endif %}">
-            <span class="pbn-drawer-icon">👥</span> Leads
-            {% if leads_non_lus|default(0) > 0 %}
-            <span class="nav-badge" style="margin-left: auto;">{{ leads_non_lus }}</span>
-            {% endif %}
-        </a>
-    </div>
 
     <div class="pbn-drawer-cat">Projets</div>
     <div class="pbn-drawer-grid pbn-drawer-grid-1">
@@ -178,15 +163,19 @@
         </a>
     </div>
 
+    <div class="pbn-drawer-cat">Temps</div>
+    <div class="pbn-drawer-grid pbn-drawer-grid-1">
+        <a href="/heures/rapports"
+           class="pbn-drawer-item {% if request.path == '/heures/rapports' %}active{% endif %}">
+            <span class="pbn-drawer-icon">📈</span> Rapports d'heures
+        </a>
+    </div>
+
     <div class="pbn-drawer-cat">Stratégie</div>
-    <div class="pbn-drawer-grid pbn-drawer-grid-2">
+    <div class="pbn-drawer-grid pbn-drawer-grid-1">
         <a href="/plan"
            class="pbn-drawer-item {% if request.path == '/plan' %}active{% endif %}">
-            <span class="pbn-drawer-icon">📊</span> Plan d'affaires
-        </a>
-        <a href="/roadmap"
-           class="pbn-drawer-item {% if request.path == '/roadmap' %}active{% endif %}">
-            <span class="pbn-drawer-icon">🗺</span> Feuille de route
+            <span class="pbn-drawer-icon">📊</span> Vision &amp; Projets
         </a>
     </div>
 

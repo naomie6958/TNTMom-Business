@@ -140,21 +140,21 @@
 {% set ns_unr = namespace(n=0) %}
 {% for m in messages %}{% if not m.reponse %}{% set ns_unr.n = ns_unr.n + 1 %}{% endif %}{% endfor %}
 <div class="fiche-tabs">
-    <button class="tab-btn active" data-tab="resume"      onclick="switchTab('resume')">Résumé</button>
+    <button class="tab-btn active" data-tab="projets"     onclick="switchTab('projets')">Projets</button>
+    <button class="tab-btn"        data-tab="resume"      onclick="switchTab('resume')">Consultations</button>
+    <button class="tab-btn"        data-tab="formulaires" onclick="switchTab('formulaires')">Formulaires</button>
     <button class="tab-btn"        data-tab="messages"    onclick="switchTab('messages')">
         Messages{% if ns_unr.n > 0 %} <span class="tab-count">{{ ns_unr.n }}</span>{% endif %}
     </button>
-    <button class="tab-btn"        data-tab="projets"     onclick="switchTab('projets')">Projets</button>
     <button class="tab-btn"        data-tab="factures"    onclick="switchTab('factures')">
         Factures{% if factures %} <span class="tab-count">{{ factures | length }}</span>{% endif %}
     </button>
-    <button class="tab-btn"        data-tab="formulaires" onclick="switchTab('formulaires')">Formulaires</button>
 </div>
 
 {# ── CONTENU PRINCIPAL ───────────────────────────────────────────────────── #}
 <div class="fiche-content">
 
-<div id="tab-resume" class="tab-panel active">
+<div id="tab-resume" class="tab-panel">
 
 {# ── CONSULTATIONS ────────────────────────────────────────────── #}
         <div class="card">
@@ -275,7 +275,7 @@
 
 </div>{# /tab-resume #}
 
-<div id="tab-projets" class="tab-panel">
+<div id="tab-projets" class="tab-panel active">
 
         {# ── PROJETS ──────────────────────────────────────────────────── #}
         <div class="card">
