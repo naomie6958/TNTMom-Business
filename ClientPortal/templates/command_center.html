@@ -127,6 +127,66 @@
     </div>
 </div>
 
+{# ── KPI GAUGES ───────────────────────────────────────────────────────────── #}
+<div class="cc-kpi-grid">
+
+    {# Jauge A — Ratio efficacité #}
+    <div class="card" style="padding: 1.25rem 1.5rem;">
+        <div style="color: var(--muted); font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 1rem;">Ratio efficacité — mois en cours</div>
+        {% if ratio_data and ratio_data.min_total > 0 %}
+        {% set pct_client  = ((ratio_data.min_client  / ratio_data.min_total) * 100) | int %}
+        {% set pct_interne = ((ratio_data.min_interne / ratio_data.min_total) * 100) | int %}
+        <div style="display: flex; align-items: center; gap: 0.6rem; margin-bottom: 0.6rem;">
+            <div style="font-size: 0.71rem; color: var(--muted); min-width: 75px;">Client</div>
+            <div style="flex: 1; height: 8px; background: var(--border); border-radius: 4px; overflow: hidden;">
+                <div style="width: {{ pct_client }}%; height: 100%; background: var(--accent); border-radius: 4px;"></div>
+            </div>
+            <div style="font-family: 'DM Mono', monospace; font-size: 0.82rem; color: var(--accent); min-width: 36px; text-align: right;">{{ pct_client }}%</div>
+        </div>
+        <div style="display: flex; align-items: center; gap: 0.6rem;">
+            <div style="font-size: 0.71rem; color: var(--muted); min-width: 75px;">R&amp;D / interne</div>
+            <div style="flex: 1; height: 8px; background: var(--border); border-radius: 4px; overflow: hidden;">
+                <div style="width: {{ pct_interne }}%; height: 100%; background: #87CEEB; border-radius: 4px;"></div>
+            </div>
+            <div style="font-family: 'DM Mono', monospace; font-size: 0.82rem; color: #87CEEB; min-width: 36px; text-align: right;">{{ pct_interne }}%</div>
+        </div>
+        <div style="margin-top: 0.85rem; font-size: 0.71rem; color: var(--muted);">
+            {{ (ratio_data.min_client // 60) }}h{{ '%02d' | format(ratio_data.min_client % 60) }} client
+            &nbsp;·&nbsp;
+            {{ (ratio_data.min_interne // 60) }}h{{ '%02d' | format(ratio_data.min_interne % 60) }} interne
+        </div>
+        {% else %}
+        <div style="color: var(--muted); font-size: 0.82rem;">Aucune entrée ce mois.</div>
+        {% endif %}
+    </div>
+
+    {# Jauge B — Santé banque d'heures #}
+    <div class="card" style="padding: 1.25rem 1.5rem;">
+        <div style="color: var(--muted); font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 1rem;">Santé banque d'heures</div>
+        {% if banques_actives %}
+        {% for b in banques_actives %}
+        {% set pct_reste = ((b.minutes_restantes / b.minutes_total) * 100) | int if b.minutes_total > 0 else 0 %}
+        {% set couleur = 'var(--green, #4ade80)' if pct_reste >= 60 else ('#fbbf24' if pct_reste >= 30 else '#f87171') %}
+        <div style="margin-bottom: 0.9rem;">
+            <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 0.3rem;">
+                <div style="font-size: 0.8rem; font-weight: 600;">{{ b.client_nom }}</div>
+                <div style="font-family: 'DM Mono', monospace; font-size: 0.74rem; color: {{ couleur }};">
+                    {{ (b.minutes_restantes // 60) }}h{{ '%02d' | format(b.minutes_restantes % 60) }}
+                    <span style="color: var(--muted);">/ {{ (b.minutes_total // 60) }}h{{ '%02d' | format(b.minutes_total % 60) }}</span>
+                </div>
+            </div>
+            <div style="height: 6px; background: var(--border); border-radius: 3px; overflow: hidden;">
+                <div style="width: {{ pct_reste }}%; height: 100%; background: {{ couleur }}; border-radius: 3px;"></div>
+            </div>
+        </div>
+        {% endfor %}
+        {% else %}
+        <div style="color: var(--muted); font-size: 0.82rem;">Aucune banque d'heures active.</div>
+        {% endif %}
+    </div>
+
+</div>
+
 {% endblock %}
 
 {% block head %}
@@ -137,10 +197,12 @@
 .cc-table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
 .cc-table-wrap table { min-width: 640px; }
 .cc-heures-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 1.5rem; }
+.cc-kpi-grid    { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 1rem; }
 
 /* Mobile : table en carte par ligne */
 @media (max-width: 640px) {
     .cc-heures-grid { grid-template-columns: 1fr; }
+    .cc-kpi-grid    { grid-template-columns: 1fr; }
 
     /* On cache les en-têtes du tableau sur mobile */
     .cc-table-wrap thead { display: none; }

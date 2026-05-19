@@ -365,9 +365,28 @@ def command_center():
         WHERE date >= ? AND (heure_fin IS NOT NULL OR mode = 'manuel')
     ''', (month_start,)).fetchone()
 
+    ratio_data = conn.execute('''
+        SELECT
+            COALESCE(SUM(CASE WHEN client_id IS NOT NULL THEN duree_minutes ELSE 0 END), 0) as min_client,
+            COALESCE(SUM(CASE WHEN client_id IS NULL THEN duree_minutes ELSE 0 END), 0) as min_interne,
+            COALESCE(SUM(duree_minutes), 0) as min_total
+        FROM entrees_temps
+        WHERE date >= ? AND (heure_fin IS NOT NULL OR mode = 'manuel')
+    ''', (month_start,)).fetchone()
+
+    banques_actives = conn.execute('''
+        SELECT b.*, c.nom as client_nom,
+               (b.minutes_total - b.minutes_utilisees) as minutes_restantes
+        FROM banque_heures b
+        JOIN clients c ON c.id = b.client_id
+        WHERE b.statut = 'actif'
+        ORDER BY minutes_restantes ASC
+    ''').fetchall()
+
     conn.close()
     return render_template('command_center.html', rows=rows,
-                           heures_semaine=heures_semaine, heures_mois=heures_mois)
+                           heures_semaine=heures_semaine, heures_mois=heures_mois,
+                           ratio_data=ratio_data, banques_actives=banques_actives)
 
 
 # ─── CLIENTS ──────────────────────────────────────────────────────────────────
@@ -2420,6 +2439,16 @@ def heures_stop():
 
     conn.execute('UPDATE entrees_temps SET heure_fin=?, duree_minutes=? WHERE id=?',
                  (heure_fin, duree, entree['id']))
+    if entree['client_id'] and duree:
+        banque = conn.execute(
+            "SELECT id FROM banque_heures WHERE client_id=? AND statut='actif' ORDER BY date_achat DESC LIMIT 1",
+            (entree['client_id'],)
+        ).fetchone()
+        if banque:
+            conn.execute(
+                "UPDATE banque_heures SET minutes_utilisees = minutes_utilisees + ? WHERE id=?",
+                (duree, banque['id'])
+            )
     conn.commit()
     conn.close()
     return jsonify({'ok': True, 'duree_minutes': duree})
@@ -2469,6 +2498,17 @@ def heures_manuel():
         f.get('type_facturation', 'horaire'),
         taux,
     ))
+    client_id_val = f.get('client_id') or None
+    if client_id_val and duree:
+        banque = conn.execute(
+            "SELECT id FROM banque_heures WHERE client_id=? AND statut='actif' ORDER BY date_achat DESC LIMIT 1",
+            (client_id_val,)
+        ).fetchone()
+        if banque:
+            conn.execute(
+                "UPDATE banque_heures SET minutes_utilisees = minutes_utilisees + ? WHERE id=?",
+                (duree, banque['id'])
+            )
     conn.commit()
     conn.close()
     flash('Entrée ajoutée.', 'success')
@@ -2620,8 +2660,12 @@ def heures_rapports():
         SELECT cl.nom as client_nom, co.nom as projet_nom,
                COALESCE(SUM(e.duree_minutes), 0) as total_min,
                COALESCE(SUM(CASE WHEN e.type_facturation='horaire' AND e.taux_applique IS NOT NULL
-                    THEN (e.duree_minutes / 60.0) * e.taux_applique ELSE 0 END), 0) as montant_facturable
+                    THEN (e.duree_minutes / 60.0) * e.taux_applique ELSE 0 END), 0) as montant_facturable,
+               COALESCE(SUM(CASE WHEN cl.id IS NOT NULL
+                    THEN (e.duree_minutes / 60.0) * COALESCE(e.taux_applique, cat.taux_max, 0)
+                    ELSE 0 END), 0) as valeur_accumulee
         FROM entrees_temps e
+        JOIN categories_temps cat ON cat.id = e.categorie_id
         LEFT JOIN clients cl ON cl.id = e.client_id
         LEFT JOIN contrats co ON co.id = e.contrat_id
         WHERE e.heure_fin IS NOT NULL OR e.mode = 'manuel'

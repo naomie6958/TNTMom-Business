@@ -82,7 +82,7 @@
                 <th>Client</th>
                 <th>Projet</th>
                 <th style="text-align: center;">Heures</th>
-                <th style="text-align: right;">Facturable</th>
+                <th style="text-align: right;">Valeur</th>
             </tr>
         </thead>
         <tbody>
@@ -94,8 +94,14 @@
                 {% set h = (r.total_min or 0) // 60 %}{% set m = (r.total_min or 0) % 60 %}
                 {{ h }}h{{ '%02d' | format(m) }}
             </td>
-            <td style="text-align: right; color: var(--accent);" class="mono">
-                {{ '%.2f' | format(r.montant_facturable | float) | replace('.', ',') }} $
+            <td style="text-align: right;" class="mono">
+                {% if r.client_nom %}
+                <span style="color: var(--accent);">{{ '%.0f' | format(r.valeur_accumulee | float) }} $</span>
+                {% else %}
+                <span style="background: rgba(135,206,235,0.12); color: #87CEEB;
+                             border: 1px solid rgba(135,206,235,0.3); border-radius: 4px;
+                             padding: 0.1rem 0.45rem; font-size: 0.7rem; font-family: 'DM Mono', monospace;">R&amp;D</span>
+                {% endif %}
             </td>
         </tr>
         {% endfor %}
