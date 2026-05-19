@@ -367,11 +367,12 @@ def command_center():
 
     ratio_data = conn.execute('''
         SELECT
-            COALESCE(SUM(CASE WHEN client_id IS NOT NULL THEN duree_minutes ELSE 0 END), 0) as min_client,
-            COALESCE(SUM(CASE WHEN client_id IS NULL THEN duree_minutes ELSE 0 END), 0) as min_interne,
-            COALESCE(SUM(duree_minutes), 0) as min_total
-        FROM entrees_temps
-        WHERE date >= ? AND (heure_fin IS NOT NULL OR mode = 'manuel')
+            COALESCE(SUM(CASE WHEN e.client_id IS NOT NULL AND COALESCE(c.rnd, 0) = 0 THEN e.duree_minutes ELSE 0 END), 0) as min_client,
+            COALESCE(SUM(CASE WHEN e.client_id IS NULL OR COALESCE(c.rnd, 0) = 1 THEN e.duree_minutes ELSE 0 END), 0) as min_interne,
+            COALESCE(SUM(e.duree_minutes), 0) as min_total
+        FROM entrees_temps e
+        LEFT JOIN clients c ON c.id = e.client_id
+        WHERE e.date >= ? AND (e.heure_fin IS NOT NULL OR e.mode = 'manuel')
     ''', (month_start,)).fetchone()
 
     banques_actives = conn.execute('''
@@ -599,6 +600,18 @@ def toggle_demo(client_id):
     current = conn.execute('SELECT demo FROM clients WHERE id = ?', (client_id,)).fetchone()
     new_val = 0 if (current and current['demo']) else 1
     conn.execute('UPDATE clients SET demo = ? WHERE id = ?', (new_val, client_id))
+    conn.commit()
+    conn.close()
+    return redirect(f'/clients/{client_id}')
+
+
+@app.route('/clients/<int:client_id>/toggle-rnd', methods=['POST'])
+@login_required
+def toggle_rnd(client_id):
+    conn = get_db()
+    current = conn.execute('SELECT rnd FROM clients WHERE id = ?', (client_id,)).fetchone()
+    new_val = 0 if (current and current['rnd']) else 1
+    conn.execute('UPDATE clients SET rnd = ? WHERE id = ?', (new_val, client_id))
     conn.commit()
     conn.close()
     return redirect(f'/clients/{client_id}')
@@ -2658,10 +2671,11 @@ def heures_rapports():
 
     par_projet = conn.execute('''
         SELECT cl.nom as client_nom, co.nom as projet_nom,
+               COALESCE(cl.rnd, 0) as rnd,
                COALESCE(SUM(e.duree_minutes), 0) as total_min,
                COALESCE(SUM(CASE WHEN e.type_facturation='horaire' AND e.taux_applique IS NOT NULL
                     THEN (e.duree_minutes / 60.0) * e.taux_applique ELSE 0 END), 0) as montant_facturable,
-               COALESCE(SUM(CASE WHEN cl.id IS NOT NULL
+               COALESCE(SUM(CASE WHEN cl.id IS NOT NULL AND COALESCE(cl.rnd, 0) = 0
                     THEN (e.duree_minutes / 60.0) * COALESCE(e.taux_applique, cat.taux_max, 0)
                     ELSE 0 END), 0) as valeur_accumulee
         FROM entrees_temps e

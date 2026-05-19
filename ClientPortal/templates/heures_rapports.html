@@ -95,7 +95,7 @@
                 {{ h }}h{{ '%02d' | format(m) }}
             </td>
             <td style="text-align: right;" class="mono">
-                {% if r.client_nom %}
+                {% if r.client_nom and not r.rnd %}
                 <span style="color: var(--accent);">{{ '%.0f' | format(r.valeur_accumulee | float) }} $</span>
                 {% else %}
                 <span style="background: rgba(135,206,235,0.12); color: #87CEEB;

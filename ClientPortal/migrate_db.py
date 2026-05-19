@@ -43,6 +43,10 @@ def main():
         print("\n[consultations]")
         add_column_if_missing(cursor, "consultations", "banque_heures_id", "INTEGER")
 
+        # --- Flag R&D sur clients ---
+        print("\n[clients]")
+        add_column_if_missing(cursor, "clients", "rnd", "INTEGER NOT NULL DEFAULT 0")
+
         # --- Point 3 : Nouvelle table banque d'heures ---
         print("\n[banque_heures]")
         cursor.execute("""

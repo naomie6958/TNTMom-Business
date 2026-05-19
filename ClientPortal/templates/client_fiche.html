@@ -45,6 +45,12 @@
                     {{ '⚠ Démo' if client.demo else '⚐ Marquer démo' }}
                 </button>
             </form>
+            <form method="POST" action="/clients/{{ client.id }}/toggle-rnd">
+                <button type="submit" class="btn btn-secondary" style="font-size: 0.78rem; {% if client.rnd %}color: #87CEEB;{% endif %}"
+                        title="{% if client.rnd %}Retirer le flag R&D{% else %}Marquer comme R&D (heures comptées comme temps interne dans les indicateurs){% endif %}">
+                    {{ '⚗ R&D' if client.rnd else '⚗ Marquer R&D' }}
+                </button>
+            </form>
             {% if client.password %}
             <form method="POST" action="/admin/switch-client/{{ client.id }}">
                 <button type="submit" class="btn btn-secondary" style="font-size: 0.78rem; color: var(--accent);"
