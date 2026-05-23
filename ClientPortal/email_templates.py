@@ -287,3 +287,37 @@ def email_formulaire_naomie(nom_client, titre_formulaire):
       </table>
     """
     return _base_email_interne(f"📋 Formulaire rempli — {titre_formulaire}", contenu)
+
+
+
+def email_facture(nom_client, numero, contrat_nom, description, montant, date_emission, statut):
+    contenu = f"""
+      <p style="margin:0 0 8px;font-size:22px;font-weight:bold;color:#FF0090;">Ta facture est prête, {nom_client} 🧾</p>
+      <p style="margin:0 0 24px;color:#aaaaaa;font-size:13px;">Voici le détail de ta facture.</p>
+
+      <table width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 32px;border-collapse:collapse;font-size:14px;">
+        <tr>
+          <td style="padding:10px 14px;background-color:#1a1a1a;color:#aaaaaa;width:40%;">Projet</td>
+          <td style="padding:10px 14px;background-color:#1a1a1a;color:#ffffff;">{contrat_nom}</td>
+        </tr>
+        <tr>
+          <td style="padding:10px 14px;background-color:#222222;color:#aaaaaa;">Description</td>
+          <td style="padding:10px 14px;background-color:#222222;color:#ffffff;">{description}</td>
+        </tr>
+        <tr>
+          <td style="padding:10px 14px;background-color:#1a1a1a;color:#aaaaaa;">Montant</td>
+          <td style="padding:10px 14px;background-color:#1a1a1a;font-size:16px;font-weight:bold;color:#FF0090;">{montant}</td>
+        </tr>
+        <tr>
+          <td style="padding:10px 14px;background-color:#222222;color:#aaaaaa;">Date d'émission</td>
+          <td style="padding:10px 14px;background-color:#222222;color:#ffffff;">{date_emission or '—'}</td>
+        </tr>
+        <tr>
+          <td style="padding:10px 14px;background-color:#1a1a1a;color:#aaaaaa;">Statut</td>
+          <td style="padding:10px 14px;background-color:#1a1a1a;color:#00CED1;font-weight:bold;">{statut}</td>
+        </tr>
+      </table>
+
+      <p style="margin:0;color:#888888;font-size:12px;">Des questions ? Réponds directement à ce courriel.</p>
+    """
+    return base_email(contenu)

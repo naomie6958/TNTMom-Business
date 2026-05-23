@@ -1,26 +1,29 @@
-from flask import Flask, render_template, request, redirect, session, jsonify, flash, send_from_directory
-from database import init_db, seed_db, migrate_db, get_db
-from werkzeug.security import check_password_hash, generate_password_hash
-from werkzeug.utils import secure_filename
-from dotenv import load_dotenv
-from functools import wraps
-from email.mime.multipart import MIMEMultipart
 import datetime
 import json
+import os
+import secrets
+import smtplib
+import uuid
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
+from functools import wraps
 from zoneinfo import ZoneInfo
+
+from dotenv import load_dotenv
+from flask import Flask, render_template, request, redirect, session, jsonify, flash, send_from_directory
+from werkzeug.security import check_password_hash, generate_password_hash
+from werkzeug.utils import secure_filename
+
+from database import init_db, seed_db, migrate_db, get_db
 from email_templates import (
     email_bienvenue, email_contrat_envoye, email_milestone_livre,
     email_reponse_message, email_message_naomie, email_lead_confirmation,
     email_contrat_signe_naomie, email_milestone_approuve_naomie,
-    email_message_recu_naomie, email_lead_naomie, email_formulaire_naomie
+    email_message_recu_naomie, email_lead_naomie, email_formulaire_naomie,
+    email_facture
 )
 
 _EASTERN = ZoneInfo('America/Montreal')
-import os
-import uuid
-import secrets
-import smtplib
-from email.mime.text import MIMEText
 
 load_dotenv()
 
@@ -1840,39 +1843,23 @@ def facture_envoyer(client_id, facture_id):
 
     montant     = f"{facture['montant']:,.2f} $".replace(',', ' ')
     description = facture['milestone_titre'] or facture['description'] or '—'
-    html = f"""<!DOCTYPE html><html><body style="font-family:Arial,sans-serif;color:#222;max-width:600px;margin:0 auto;padding:2rem;">
-<h2 style="color:#111;border-bottom:2px solid #d946ef;padding-bottom:.5rem;">Facture {facture['numero'] or ''}</h2>
-<p>Bonjour {client['nom']},</p>
-<p>Veuillez trouver ci-dessous le détail de votre facture.</p>
-<table style="width:100%;border-collapse:collapse;margin:1.5rem 0;font-size:.95rem;">
-<tr style="background:#f5f5f5;"><td style="padding:.6rem;border:1px solid #ddd;font-weight:bold;">Projet</td><td style="padding:.6rem;border:1px solid #ddd;">{contrat_nom}</td></tr>
-<tr><td style="padding:.6rem;border:1px solid #ddd;font-weight:bold;">Description</td><td style="padding:.6rem;border:1px solid #ddd;">{description}</td></tr>
-<tr style="background:#f5f5f5;"><td style="padding:.6rem;border:1px solid #ddd;font-weight:bold;">Montant</td><td style="padding:.6rem;border:1px solid #ddd;font-size:1.1rem;color:#d946ef;font-weight:bold;">{montant}</td></tr>
-<tr><td style="padding:.6rem;border:1px solid #ddd;font-weight:bold;">Date d'émission</td><td style="padding:.6rem;border:1px solid #ddd;">{facture['date_emission'] or '—'}</td></tr>
-<tr style="background:#f5f5f5;"><td style="padding:.6rem;border:1px solid #ddd;font-weight:bold;">Statut</td><td style="padding:.6rem;border:1px solid #ddd;">{facture['statut']}</td></tr>
-</table>
-<p>Pour toute question, répondez à ce courriel ou écrivez à <a href="mailto:naomiemt@tntm.ca">naomiemt@tntm.ca</a>.</p>
-<p>Merci pour votre confiance !</p>
-<p style="margin-top:2rem;color:#888;font-size:.85rem;">— Naomie McMahon · <a href="https://tntm.ca" style="color:#d946ef;">tntm.ca</a></p>
-</body></html>"""
-
-    gmail_user = os.getenv('GMAIL_USER')
-    gmail_pass = os.getenv('GMAIL_APP_PASSWORD')
-    if not gmail_user or not gmail_pass:
-        return jsonify({'error': 'SMTP non configuré'}), 500
-    try:
-        msg = MIMEText(html, 'html', 'utf-8')
-        msg['Subject'] = f'Facture {facture["numero"] or ""} – {contrat_nom}'
-        msg['From']    = f'Naomie McMahon <{gmail_user}>'
-        msg['To']      = client['email']
-        msg['Reply-To'] = 'naomiemt@tntm.ca'
-        with smtplib.SMTP('smtp.gmail.com', 587) as server:
-            server.starttls()
-            server.login(gmail_user, gmail_pass)
-            server.send_message(msg)
-        return jsonify({'ok': True})
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
+    ok = send_notification_email(
+        f'Facture {facture["numero"] or ""} – {contrat_nom}',
+        f'Bonjour {client["nom"]},\n\nTa facture de {montant} pour le projet "{contrat_nom}" est disponible.',
+        to=client['email'],
+        html=email_facture(
+            client['nom'],
+            facture['numero'] or '',
+            contrat_nom,
+            description,
+            montant,
+            facture['date_emission'],
+            facture['statut']
+        )
+    )
+    if not ok:
+        return jsonify({'error': 'Erreur SMTP'}), 500
+    return jsonify({'ok': True})
 
 
 @app.route('/clients/<int:client_id>/factures/<int:facture_id>/print')
