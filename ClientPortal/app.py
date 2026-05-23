@@ -4,9 +4,16 @@ from werkzeug.security import check_password_hash, generate_password_hash
 from werkzeug.utils import secure_filename
 from dotenv import load_dotenv
 from functools import wraps
+from email.mime.multipart import MIMEMultipart
 import datetime
 import json
 from zoneinfo import ZoneInfo
+from email_templates import (
+    email_bienvenue, email_contrat_envoye, email_milestone_livre,
+    email_reponse_message, email_message_naomie, email_lead_confirmation,
+    email_contrat_signe_naomie, email_milestone_approuve_naomie,
+    email_message_recu_naomie, email_lead_naomie, email_formulaire_naomie
+)
 
 _EASTERN = ZoneInfo('America/Montreal')
 import os
@@ -20,17 +27,24 @@ load_dotenv()
 app = Flask(__name__)
 
 
-def send_notification_email(subject, body, to=None):
+def send_notification_email(subject, body, to=None, html=None):
     """Envoie un courriel via Gmail SMTP. Retourne True si envoyé, False sinon."""
     gmail_user = os.getenv('GMAIL_USER')
     gmail_pass = os.getenv('GMAIL_APP_PASSWORD')
     if not gmail_user or not gmail_pass:
         return False
     try:
-        msg = MIMEText(body, 'plain', 'utf-8')
+        if html:
+            # courriel multipart : version texte + version HTML
+            msg = MIMEMultipart('alternative')
+            msg.attach(MIMEText(body, 'plain', 'utf-8'))
+            msg.attach(MIMEText(html, 'html', 'utf-8'))
+        else:
+            msg = MIMEText(body, 'plain', 'utf-8')
         msg['Subject'] = subject
-        msg['From']    = gmail_user
+        msg['From']    = f'Naomie | TNTMom <{gmail_user}>'
         msg['To']      = to or 'naomiemt@tntm.ca'
+        msg['Reply-To'] = 'naomiemt@tntm.ca'
         with smtplib.SMTP('smtp.gmail.com', 587) as server:
             server.starttls()
             server.login(gmail_user, gmail_pass)
@@ -969,13 +983,9 @@ def contrat_envoyer_email(client_id, contrat_id):
     nom_projet = contrat['nom'] or 'ton projet'
     ok = send_notification_email(
         f'[TNTMom] Ton contrat est prêt à signer — {nom_projet}',
-        f'Bonjour {client["nom"]},\n\n'
-        f'Naomie a préparé un contrat pour toi :\n\n'
-        f'  ✍ {nom_projet}\n\n'
-        f'Connecte-toi à ton portail pour le lire et le signer :\n'
-        f'https://tntmom.pythonanywhere.com/portail/login\n\n'
-        f'— Naomie (TNTMom)',
-        to=client['email']
+        f'Bonjour {client["nom"]},\n\nTon contrat "{nom_projet}" est prêt. Connecte-toi pour le signer.',
+        to=client['email'],
+        html=email_contrat_envoye(client['nom'], nom_projet)
     )
     if ok:
         flash(f'Email envoyé à {client["email"]}.', 'success')
@@ -1105,13 +1115,9 @@ def toggle_milestone(client_id, contrat_id, index):
             if client_notif and client_notif['email']:
                 send_notification_email(
                     f'[TNTMom] Ton livrable est prêt — {titre}',
-                    f'Bonjour {client_notif["nom"]},\n\n'
-                    f'Naomie vient de marquer ton livrable comme prêt :\n\n'
-                    f'  \U0001f4e6 {titre}\n\n'
-                    f'Connecte-toi à ton portail pour le consulter et l\'approuver :\n'
-                    f'https://tntmom.pythonanywhere.com/portail/dashboard\n\n'
-                    f'— Naomie (TNTMom)',
-                    to=client_notif['email']
+                    f'Bonjour {client_notif["nom"]},\n\nTon livrable "{titre}" est prêt. Connecte-toi pour le consulter.',
+                    to=client_notif['email'],
+                    html=email_milestone_livre(client_notif['nom'], titre)
                 )
 
     conn.execute(
@@ -1243,17 +1249,14 @@ def set_client_password(client_id):
     client_notif = conn.execute('SELECT nom, email FROM clients WHERE id = ?', (client_id,)).fetchone()
     conn.close()
     if client_notif and client_notif['email']:
+        lien_portail = 'https://tntmom.pythonanywhere.com/portail/login'
         send_notification_email(
             '[TNTMom] Ton accès au portail client est prêt ✨',
-            f'Bonjour {client_notif["nom"]},\n\n'
-            f'Naomie vient de configurer ton accès au portail client.\n\n'
-            f'Connecte-toi ici :\nhttps://tntmom.pythonanywhere.com/portail/login\n\n'
-            f'Ton courriel : {client_notif["email"]}\n'
-            f'Mot de passe : celui que Naomie t\'a communiqué\n\n'
-            f'Pour toute question, écris à naomiemt@tntm.ca\n\n'
-            f'— Naomie (TNTMom)',
-            to=client_notif['email']
+            f'Bonjour {client_notif["nom"]},\n\nTon portail est prêt. Connecte-toi ici : {lien_portail}',
+            to=client_notif['email'],
+            html=email_bienvenue(client_notif['nom'], lien_portail)
         )
+
     flash('Mot de passe mis à jour.', 'success')
     return redirect(f'/clients/{client_id}')
 
@@ -1542,10 +1545,42 @@ def repondre_message(client_id, message_id):
             sujet = msg_row['sujet'] if msg_row and msg_row['sujet'] else 'ton message'
             send_notification_email(
                 f'[TNTMom] Naomie t\'a répondu — {sujet}',
-                f'Bonjour {client_notif["nom"]},\n\nNaomie vient de répondre à ton message « {sujet} ».\n\nConnecte-toi à ton portail pour lire la réponse :\nhttps://tntmom.pythonanywhere.com/portail/login\n\n— Naomie (TNTMom)',
-                to=client_notif['email']
+                f'Bonjour {client_notif["nom"]},\n\nNaomie vient de répondre à ton message « {sujet} ».',
+                to=client_notif['email'],
+                html=email_reponse_message(client_notif['nom'], sujet)
             )
         flash('Réponse envoyée.', 'success')
+    return redirect(f'/clients/{client_id}')
+
+@app.route('/clients/<int:client_id>/messages/admin', methods=['POST'])
+@login_required
+def admin_message_nouveau(client_id):
+    sujet   = request.form.get('sujet', '').strip()
+    message = request.form.get('message', '').strip()
+    if not sujet or not message:
+        flash('Sujet et message requis.', 'error')
+        return redirect(f'/clients/{client_id}')
+
+    conn = get_db()
+    conn.execute(
+        '''INSERT INTO messages_client (client_id, sujet, message, reponse, repondu_at)
+           VALUES (?, ?, ?, ?, datetime('now'))''',
+        (client_id, sujet, '[Message initié par admin]', message)
+    )
+    conn.commit()
+
+    client = conn.execute('SELECT nom, email FROM clients WHERE id = ?', (client_id,)).fetchone()
+    conn.close()
+
+    if client and client['email']:
+        send_notification_email(
+            f'[TNTMom] Nouveau message de Naomie — {sujet}',
+            f'Bonjour {client["nom"]},\n\nNaomie t\'a envoyé un message : « {sujet} ».',
+            to=client['email'],
+            html=email_message_naomie(client['nom'], sujet)
+        )
+
+    flash('Message envoyé au client.', 'success')
     return redirect(f'/clients/{client_id}')
 
 
@@ -1587,7 +1622,8 @@ def portail_signer(contrat_id):
         nom_projet = contrat['nom'] or 'Projet sans titre'
         send_notification_email(
             f'[ClientPortal] ✍ Contrat signé — {nom_projet}',
-            f'{client_notif["nom"] if client_notif else "Ton client"} vient de signer le contrat « {nom_projet} ».\n\nConnecte-toi pour voir les détails.'
+            f'{client_notif["nom"] if client_notif else "Ton client"} vient de signer le contrat « {nom_projet} ».',
+            html=email_contrat_signe_naomie(client_notif['nom'] if client_notif else 'Client', nom_projet)
         )
         flash('Contrat signé. Merci !', 'success')
     conn.close()
@@ -1620,7 +1656,8 @@ def portail_approuver_milestone(contrat_id, index):
             client_notif = conn.execute('SELECT nom FROM clients WHERE id = ?', (session['client_id'],)).fetchone()
             send_notification_email(
                 f'[ClientPortal] ✅ Milestone approuvé — {titre}',
-                f'{client_notif["nom"] if client_notif else "Ton client"} vient d\'approuver : « {titre} ».\n\nTu peux maintenant marquer la facture comme payée.'
+                f'{client_notif["nom"] if client_notif else "Ton client"} vient d\'approuver : « {titre} ».',
+                html=email_milestone_approuve_naomie(client_notif['nom'] if client_notif else 'Client', titre)
             )
             flash(f'✅ « {titre} » approuvé. Merci !', 'success')
 
@@ -1684,7 +1721,8 @@ def portail_contact():
         conn.close()
         send_notification_email(
             f'[ClientPortal] Nouveau message de {session["client_nom"]}',
-            f'Client : {session["client_nom"]}\nSujet : {sujet or "(aucun)"}\n\n{message}'
+            f'Client : {session["client_nom"]}\nSujet : {sujet or "(aucun)"}\n\n{message}',
+            html=email_message_recu_naomie(session['client_nom'], sujet, message)
         )
         flash('Message envoyé. Naomie te reviendra sous peu !', 'success')
         return redirect('/portail/contact')
@@ -1918,15 +1956,17 @@ def api_public_contact():
     # Courriel à Naomie — notification interne
     send_notification_email(
         f'[TNTMom] Nouveau message de {nom}',
-        f'Nom : {nom}\nCourriel : {email or "(non fourni)"}\n\n{message}'
+        f'Nom : {nom}\nCourriel : {email or "(non fourni)"}\n\n{message}',
+        html=email_lead_naomie(nom, email, message)
     )
 
     # Courriel automatique au client — seulement si un email a été fourni
     if email:
         send_notification_email(
             'Merci pour ton message — TNTMom',
-            f'Bonjour {nom},\n\nMerci pour ton message ! Je l\'ai bien reçu et je te répondrai dans les 24-48h.\n\nÀ très bientôt,\nNaomie — TNTMom\ntntm.ca',
-            to=email
+            f'Bonjour {nom},\n\nMerci pour ton message ! Je l\'ai bien reçu et je te répondrai dans les 24-48h.',
+            to=email,
+            html=email_lead_confirmation(nom)
         )
 
     resp = jsonify({'ok': True})
@@ -2227,7 +2267,8 @@ def portail_formulaire_submit(fid):
         if client and formulaire:
             send_notification_email(
                 f'[ClientPortal] Formulaire rempli par {client["nom"]}',
-                f'{client["nom"]} a rempli le formulaire : {formulaire["titre"]}'
+                f'{client["nom"]} a rempli le formulaire : {formulaire["titre"]}',
+                html=email_formulaire_naomie(client['nom'], formulaire['titre'])
             )
     conn.close()
     flash('Formulaire envoyé, merci !', 'success')
