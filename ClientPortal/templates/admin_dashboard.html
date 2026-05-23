@@ -13,6 +13,8 @@
 /* ── KPI grid ────────────────────────────────────────────────────────────── */
 .dash-kpi-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 1rem; }
 
+
+
 /* ── Mobile ─────────────────────────────────────────────────────────────── */
 @media (max-width: 640px) {
     .dash-kpi-grid { grid-template-columns: 1fr; }
@@ -43,6 +45,7 @@
 </div>
 
 {# ── STATS ────────────────────────────────────────────────────────────────── #}
+<div class="dash-section"><span class="dash-section-label">Vue globale</span></div>
 <div class="stats-bar">
     <div class="stat-card">
         <div class="stat-value">{{ stats.total }}</div>
@@ -64,8 +67,7 @@
 
 {# ── PROJETS ACTIFS ───────────────────────────────────────────────────────── #}
 {% if rows %}
-<div style="font-weight: 600; font-size: 0.72rem; color: var(--muted); text-transform: uppercase;
-            letter-spacing: 0.08em; margin: 1.5rem 0 0.5rem;">Projets actifs</div>
+<div class="dash-section"><span class="dash-section-label">Projets actifs</span></div>
 <div class="card cc-table-wrap" style="padding: 0; overflow: hidden;">
     <table style="width: 100%; border-collapse: collapse; font-size: 0.84rem;">
         <thead>
@@ -138,6 +140,7 @@
 {% endif %}
 
 {# ── KPI GRID ─────────────────────────────────────────────────────────────── #}
+<div class="dash-section"><span class="dash-section-label">Temps & ressources</span></div>
 <div class="dash-kpi-grid">
 
     {# Heures cette semaine #}
@@ -221,6 +224,7 @@
 
 {# ── ALERTES ──────────────────────────────────────────────────────────────── #}
 {% if messages_nonlus or factures_attente %}
+<div class="dash-section"><span class="dash-section-label">Alertes</span></div>
 <div class="cmd-center" style="margin-top: 1rem;">
 
     <div class="cmd-section">
@@ -272,7 +276,8 @@
 </div>
 {% endif %}
 
-{# ── NOUVEAU CLIENT ───────────────────────────────────────────────────────── #}
+{# ── CLIENTS ──────────────────────────────────────────────────────────────── #}
+<div class="dash-section"><span class="dash-section-label">Clients</span></div>
 <details class="collapsible" id="new-client-form" style="margin-top: 1rem;">
     <summary>＋ Nouveau client</summary>
     <div class="collapsible-body">
@@ -308,8 +313,6 @@
 </details>
 
 {# ── LISTE CLIENTS ────────────────────────────────────────────────────────── #}
-<div style="font-weight: 600; font-size: 0.72rem; color: var(--muted); text-transform: uppercase;
-            letter-spacing: 0.08em; margin: 1.5rem 0 0.5rem;">Tous les clients</div>
 <div class="card">
     {% if clients %}
         <div class="client-table-wrap">

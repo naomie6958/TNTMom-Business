@@ -437,65 +437,11 @@
                 </div>
             {% endif %}
         </div>
-
-
-        {# ── FICHIERS PARTAGÉS ────────────────────────────────────────── #}
-        <div class="card">
-            <div class="section-header">
-                <div class="section-title">Fichiers partagés</div>
-            </div>
-
-            {# enctype="multipart/form-data" est obligatoire pour les uploads de fichiers #}
-            <form method="POST" action="/clients/{{ client.id }}/fichiers/upload"
-                  enctype="multipart/form-data" style="margin-bottom: 0.8rem;">
-                <div class="fiche-upload-form" style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
-                    <input type="file" name="fichier" required
-                           style="font-size: 0.82rem; flex: 1; min-width: 0;
-                                  background: var(--surface2); border: 1px solid var(--border);
-                                  border-radius: var(--radius); padding: 0.4rem 0.6rem; color: var(--text);">
-                    <button type="submit" class="btn btn-primary" style="white-space: nowrap;">
-                        ↑ Uploader
-                    </button>
-                </div>
-            </form>
-
-            {% if fichiers %}
-                {% for f in fichiers %}
-                <div class="fiche-file-row">
-                    <div>
-                        <div>{{ f.nom_original }}</div>
-                        <div class="text-muted" style="font-size: 0.75rem;">
-                            {# Affiche la taille en MB, KB ou B selon la taille #}
-                            {% if f.taille > 1048576 %}{{ (f.taille / 1048576) | round(1) }} MB
-                            {% elif f.taille > 1024 %}{{ (f.taille / 1024) | int }} KB
-                            {% else %}{{ f.taille }} B{% endif %}
-                            · {{ f.uploaded_at[:10] }}
-                        </div>
-                    </div>
-                    <div style="display: flex; gap: 0.4rem; align-items: center;">
-                        <a href="/clients/{{ client.id }}/fichiers/{{ f.id }}/download"
-                           class="btn btn-secondary" style="font-size: 0.78rem;">↓</a>
-                        <form id="delete-fichier-{{ f.id }}" method="POST"
-                              action="/clients/{{ client.id }}/fichiers/{{ f.id }}/delete">
-                            <button type="button" class="btn btn-ghost"
-                                    style="font-size: 0.75rem; color: var(--red);"
-                                    onclick="openDeleteModal('delete-fichier-{{ f.id }}',
-                                             'Supprimer &quot;{{ f.nom_original }}&quot; ?')">
-                                ✕
-                            </button>
-                        </form>
-                    </div>
-                </div>
-                {% endfor %}
-            {% else %}
-                <div class="empty-state">Aucun fichier partagé.</div>
-            {% endif %}
-        </div>
-
 </div>{# /tab-projets #}
 
 <div id="tab-messages" class="tab-panel">
 
+    
         {# ── MESSAGES CLIENT ──────────────────────────────────────────── #}
         {% if msg_threads %}
         <div class="card">
@@ -549,7 +495,7 @@
                     {% endif %}
                     {% endfor %}
 
-                    {% if not last.reponse %}
+        
                     <details class="collapsible" style="margin-top: 0.5rem;">
                         <summary style="font-size: 0.75rem;">↩ Répondre</summary>
                         <div class="collapsible-body">
@@ -563,15 +509,87 @@
                             </form>
                         </div>
                     </details>
-                    {% endif %}
+                    
 
                 </div>
             </details>
             {% endfor %}
         </div>
+
         {% else %}
         <div class="card"><div class="empty-state">Aucun message pour ce client.</div></div>
         {% endif %}
+
+        {# ── NOUVEAU MESSAGE ADMIN ───────────────────────────────────── #}
+        <div class="card" style="margin-top: 1rem;">
+            <div class="section-header">
+                <div class="section-title">Envoyer un message</div>
+            </div>
+            <form method="POST" action="/clients/{{ client.id }}/messages/admin">
+                <div class="form-group" style="margin-bottom: 0.5rem;">
+                    <input type="text" name="sujet" placeholder="Sujet…" required
+                           style="width: 100%; font-size: 0.85rem;">
+                </div>
+                <div class="form-group" style="margin-bottom: 0.5rem;">
+                    <textarea name="message" rows="3" placeholder="Ton message au client…" required
+                              style="width: 100%; font-size: 0.85rem;"></textarea>
+                </div>
+                <button type="submit" class="btn btn-primary" style="font-size: 0.8rem;">
+                    Envoyer au client →
+                </button>
+            </form>
+        </div>
+
+        {# ── FICHIERS PARTAGÉS ────────────────────────────────────────── #}
+        <div class="card" style="margin-top: 1rem;">
+            <div class="section-header">
+                <div class="section-title">Fichiers partagés</div>
+            </div>
+
+            <form method="POST" action="/clients/{{ client.id }}/fichiers/upload"
+                  enctype="multipart/form-data" style="margin-bottom: 0.8rem;">
+                <div class="fiche-upload-form" style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
+                    <input type="file" name="fichier" required
+                           style="font-size: 0.82rem; flex: 1; min-width: 0;
+                                  background: var(--surface2); border: 1px solid var(--border);
+                                  border-radius: var(--radius); padding: 0.4rem 0.6rem; color: var(--text);">
+                    <button type="submit" class="btn btn-primary" style="white-space: nowrap;">
+                        ↑ Uploader
+                    </button>
+                </div>
+            </form>
+
+            {% if fichiers %}
+                {% for f in fichiers %}
+                <div class="fiche-file-row">
+                    <div>
+                        <div>{{ f.nom_original }}</div>
+                        <div class="text-muted" style="font-size: 0.75rem;">
+                            {% if f.taille > 1048576 %}{{ (f.taille / 1048576) | round(1) }} MB
+                            {% elif f.taille > 1024 %}{{ (f.taille / 1024) | int }} KB
+                            {% else %}{{ f.taille }} B{% endif %}
+                            · {{ f.uploaded_at[:10] }}
+                        </div>
+                    </div>
+                    <div style="display: flex; gap: 0.4rem; align-items: center;">
+                        <a href="/clients/{{ client.id }}/fichiers/{{ f.id }}/download"
+                           class="btn btn-secondary" style="font-size: 0.78rem;">↓</a>
+                        <form id="delete-fichier-{{ f.id }}" method="POST"
+                              action="/clients/{{ client.id }}/fichiers/{{ f.id }}/delete">
+                            <button type="button" class="btn btn-ghost"
+                                    style="font-size: 0.75rem; color: var(--red);"
+                                    onclick="openDeleteModal('delete-fichier-{{ f.id }}',
+                                             'Supprimer &quot;{{ f.nom_original }}&quot; ?')">
+                                ✕
+                            </button>
+                        </form>
+                    </div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="empty-state">Aucun fichier partagé.</div>
+            {% endif %}
+        </div>
 
 </div>{# /tab-messages #}
 
@@ -872,6 +890,6 @@
         localStorage.setItem('fiche-tab-{{ client.id }}', name);
     }
     const _savedTab = localStorage.getItem('fiche-tab-{{ client.id }}');
-    if (_savedTab) switchTab(_savedTab);
+    switchTab(_savedTab || 'projets');
 </script>
 {% endblock %}
