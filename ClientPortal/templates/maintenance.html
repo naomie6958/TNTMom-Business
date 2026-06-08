@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Amélioration en cours — TNTMom</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="icon" href="{{ url_for('static', filename='images/favicon.svg') }}" type="image/svg+xml">
+    <style>
+        @keyframes pulse-bar {
+            0%, 100% { opacity: 1; transform: scaleX(1); }
+            50% { opacity: 0.5; transform: scaleX(1.5); }
+        }
+    </style>
+</head>
+<body>
+<div class="login-page">
+    <div class="login-card" style="text-align: center; padding: 3rem 2rem;">
+        <div class="login-logo" style="margin-bottom: 1.5rem;">
+            <span class="gold-title">TNT</span><span class="gold-title gold-mom">Mom</span>
+        </div>
+        <h1 style="font-size: 1.4rem; margin-bottom: 1rem; color: var(--text);">Amélioration en cours 🚀</h1>
+        <p style="color: var(--muted); font-size: 0.85rem; line-height: 1.6; margin-bottom: 2rem;">Le portail client est momentanément indisponible pendant que je migre vers de nouveaux serveurs ultra-rapides.<br><br>Tout sera de retour en ligne très bientôt !</p>
+        <div style="width: 40px; height: 4px; background: var(--accent); border-radius: 2px; margin: 0 auto; animation: pulse-bar 1.5s infinite;"></div>
+    </div>
+</div>
+</body>
+</html>

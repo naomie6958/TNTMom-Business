@@ -10,8 +10,16 @@ load_dotenv()
 
 # SQLite = base de données dans un seul fichier .db, pas de serveur séparé.
 # Parfait pour une app mono-utilisateur ou petit trafic.
-DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'portal.db')
 
+# --- CONFIGURATION DU CHEMIN DE LA BASE DE DONNÉES ---
+RAILWAY_DIR = os.getenv('RAILWAY_VOLUME_MOUNT_PATH')
+
+if RAILWAY_DIR:
+    # En production sur Railway, on stocke la DB sur le disque persistant (Volume)
+    DB_PATH = os.path.join(RAILWAY_DIR, 'portal.db')
+else:
+    # En local sur l'ordinateur de Naomie, on garde le comportement habituel
+    DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'portal.db')
 
 def get_db():
     conn = sqlite3.connect(DB_PATH)
@@ -45,6 +53,7 @@ def init_db():
             statut     TEXT DEFAULT 'prospect',
             -- statuts possibles : prospect / actif / complété / archivé
             token      TEXT UNIQUE,  -- UUID pour le lien questionnaire public /q/<token>
+            deleted    INTEGER DEFAULT 0,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         );
 
@@ -130,6 +139,7 @@ def init_db():
             statut          TEXT DEFAULT 'envoyée',
             date_emission   TEXT NOT NULL,
             date_paiement   TEXT,
+            deleted         INTEGER DEFAULT 0,
             FOREIGN KEY(client_id) REFERENCES clients(id) ON DELETE CASCADE
         );
 
@@ -201,6 +211,14 @@ def migrate_db():
         conn.commit()
 
     try:
+        # Ajout du rôle pour différencier l'admin principal (Naomie) du staff (Bill)
+        # Par défaut, on met 'admin' pour que ton compte principal fonctionne tout de suite.
+        conn.execute("ALTER TABLE users ADD COLUMN role TEXT DEFAULT 'admin'")
+        conn.commit()
+    except Exception:
+        pass
+
+    try:
         conn.execute("ALTER TABLE messages_client ADD COLUMN reponse TEXT")
         conn.commit()
     except Exception:
@@ -262,6 +280,12 @@ def migrate_db():
         pass
 
     try:
+        conn.execute("ALTER TABLE clients ADD COLUMN deleted INTEGER DEFAULT 0")
+        conn.commit()
+    except Exception:
+        pass
+
+    try:
         conn.execute('''CREATE TABLE IF NOT EXISTS tarifs (
             id         INTEGER PRIMARY KEY AUTOINCREMENT,
             titre      TEXT NOT NULL,
@@ -290,6 +314,7 @@ def migrate_db():
             statut          TEXT DEFAULT 'envoyée',
             date_emission   TEXT NOT NULL,
             date_paiement   TEXT,
+            deleted         INTEGER DEFAULT 0,
             FOREIGN KEY(client_id) REFERENCES clients(id) ON DELETE CASCADE
         );
 
@@ -433,6 +458,13 @@ def migrate_db():
         conn.commit()
     except Exception:
         pass  # Colonne déjà présente
+
+    # Ajout de la colonne deleted pour le soft-delete des factures
+    try:
+        conn.execute("ALTER TABLE factures ADD COLUMN deleted INTEGER DEFAULT 0")
+        conn.commit()
+    except Exception:
+        pass
 
     # Table des dépenses d'entreprise (abonnements, outils, domaines, etc.)
     # Permet de calculer le revenu net et la provision fiscale réelle.

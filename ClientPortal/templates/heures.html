@@ -1,66 +1,92 @@
 {% extends "base.html" %}
-
 {% block title %}Heures{% endblock %}
 
 {% block head %}
 <style>
-.timer-display {
-    font-family: 'DM Mono', monospace;
-    font-size: 2.8rem;
-    color: var(--accent);
-    letter-spacing: 0.06em;
-}
-@keyframes timer-pulse {
-    0%, 100% { opacity: 1; }
-    50%       { opacity: 0.6; }
-}
-.timer-running { animation: timer-pulse 1.5s infinite; }
-
-.heures-stats {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 1rem;
-    margin-bottom: 1.5rem;
-}
-.cat-dot {
-    display: inline-block;
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    margin-right: 0.4rem;
-    vertical-align: middle;
-}
-.entrees-table { width: 100%; border-collapse: collapse; font-size: 0.83rem; }
-.entrees-table th {
-    padding: 0.6rem 0.75rem;
+/* ── Table ────────────────────────────────────────────────────────────────── */
+.punch-table { width: 100%; border-collapse: collapse; font-size: 0.81rem; }
+.punch-table th {
+    padding: 0.5rem 0.65rem;
     text-align: left;
     color: var(--muted);
-    font-size: 0.7rem;
+    font-size: 0.67rem;
     text-transform: uppercase;
-    letter-spacing: 0.06em;
+    letter-spacing: 0.07em;
     border-bottom: 1px solid var(--border);
+    background: rgba(255,255,255,0.02);
+    white-space: nowrap;
 }
-.entrees-table td { padding: 0.65rem 0.75rem; border-bottom: 1px solid var(--border); vertical-align: middle; }
-.entrees-table tr:last-child td { border-bottom: none; }
-.badge-horaire  { background: rgba(217,79,189,0.15); color: var(--accent); font-size: 0.68rem; padding: 0.15rem 0.45rem; border-radius: 3px; }
-.badge-package  { background: rgba(135,206,235,0.15); color: #87CEEB; font-size: 0.68rem; padding: 0.15rem 0.45rem; border-radius: 3px; }
-.badge-gratuit  { background: rgba(255,255,255,0.06); color: var(--muted); font-size: 0.68rem; padding: 0.15rem 0.45rem; border-radius: 3px; }
-.collapsible-toggle { cursor: pointer; user-select: none; display: flex; align-items: center; justify-content: space-between; }
-.collapsible-toggle:hover .toggle-label { color: var(--accent); }
-.form-row { display: grid; gap: 0.75rem; margin-bottom: 0.75rem; }
-.form-row-2 { grid-template-columns: 1fr 1fr; }
-.form-row-3 { grid-template-columns: 1fr 1fr 1fr; }
-.form-row-4 { grid-template-columns: 2fr 1fr 1fr 1fr; }
-@media (max-width: 640px) {
-    .heures-stats { grid-template-columns: 1fr; }
-    .form-row-2, .form-row-3, .form-row-4 { grid-template-columns: 1fr; }
-    .entrees-table .hide-mobile { display: none; }
+.punch-table td {
+    padding: 0.5rem 0.65rem;
+    border-bottom: 1px solid var(--border);
+    vertical-align: middle;
 }
-.field-label { font-size: 0.72rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; display: block; margin-bottom: 0.3rem; }
+.punch-table tbody tr:last-child td { border-bottom: none; }
+
+/* ── Filtre ───────────────────────────────────────────────────────────────── */
+.filter-row th { padding: 0.35rem 0.5rem; background: rgba(255,255,255,0.015); }
+.fi {
+    width: 100%;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    color: var(--text);
+    padding: 0.5rem 0.75rem; /* Plus aéré ! */
+    font-size: 0.8rem;
+    font-family: inherit;
+    box-sizing: border-box;
+}
+.fi:focus { outline: none; border-color: var(--accent); }
+select.fi { padding-right: 2rem; text-overflow: ellipsis; } /* Empêche de passer sous la flèche */
+
+/* ── Nouvelle entrée ──────────────────────────────────────────────────────── */
+.new-row td { background: rgba(255,255,255,0.025); border-bottom: 2px solid var(--border); }
+.ci {
+    width: 100%;
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: 4px;
+    color: var(--text);
+    padding: 0.45rem 0.65rem; /* Plus aéré ! */
+    font-size: 0.81rem;
+    font-family: inherit;
+    box-sizing: border-box;
+    transition: border-color 0.15s, background 0.15s;
+}
+.ci:focus { outline: none; border-color: var(--accent); background: rgba(255,255,255,0.04); }
+select.ci { cursor: pointer; padding-right: 2rem; text-overflow: ellipsis; } /* Idem ici */
+.ci::placeholder { color: var(--muted); }
+
+/* ── Punch actif ──────────────────────────────────────────────────────────── */
+.active-row td { background: rgba(217,79,189,0.06); }
+.active-row { border-left: 3px solid var(--accent); }
+@keyframes pulse-dot { 0%,100%{opacity:1} 50%{opacity:0.4} }
+.live-dot { display:inline-block; width:6px; height:6px; border-radius:50%;
+            background:var(--accent); animation:pulse-dot 1.5s infinite; margin-right:0.35rem; vertical-align:middle; }
+
+/* ── Badges ───────────────────────────────────────────────────────────────── */
+.badge { font-size: 0.64rem; padding: 0.12rem 0.42rem; border-radius: 3px; white-space: nowrap; }
+.badge-horaire  { background: rgba(217,79,189,0.15); color: var(--accent); }
+.badge-package  { background: rgba(0,206,209,0.15); color: #00CED1; }
+.badge-gratuit  { background: rgba(255,255,255,0.06); color: var(--muted); }
+
+/* ── Misc ─────────────────────────────────────────────────────────────────── */
+.cat-dot { display:inline-block; width:7px; height:7px; border-radius:50%; margin-right:0.3rem; vertical-align:middle; }
+.mono { font-family:'DM Mono',monospace; }
+.heures-stats { display:grid; grid-template-columns:1fr 1fr; gap:1rem; margin-bottom:1.5rem; align-items: stretch; }
+.heures-stats .card { margin-top: 0; display: flex; flex-direction: column; justify-content: center; height: 100%; } /* Annule la marge forcée ! */
+.filtered-out { display:none !important; }
+
+/* Animation carte survol */
+.entry-card { margin-top: 0; transition: border-color 0.2s, background 0.2s; } /* Annule la marge forcée aussi ici ! */
+.entry-card:hover { border-color: rgba(217,79,189,0.3); background: rgba(255,255,255,0.02); }
+
+/* ── Responsive ───────────────────────────────────────────────────────────── */
+@media (max-width: 600px) { .heures-stats { grid-template-columns: 1fr; } }
 </style>
 {% endblock %}
 
-{% set TAUX_FIXES = {
+{% set TAUX = {
     'Développement & Architecture': 80,
     'Design UI/UX & Conception': 65,
     'Intégration & Maintenance': 55,
@@ -70,427 +96,303 @@
 {% block content %}
 <div class="page-header">
     <div>
-        <h1 class="page-title">Mon <span class="client-nom" style="font-size:inherit; display:inline-block;">punch d'heures</span></h1>
-        <div class="page-sub">Timer live, saisie manuelle, suivi par projet.</div>
+        <h1 class="page-title">Punch <span class="client-nom" style="font-size:inherit;display:inline-block;">d'heures</span></h1>
+        <div class="page-sub">Punch in/out • Saisie manuelle • Suivi par projet</div>
     </div>
     <a href="/heures/rapports" class="btn btn-secondary">Rapports →</a>
 </div>
 
 {# ── STATS ─────────────────────────────────────────────────────────────────── #}
 <div class="heures-stats">
-    <div class="card" style="padding: 1.25rem 1.5rem;">
-        <div class="field-label">Cette semaine</div>
-        <div style="font-size: 1.7rem; font-weight: 700; font-family: 'DM Mono', monospace;">
-            {{ (stats_semaine.total_min or 0) // 60 }}h{{ '%02d' | format((stats_semaine.total_min or 0) % 60) }}
+    <div class="card" style="padding:1.25rem 1.5rem;">
+        <div style="font-size:0.67rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:0.4rem;">Cette semaine</div>
+        <div style="font-size:1.7rem;font-weight:700;" class="mono">
+            {{ (stats_semaine.total_min or 0) // 60 }}h{{ '%02d'|format((stats_semaine.total_min or 0) % 60) }}
         </div>
-        <div style="color: var(--accent); font-size: 0.85rem; margin-top: 0.25rem;">
-            ${{ '%.0f' | format(stats_semaine.montant or 0) }} facturable
+        <div style="color:var(--accent);font-size:0.85rem;margin-top:0.25rem;">
+            ${{ '%.0f'|format(stats_semaine.montant or 0) }} facturable
         </div>
     </div>
-    <div class="card" style="padding: 1.25rem 1.5rem;">
-        <div class="field-label">Ce mois</div>
-        <div style="font-size: 1.7rem; font-weight: 700; font-family: 'DM Mono', monospace;">
-            {{ (stats_mois.total_min or 0) // 60 }}h{{ '%02d' | format((stats_mois.total_min or 0) % 60) }}
+    <div class="card" style="padding:1.25rem 1.5rem;">
+        <div style="font-size:0.67rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:0.4rem;">Ce mois</div>
+        <div style="font-size:1.7rem;font-weight:700;" class="mono">
+            {{ (stats_mois.total_min or 0) // 60 }}h{{ '%02d'|format((stats_mois.total_min or 0) % 60) }}
         </div>
-        <div style="color: var(--accent); font-size: 0.85rem; margin-top: 0.25rem;">
-            ${{ '%.0f' | format(stats_mois.montant or 0) }} facturable
+        <div style="color:var(--accent);font-size:0.85rem;margin-top:0.25rem;">
+            ${{ '%.0f'|format(stats_mois.montant or 0) }} facturable
         </div>
     </div>
 </div>
 
-{# ── TIMER ─────────────────────────────────────────────────────────────────── #}
-<div class="card" style="margin-bottom: 1.5rem;">
-    {% if timer_actif %}
-    <div style="text-align: center; padding: 0.5rem 0 1rem;">
-        <div style="color: var(--muted); font-size: 0.73rem; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 0.75rem;">
-            Timer en cours —
-            <span class="cat-dot" style="background: {{ timer_actif.cat_couleur or '#d94fbd' }};"></span>
-            {{ timer_actif.cat_nom }}{% if timer_actif.description %} · {{ timer_actif.description }}{% endif %}
+{# ── PANNEAU DE CONTRÔLE (LE PUNCH) ────────────────────────────────────────── #}
+{% if timer_actif %}
+<div class="card" style="margin-bottom: 2rem; border-left: 4px solid var(--accent); background: rgba(217,79,189,0.05); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+    <div>
+        <div style="font-size: 0.75rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 0.4rem;">Timer en cours</div>
+        <div style="font-size: 1.1rem; font-weight: 600;">{{ timer_actif.client_nom or 'Projet interne' }} <span style="color: var(--muted); font-weight: normal;">— {{ timer_actif.contrat_nom or 'Sans projet' }}</span></div>
+        <div style="font-size: 0.85rem; color: var(--muted); margin-top: 0.2rem;">
+            <span class="cat-dot" style="background:{{ timer_actif.cat_couleur or 'var(--accent)' }};"></span>{{ timer_actif.cat_nom }}
+            {% if timer_actif.description %} · {{ timer_actif.description }}{% endif %}
+            · <span class="badge badge-{{ timer_actif.type_facturation }}">{{ timer_actif.type_facturation }}</span>
         </div>
-        <div id="timer-display" class="timer-display timer-running">00:00:00</div>
-
-        {# Heure de départ — modifiable sans arrêter le timer #}
-        <div style="margin-top: 0.9rem; display: flex; align-items: center; justify-content: center; gap: 0.5rem; flex-wrap: wrap;">
-            <span style="font-size: 0.75rem; color: var(--muted);">Démarré à</span>
-            <input type="time" id="timer-start-input"
-                   value="{{ timer_actif.heure_debut }}"
-                   style="background: var(--surface-2, rgba(255,255,255,0.06)); border: 1px solid var(--border);
-                          border-radius: 6px; color: var(--text); padding: 0.2rem 0.5rem;
-                          font-size: 0.82rem; font-family: 'DM Mono', monospace; width: auto;"
-                   onchange="ajusterHeureDepart(this.value)">
-            <span id="timer-start-feedback" style="font-size: 0.72rem; color: var(--green); display: none;">✓ mis à jour</span>
+    </div>
+    <div style="text-align: right; display: flex; align-items: center; gap: 1.5rem; flex-wrap: wrap;">
+        <div style="text-align: left;">
+            <div style="font-size: 0.7rem; color: var(--muted); margin-bottom: 0.2rem;">Début</div>
+            <input type="time" id="active-debut" value="{{ timer_actif.heure_debut }}"
+                style="background:var(--surface); border:1px solid var(--border); border-radius:4px; color:var(--text); padding:0.2rem 0.4rem; font-size:0.85rem; font-family:'DM Mono',monospace;"
+                onchange="ajusterHeureDepart(this.value)">
+            <span id="timer-start-feedback" style="font-size:0.67rem;color:var(--green);display:none;">✓</span>
         </div>
-
-        <div style="margin-top: 1.25rem;">
-            <button class="btn" style="background: var(--red, #e05252); min-width: 150px;" onclick="stopTimer()">
-                Arrêter le timer
+        <div style="text-align: center; min-width: 80px;">
+            <div style="font-size: 0.7rem; color: var(--muted); margin-bottom: 0.2rem;">Durée</div>
+            <div class="mono" style="font-size: 1.5rem; color: var(--accent); font-weight: 700;"><span class="live-dot"></span><span id="timer-display">00:00:00</span></div>
+            <div id="timer-montant" style="font-size: 0.75rem; color: var(--muted);">{% if timer_actif.taux_applique %}$0{% else %}—{% endif %}</div>
+        </div>
+        <button id="btn-stop-timer" class="btn" style="background: var(--red); color: white; padding: 0.6rem 1.2rem; font-size: 0.9rem;" onclick="stopTimer()">
+            ⏹ Punch OUT
+        </button>
+    </div>
+</div>
+{% else %}
+<div class="card" style="margin-bottom: 2rem; border-top: 3px solid var(--accent);">
+    <div class="section-title" style="margin-bottom: 1rem;">⏱ Nouvelle entrée</div>
+    <div class="form-grid" style="grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 0.8rem;">
+        <div class="form-group" style="margin:0;">
+            <label>Date</label>
+            <input type="date" id="new-date" class="ci" value="{{ today }}">
+        </div>
+        <div class="form-group" style="margin:0;">
+            <label>Catégorie *</label>
+            <select id="new-cat" class="ci" onchange="syncTauxNew()">
+                <option value="">— Sélectionner —</option>
+                {% for cat in categories %}
+                {% set t = TAUX.get(cat.nom, (cat.taux_min or 0)|int) %}
+                <option value="{{ cat.id }}" data-nom="{{ cat.nom }}" data-taux="{{ t }}" data-couleur="{{ cat.couleur }}">{{ cat.nom }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="form-group" style="margin:0;">
+            <label>Client</label>
+            <select id="new-client" class="ci" onchange="filterContratsNew()">
+                <option value="">— Interne / Aucun —</option>
+                {% for c in clients %}<option value="{{ c.id }}">{{ c.nom }}</option>{% endfor %}
+            </select>
+        </div>
+        <div class="form-group" style="margin:0;">
+            <label>Projet</label>
+            <select id="new-contrat" class="ci" onchange="loadMilestonesNew()">
+                <option value="">— Aucun projet —</option>
+                {% for co in contrats %}<option value="{{ co.id }}" data-client-id="{{ co.client_id or '' }}">{{ co.nom or 'Sans nom' }}</option>{% endfor %}
+            </select>
+        </div>
+        <div class="form-group" style="margin:0;">
+            <label>Milestone</label>
+            <select id="new-milestone" class="ci"><option value="">— Aucun milestone —</option></select>
+        </div>
+        <div class="form-group" style="margin:0; grid-column: 1 / -1;">
+            <label>Description</label>
+            <input type="text" id="new-desc" class="ci" placeholder="Qu'est-ce que tu as fait ?">
+        </div>
+    </div>
+    <div class="form-grid" style="grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 0.8rem; margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--border); align-items: end;">
+        <div class="form-group" style="margin:0;">
+            <label>Début</label>
+            <input type="time" id="new-debut" class="ci mono" oninput="calcDureeNew()">
+        </div>
+        <div class="form-group" style="margin:0;">
+            <label>Fin</label>
+            <input type="time" id="new-fin" class="ci mono" oninput="calcDureeNew()">
+        </div>
+        <div class="form-group" style="margin:0; text-align: center;">
+            <label>Durée manuelle</label>
+            <div id="new-duree" style="font-size: 1.1rem; color: var(--muted); padding-top: 0.3rem;" class="mono">—</div>
+        </div>
+        <div class="form-group" style="margin:0;">
+            <label>Facturation</label>
+            <select id="new-type" class="ci" onchange="syncFacturationNew()">
+                <option value="horaire">À l'heure</option>
+                <option value="package">Forfait / Package</option>
+                <option value="gratuit">Gratuit</option>
+            </select>
+        </div>
+        <div class="form-group" style="margin:0;" id="taux-wrapper">
+            <label>Taux ($/h)</label>
+            <input type="number" id="new-taux" class="ci" step="5" min="0">
+        </div>
+        <div class="form-group" style="margin:0;">
+            <button id="btn-punch" class="btn btn-primary" style="width: 100%; min-height: 40px; justify-content: center;" onclick="punchIn()">
+                ▶ Démarrer
             </button>
         </div>
     </div>
-    {% else %}
-    <div style="font-weight: 600; font-size: 0.95rem; margin-bottom: 1.1rem;">Démarrer un timer</div>
-
-    <div class="form-row form-row-2">
-        <div>
-            <label class="field-label">Catégorie *</label>
-            <select id="timer-cat" class="form-control" onchange="syncTaux('timer')">
-                <option value="">— Choisir —</option>
-                {% for cat in categories %}
-                {% set taux_fixe = TAUX_FIXES.get(cat.nom, (cat.taux_min or 0) | int) %}
-                <option value="{{ cat.id }}" data-taux="{{ taux_fixe }}" data-couleur="{{ cat.couleur }}">
-                    {{ cat.nom }} ({{ taux_fixe }}$/h)
-                </option>
-                {% endfor %}
-            </select>
-        </div>
-        <div>
-            <label class="field-label">Type de facturation</label>
-            <select id="timer-type" class="form-control" onchange="syncFacturation('timer')">
-                <option value="horaire">Facturable à l'heure</option>
-                <option value="package">Inclus dans package</option>
-                <option value="gratuit">Gratuit (non facturé)</option>
-            </select>
-        </div>
-    </div>
-
-    <div class="form-row form-row-2">
-        <div>
-            <label class="field-label">Client (optionnel)</label>
-            <select id="timer-client" class="form-control" onchange="filterContrats('timer')">
-                <option value="">— Sans client —</option>
-                {% for c in clients %}
-                <option value="{{ c.id }}">{{ c.nom }}</option>
-                {% endfor %}
-            </select>
-        </div>
-        <div>
-            <label class="field-label">Projet (optionnel)</label>
-            <select id="timer-contrat" class="form-control" onchange="loadMilestones('timer')">
-                <option value="">— Sans projet —</option>
-                {% for co in contrats %}
-                <option value="{{ co.id }}" data-client-id="{{ co.client_id or '' }}">
-                    {{ co.client_nom }} — {{ co.nom or 'Sans nom' }}
-                </option>
-                {% endfor %}
-            </select>
-        </div>
-    </div>
-
-    <div class="form-row form-row-2">
-        <div>
-            <label class="field-label">Milestone (optionnel)</label>
-            <select id="timer-milestone" class="form-control">
-                <option value="">— Aucun —</option>
-            </select>
-        </div>
-        <div>
-            <label class="field-label">Taux appliqué ($/h)</label>
-            <input type="number" id="timer-taux" class="form-control" placeholder="Ex: 75" step="5" min="0">
-        </div>
-    </div>
-
-    <div class="form-row" style="margin-bottom: 1rem;">
-        <div>
-            <label class="field-label">Description (optionnel)</label>
-            <input type="text" id="timer-desc" class="form-control" placeholder="Ex: Intégration page contact">
-        </div>
-    </div>
-
-    <button class="btn" style="background: var(--accent); min-width: 150px;" onclick="startTimer()">
-        Démarrer
-    </button>
-    {% endif %}
 </div>
+{% endif %}
 
-{# ── SAISIE MANUELLE ──────────────────────────────────────────────────────── #}
-<div class="card" style="margin-bottom: 1.5rem;">
-    <div class="collapsible-toggle" onclick="toggleSection('manuel-body', 'manuel-arrow')">
-        <span class="toggle-label" style="font-weight: 600; font-size: 0.95rem;">+ Saisie manuelle</span>
-        <span id="manuel-arrow" style="color: var(--muted); font-size: 0.85rem; transition: transform 0.2s;">▼</span>
-    </div>
-
-    <div id="manuel-body" style="display: none; margin-top: 1.25rem;">
-        <form action="/heures/manuel" method="POST">
-            <div class="form-row form-row-2">
-                <div>
-                    <label class="field-label">Catégorie *</label>
-                    <select name="categorie_id" class="form-control" required onchange="syncTaux('manuel')">
-                        <option value="">— Choisir —</option>
-                        {% for cat in categories %}
-                        {% set taux_fixe = TAUX_FIXES.get(cat.nom, (cat.taux_min or 0) | int) %}
-                        <option value="{{ cat.id }}" data-taux="{{ taux_fixe }}">
-                            {{ cat.nom }} ({{ taux_fixe }}$/h)
-                        </option>
-                        {% endfor %}
-                    </select>
-                </div>
-                <div>
-                    <label class="field-label">Date *</label>
-                    <input type="date" name="date" id="man-date" class="form-control" value="{{ today }}" required>
-                </div>
-            </div>
-
-            <div class="form-row form-row-3">
-                <div>
-                    <label class="field-label">Heure début</label>
-                    <input type="time" name="heure_debut" id="man-debut" class="form-control" onchange="calcDuree()">
-                </div>
-                <div>
-                    <label class="field-label">Heure fin</label>
-                    <input type="time" name="heure_fin" id="man-fin" class="form-control" onchange="calcDuree()">
-                </div>
-                <div>
-                    <label class="field-label">Durée (min)</label>
-                    <input type="number" name="duree_minutes" id="man-duree" class="form-control" placeholder="Ex: 90" min="1">
-                </div>
-            </div>
-
-            <div class="form-row form-row-2">
-                <div>
-                    <label class="field-label">Client</label>
-                    <select name="client_id" class="form-control" onchange="filterContrats('manuel')">
-                        <option value="">— Sans client —</option>
-                        {% for c in clients %}
-                        <option value="{{ c.id }}">{{ c.nom }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
-                <div>
-                    <label class="field-label">Projet</label>
-                    <select name="contrat_id" id="manuel-contrat" class="form-control" onchange="loadMilestones('manuel')">
-                        <option value="">— Sans projet —</option>
-                        {% for co in contrats %}
-                        <option value="{{ co.id }}" data-client-id="{{ co.client_id or '' }}">
-                            {{ co.client_nom }} — {{ co.nom or 'Sans nom' }}
-                        </option>
-                        {% endfor %}
-                    </select>
-                </div>
-            </div>
-
-            <div class="form-row form-row-2">
-                <div>
-                    <label class="field-label">Milestone</label>
-                    <select name="milestone_titre" id="manuel-milestone" class="form-control">
-                        <option value="">— Aucun —</option>
-                    </select>
-                </div>
-                <div>
-                    <label class="field-label">Type de facturation</label>
-                    <select name="type_facturation" class="form-control" onchange="syncFacturation('manuel')">
-                        <option value="horaire">Facturable à l'heure</option>
-                        <option value="package">Inclus dans package</option>
-                        <option value="gratuit">Gratuit (non facturé)</option>
-                    </select>
-                </div>
-            </div>
-
-            <div class="form-row form-row-2" style="margin-bottom: 1rem;">
-                <div>
-                    <label class="field-label">Description</label>
-                    <input type="text" name="description" class="form-control" placeholder="Ex: Configuration email SMTP">
-                </div>
-                <div>
-                    <label class="field-label">Taux ($/h)</label>
-                    <input type="number" name="taux_applique" id="man-taux" class="form-control" placeholder="75" step="5" min="0">
-                </div>
-            </div>
-
-            <button type="submit" class="btn btn-secondary">Ajouter l'entrée</button>
-        </form>
+{# ── HISTORIQUE (TIME CARDS) ───────────────────────────────────────────────── #}
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 1rem;">
+    <h2 class="section-title" style="margin:0;">Historique</h2>
+    <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+        <input class="fi" type="date" id="f-date" oninput="filterTable()" style="width: 140px;">
+        <select class="fi" id="f-client" onchange="filterTable()" style="width: 150px;">
+            <option value="">Tous les clients</option>
+            {% for c in clients %}<option value="{{ c.nom }}">{{ c.nom }}</option>{% endfor %}
+        </select>
+        <select class="fi" id="f-cat" onchange="filterTable()" style="width: 160px;">
+            <option value="">Toutes catégories</option>
+            {% for cat in categories %}<option value="{{ cat.nom }}">{{ cat.nom }}</option>{% endfor %}
+        </select>
+        <input class="fi" type="text" id="f-desc" oninput="filterTable()" placeholder="🔍 Recherche..." style="width: 150px;">
+        {# Champs cachés pour ne pas briser la fonction JS #}
+        <input type="hidden" id="f-projet"><input type="hidden" id="f-milestone"><input type="hidden" id="f-type">
     </div>
 </div>
 
-{# ── ENTRÉES RÉCENTES ─────────────────────────────────────────────────────── #}
-<div class="card" style="padding: 0; overflow: hidden; margin-bottom: 1.5rem;">
-    <div style="padding: 1rem 1.25rem; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between;">
-        <span style="font-weight: 600; font-size: 0.95rem;">Entrées récentes</span>
-        <span style="color: var(--muted); font-size: 0.73rem;">30 dernières</span>
+<div class="entries-list">
+{% if entrees %}
+{% for e in entrees %}
+{% set montant = ((e.duree_minutes or 0) / 60 * (e.taux_applique or 0)) if e.type_facturation == 'horaire' and e.taux_applique else 0 %}
+<div class="card entry-row entry-card" style="margin-bottom: 0.6rem; padding: 0.8rem 1.2rem; display: flex; flex-direction: column; gap: 0.5rem;"
+    data-date="{{ e.date }}"
+    data-cat="{{ e.cat_nom }}"
+    data-client="{{ e.client_nom or '' }}"
+    data-projet="{{ e.contrat_nom or '' }}"
+    data-milestone="{{ e.milestone_titre or '' }}"
+    data-desc="{{ e.description or '' }}"
+    data-type="{{ e.type_facturation }}">
+    
+    <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 0.5rem;">
+        <div style="display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap;">
+            <span class="mono" style="font-size: 0.8rem; color: var(--muted);">{{ e.date | fmt_date }}</span>
+            <span class="badge badge-{{ e.type_facturation }}">{{ e.type_facturation }}</span>
+            <span style="font-size: 0.85rem; font-weight: 600;">{{ e.client_nom or 'Projet interne' }}</span>
+            {% if e.contrat_nom %}<span style="font-size: 0.75rem; color: var(--muted);">· {{ e.contrat_nom }}</span>{% endif %}
+        </div>
+        <div style="display: flex; gap: 1.2rem; align-items: center;">
+            <div class="mono" style="font-size: 0.95rem; font-weight: 600;">
+                {% set h = (e.duree_minutes or 0) // 60 %}{% set m = (e.duree_minutes or 0) % 60 %}
+                {% if h %}{{ h }}h{% endif %}{{ '%02d'|format(m) }}
+            </div>
+            {% if montant > 0 %}
+            <div class="mono" style="font-size: 0.9rem; color: var(--accent); min-width: 45px; text-align: right;">${{ '%.0f'|format(montant) }}</div>
+            {% else %}
+            <div class="mono" style="font-size: 0.9rem; color: var(--muted); min-width: 45px; text-align: right;">—</div>
+            {% endif %}
+        </div>
     </div>
-    {% if entrees %}
-    <table class="entrees-table">
-        <thead>
-            <tr>
-                <th>Date</th>
-                <th>Catégorie</th>
-                <th class="hide-mobile">Client / Milestone</th>
-                <th class="hide-mobile">Description</th>
-                <th style="text-align: center;">Durée</th>
-                <th style="text-align: right;">Montant</th>
-                <th style="text-align: right;" class="hide-mobile">Type</th>
-                <th></th>
-            </tr>
-        </thead>
-        <tbody>
-        {% for e in entrees %}
-        <tr>
-            <td style="white-space: nowrap; color: var(--muted); font-size: 0.8rem;">{{ e.date | fmt_date }}</td>
-            <td>
-                <span class="cat-dot" style="background: {{ e.cat_couleur or '#d94fbd' }};"></span>
-                <span style="font-size: 0.8rem;">{{ e.cat_nom }}</span>
-            </td>
-            <td class="hide-mobile" style="font-size: 0.79rem; color: var(--muted);">
-                {{ e.client_nom or '—' }}
-                {% if e.milestone_titre %}<br><span style="font-size: 0.71rem;">↳ {{ e.milestone_titre }}</span>{% endif %}
-            </td>
-            <td class="hide-mobile" style="font-size: 0.79rem; color: var(--muted); max-width: 160px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
-                {{ e.description or '—' }}
-            </td>
-            <td style="text-align: center; font-family: 'DM Mono', monospace; font-size: 0.82rem; white-space: nowrap;">
-                {% set h = (e.duree_minutes or 0) // 60 %}
-                {% set m = (e.duree_minutes or 0) % 60 %}
-                {% if h %}{{ h }}h{% endif %}{{ '%02d' | format(m) }}
-            </td>
-            <td style="text-align: right; font-family: 'DM Mono', monospace; font-size: 0.82rem;">
-                {% if e.type_facturation == 'horaire' and e.taux_applique %}
-                <span style="color: var(--accent);">${{ '%.0f' | format((e.duree_minutes or 0) / 60 * e.taux_applique) }}</span>
-                {% else %}
-                <span style="color: var(--muted);">—</span>
-                {% endif %}
-            </td>
-            <td class="hide-mobile" style="text-align: right;">
-                <span class="badge-{{ e.type_facturation }}">{{ e.type_facturation }}</span>
-            </td>
-            <td style="text-align: right; padding-right: 0.75rem; white-space: nowrap;">
-                <button class="btn btn-secondary"
-                    style="font-size: 0.7rem; padding: 0.2rem 0.6rem; margin-right: 0.2rem;"
-                    onclick="ouvrirEditEntree({{ e.id }}, '{{ e.date }}', '{{ e.heure_debut or '' }}', '{{ e.heure_fin or '' }}', {{ e.duree_minutes or 0 }}, '{{ (e.description or '') | replace("'", "\\'") }}', '{{ e.type_facturation }}', {{ e.taux_applique or 0 }}, {{ e.categorie_id }})">
-                    ✎
-                </button>
-                <button class="btn btn-secondary"
-                    style="font-size: 0.7rem; padding: 0.2rem 0.5rem; color: var(--muted);"
-                    onclick="openModal('Supprimer cette entrée', 'Cette action est irréversible.', 'Supprimer', 'btn-danger', () => deleteEntree({{ e.id }}))">
-                    ✕
-                </button>
-            </td>
-        </tr>
-        {% endfor %}
-        </tbody>
-    </table>
-    {% else %}
-    <div class="empty-state" style="padding: 2rem;">Aucune entrée pour le moment.</div>
-    {% endif %}
+
+    <div style="display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 0.5rem;">
+        <div style="font-size: 0.8rem; color: var(--muted); line-height: 1.4;">
+            <span class="cat-dot" style="background:{{ e.cat_couleur or 'var(--accent)' }};"></span>{{ e.cat_nom }}
+            {% if e.milestone_titre %} · <span style="color: var(--text);">{{ e.milestone_titre }}</span>{% endif %}
+            {% if e.description %} · {{ e.description }}{% endif %}
+        </div>
+        <div style="display: flex; align-items: center; gap: 0.8rem;">
+            <span class="mono" style="font-size: 0.75rem; color: var(--muted);">{{ e.heure_debut or '—' }} à {{ e.heure_fin or '—' }}</span>
+            <div style="display: flex; gap: 0.3rem;">
+                <button class="btn btn-secondary" style="padding: 0.25rem 0.6rem; font-size: 0.75rem;"
+                    onclick="ouvrirEditEntree({{ e.id }},'{{ e.date }}','{{ e.heure_debut or '' }}','{{ e.heure_fin or '' }}',{{ e.duree_minutes or 0 }},'{{ (e.description or '')|replace("'","\\'") }}','{{ e.type_facturation }}',{{ e.taux_applique or 0 }},{{ e.categorie_id }})">✎</button>
+                <button class="btn btn-ghost" style="padding: 0.25rem 0.6rem; font-size: 0.75rem; color: var(--red);"
+                    onclick="openModal('Supprimer cette entrée','Cette action est irréversible.','Supprimer','btn-danger',()=>deleteEntree({{ e.id }}))">✕</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endfor %}
+{% else %}
+<div class="card empty-state">Aucune entrée pour le moment.</div>
+{% endif %}
 </div>
 
-{# ── CATÉGORIES ───────────────────────────────────────────────────────────── #}
-<div class="card">
-    <div class="collapsible-toggle" onclick="toggleSection('cat-body', 'cat-arrow')">
-        <span class="toggle-label" style="font-weight: 600; font-size: 0.95rem;">Catégories ({{ categories | length }})</span>
-        <span id="cat-arrow" style="color: var(--muted); font-size: 0.85rem;">▼</span>
+{# ── CATÉGORIES (collapsible) ──────────────────────────────────────────────── #}
+<div class="card" style="margin-top:1.5rem;">
+    <div style="cursor:pointer;display:flex;align-items:center;justify-content:space-between;" onclick="toggleSection('cat-body','cat-arrow')">
+        <span style="font-weight:600;font-size:0.92rem;">Catégories ({{ categories|length }})</span>
+        <span id="cat-arrow" style="color:var(--muted);font-size:0.82rem;transition:transform 0.2s;">▼</span>
     </div>
-
-    <div id="cat-body" style="display: none; margin-top: 1.25rem;">
-        <div style="display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1.25rem;">
+    <div id="cat-body" style="display:none;margin-top:1.1rem;">
+        <div style="display:flex;flex-wrap:wrap;gap:0.5rem;margin-bottom:1.1rem;">
             {% for cat in categories %}
-            <div style="display: flex; align-items: center; gap: 0.4rem;
-                        background: rgba(255,255,255,0.04); border: 1px solid var(--border);
-                        border-radius: var(--radius); padding: 0.35rem 0.75rem; font-size: 0.79rem;">
-                <span class="cat-dot" style="background: {{ cat.couleur }};"></span>
+            <div style="display:flex;align-items:center;gap:0.35rem;background:rgba(255,255,255,0.04);
+                        border:1px solid var(--border);border-radius:var(--radius);
+                        padding:0.3rem 0.7rem;font-size:0.78rem;">
+                <span class="cat-dot" style="background:{{ cat.couleur }};"></span>
                 <strong>{{ cat.nom }}</strong>
-                <span style="color: var(--muted);">{{ cat.taux_min | int }}–{{ cat.taux_max | int }}$/h</span>
+                <span style="color:var(--muted);">{{ cat.taux_min|int }}–{{ cat.taux_max|int }}$/h</span>
             </div>
             {% endfor %}
         </div>
-
-        <div style="border-top: 1px solid var(--border); padding-top: 1rem;">
-            <div class="field-label" style="margin-bottom: 0.75rem;">Nouvelle catégorie</div>
-            <form action="/heures/categories" method="POST">
-                <div class="form-row form-row-4" style="align-items: end;">
-                    <div>
-                        <label class="field-label">Nom *</label>
-                        <input type="text" name="nom" class="form-control" required placeholder="Ex: Rédaction">
-                    </div>
-                    <div>
-                        <label class="field-label">Taux min ($/h)</label>
-                        <input type="number" name="taux_min" class="form-control" placeholder="40" step="5" min="0">
-                    </div>
-                    <div>
-                        <label class="field-label">Taux max ($/h)</label>
-                        <input type="number" name="taux_max" class="form-control" placeholder="60" step="5" min="0">
-                    </div>
-                    <div>
-                        <button type="submit" class="btn btn-secondary" style="width: 100%;">Ajouter</button>
-                    </div>
-                </div>
+        <div style="border-top:1px solid var(--border);padding-top:0.9rem;">
+            <div style="font-size:0.67rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:0.65rem;">Nouvelle catégorie</div>
+            <form action="/heures/categories" method="POST" style="display:grid;grid-template-columns:2fr 1fr 1fr auto;gap:0.6rem;align-items:end;">
+                <input type="text" name="nom" class="form-control" required placeholder="Nom">
+                <input type="number" name="taux_min" class="form-control" placeholder="Min $/h" step="5" min="0">
+                <input type="number" name="taux_max" class="form-control" placeholder="Max $/h" step="5" min="0">
+                <button type="submit" class="btn btn-secondary">Ajouter</button>
             </form>
         </div>
     </div>
 </div>
 
-{# ── MODAL ÉDITION ENTRÉE ─────────────────────────────────────────────────── #}
+{# ── MODAL ÉDITION ─────────────────────────────────────────────────────────── #}
 <div id="edit-entree-modal"
-     style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.7);
-            z-index:1000; align-items:center; justify-content:center; backdrop-filter:blur(3px);">
-    <div style="background:var(--surface); border:1px solid rgba(217,79,189,0.2);
-                border-radius:var(--radius-lg, 12px); padding:1.5rem; width:90%; max-width:500px;
-                box-shadow:0 24px 60px rgba(0,0,0,0.5); max-height:90vh; overflow-y:auto;">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.25rem;">
-            <h3 style="font-size:1rem; color:var(--text);">Modifier l'entrée</h3>
-            <button onclick="fermerEditEntree()" style="background:none; border:none; color:var(--muted); cursor:pointer; font-size:1.2rem; padding:0.2rem 0.5rem;">✕</button>
+     style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);
+            z-index:1000;align-items:center;justify-content:center;backdrop-filter:blur(3px);">
+    <div style="background:var(--surface);border:1px solid rgba(217,79,189,0.2);
+                border-radius:var(--radius-lg,12px);padding:1.5rem;width:90%;max-width:480px;
+                box-shadow:0 24px 60px rgba(0,0,0,0.5);max-height:90vh;overflow-y:auto;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.1rem;">
+            <h3 style="font-size:0.95rem;">Modifier l'entrée</h3>
+            <button onclick="fermerEditEntree()" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:1.1rem;padding:0.2rem 0.5rem;">✕</button>
         </div>
         <form id="edit-entree-form" method="POST" action="">
-            <div class="form-row form-row-2" style="margin-bottom:0.75rem;">
-                <div>
-                    <label class="field-label">Date</label>
-                    <input type="date" name="date" id="edit-date" class="form-control" required>
-                </div>
-                <div>
-                    <label class="field-label">Catégorie</label>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.65rem;margin-bottom:0.65rem;">
+                <div><label style="font-size:0.67rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em;display:block;margin-bottom:0.25rem;">Date</label>
+                    <input type="date" name="date" id="edit-date" class="form-control" required></div>
+                <div><label style="font-size:0.67rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em;display:block;margin-bottom:0.25rem;">Catégorie</label>
                     <select name="categorie_id" id="edit-categorie" class="form-control">
-                        {% for cat in categories %}
-                        <option value="{{ cat.id }}">{{ cat.nom }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
+                        {% for cat in categories %}<option value="{{ cat.id }}">{{ cat.nom }}</option>{% endfor %}
+                    </select></div>
             </div>
-            <div class="form-row form-row-3" style="margin-bottom:0.75rem;">
-                <div>
-                    <label class="field-label">Heure début</label>
-                    <input type="time" name="heure_debut" id="edit-debut" class="form-control" onchange="calcDureeEdit()">
-                </div>
-                <div>
-                    <label class="field-label">Heure fin</label>
-                    <input type="time" name="heure_fin" id="edit-fin" class="form-control" onchange="calcDureeEdit()">
-                </div>
-                <div>
-                    <label class="field-label">Durée (min)</label>
-                    <input type="number" name="duree_minutes" id="edit-duree" class="form-control" min="1">
-                </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:0.65rem;margin-bottom:0.65rem;">
+                <div><label style="font-size:0.67rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em;display:block;margin-bottom:0.25rem;">Début</label>
+                    <input type="time" name="heure_debut" id="edit-debut" class="form-control" onchange="calcDureeEdit()"></div>
+                <div><label style="font-size:0.67rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em;display:block;margin-bottom:0.25rem;">Fin</label>
+                    <input type="time" name="heure_fin" id="edit-fin" class="form-control" onchange="calcDureeEdit()"></div>
+                <div><label style="font-size:0.67rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em;display:block;margin-bottom:0.25rem;">Durée (min)</label>
+                    <input type="number" name="duree_minutes" id="edit-duree" class="form-control" min="1"></div>
             </div>
-            <div class="form-row form-row-2" style="margin-bottom:0.75rem;">
-                <div>
-                    <label class="field-label">Type de facturation</label>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.65rem;margin-bottom:0.65rem;">
+                <div><label style="font-size:0.67rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em;display:block;margin-bottom:0.25rem;">Type</label>
                     <select name="type_facturation" id="edit-type" class="form-control">
                         <option value="horaire">Facturable à l'heure</option>
                         <option value="package">Inclus dans package</option>
                         <option value="gratuit">Gratuit</option>
-                    </select>
-                </div>
-                <div>
-                    <label class="field-label">Taux ($/h)</label>
-                    <input type="number" name="taux_applique" id="edit-taux" class="form-control" step="5" min="0">
-                </div>
+                    </select></div>
+                <div><label style="font-size:0.67rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em;display:block;margin-bottom:0.25rem;">Taux ($/h)</label>
+                    <input type="number" name="taux_applique" id="edit-taux" class="form-control" step="5" min="0"></div>
             </div>
-            <div style="margin-bottom:1.25rem;">
-                <label class="field-label">Description</label>
-                <input type="text" name="description" id="edit-desc" class="form-control" placeholder="Description">
+            <div style="margin-bottom:1.1rem;">
+                <label style="font-size:0.67rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em;display:block;margin-bottom:0.25rem;">Description</label>
+                <input type="text" name="description" id="edit-desc" class="form-control">
             </div>
-            <div style="display:flex; gap:0.75rem; justify-content:flex-end;">
+            <div style="display:flex;gap:0.65rem;justify-content:flex-end;">
                 <button type="button" class="btn btn-secondary" onclick="fermerEditEntree()">Annuler</button>
                 <button type="submit" class="btn btn-primary">Enregistrer</button>
             </div>
         </form>
     </div>
 </div>
-
 {% endblock %}
 
 {% block scripts %}
 <script>
-// ── Timer actif : calcul du temps écoulé ─────────────────────────────────────
+// ── Timer live ───────────────────────────────────────────────────────────────
 {% if timer_actif %}
 let _timerStartOverride = null;
-const _timerStart = new Date("{{ timer_actif.created_at }}".replace(' ', 'T') + 'Z').getTime();
+const _timerStart = new Date("{{ timer_actif.created_at }}".replace(' ','T')+'Z').getTime();
+const _timerTaux  = {{ timer_actif.taux_applique or 0 }};
+
 function _updateTimer() {
     const base    = _timerStartOverride !== null ? _timerStartOverride : _timerStart;
     const elapsed = Math.floor((Date.now() - base) / 1000);
@@ -498,51 +400,129 @@ function _updateTimer() {
     const m = Math.floor((elapsed % 3600) / 60);
     const s = elapsed % 60;
     document.getElementById('timer-display').textContent =
-        String(h).padStart(2, '0') + ':' +
-        String(m).padStart(2, '0') + ':' +
-        String(s).padStart(2, '0');
+        String(h).padStart(2,'0')+':'+String(m).padStart(2,'0')+':'+String(s).padStart(2,'0');
+    if (_timerTaux) {
+        const montantEl = document.getElementById('timer-montant');
+        if (montantEl) montantEl.innerHTML =
+            '<span style="color:var(--accent);font-size:0.8rem;" class="mono">$'+Math.floor(elapsed/3600*_timerTaux)+'</span>';
+    }
 }
 _updateTimer();
 setInterval(_updateTimer, 1000);
 {% endif %}
 
-// ── Start timer ─────────────────────────────────────────────────────────────
-async function startTimer() {
-    const catEl = document.getElementById('timer-cat');
+// ── Punch IN ─────────────────────────────────────────────────────────────────
+async function punchIn() {
+    const catEl = document.getElementById('new-cat');
     if (!catEl.value) { alert('Choisis une catégorie.'); return; }
-    const r = await fetch('/heures/start', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({
-            categorie_id:     parseInt(catEl.value),
-            client_id:        document.getElementById('timer-client').value || null,
-            contrat_id:       document.getElementById('timer-contrat').value || null,
-            milestone_titre:  document.getElementById('timer-milestone').value || null,
-            description:      document.getElementById('timer-desc').value.trim() || null,
-            type_facturation: document.getElementById('timer-type').value,
-            taux_applique:    parseFloat(document.getElementById('timer-taux').value) || null,
-        })
-    });
-    if (r.ok) { location.reload(); }
-    else { const d = await r.json(); alert(d.error || 'Erreur démarrage.'); }
+    const fin   = document.getElementById('new-fin').value;
+    const debut = document.getElementById('new-debut').value;
+    const type  = document.getElementById('new-type')?.value || 'horaire';
+    const taux  = parseFloat(document.getElementById('new-taux')?.value) || null;
+
+    // 1. Feedback visuel immédiat
+    const btn = document.getElementById('btn-punch');
+    const originalText = btn.innerHTML;
+    btn.innerHTML = '⏳...';
+    btn.disabled = true;
+
+    if (fin) {
+        // Saisie manuelle
+        const fd = new FormData();
+        fd.append('date',            document.getElementById('new-date').value);
+        fd.append('categorie_id',    catEl.value);
+        fd.append('client_id',       document.getElementById('new-client').value || '');
+        fd.append('contrat_id',      document.getElementById('new-contrat')?.value || '');
+        fd.append('milestone_titre', document.getElementById('new-milestone')?.value || '');
+        fd.append('description',     document.getElementById('new-desc')?.value || '');
+        fd.append('heure_debut',     debut);
+        fd.append('heure_fin',       fin);
+        fd.append('type_facturation',type);
+        if (taux) fd.append('taux_applique', taux);
+        
+        // 2. On indique au serveur que c'est de l'AJAX
+        const r = await fetch('/heures/manuel', { 
+            method:'POST', 
+            body:fd,
+            headers: { 'X-Requested-With': 'XMLHttpRequest' }
+        });
+        
+        if (r.ok) {
+            btn.innerHTML = '✓ Ajouté';
+            btn.style.background = 'var(--green)';
+            setTimeout(() => location.reload(), 500); // Soft reload
+        }
+        else { alert('Erreur ajout manuel.'); btn.innerHTML = originalText; btn.disabled = false; }
+    } else {
+        // Timer
+        const r = await fetch('/heures/start', {
+            method: 'POST',
+            headers: {
+                'Content-Type':'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: JSON.stringify({
+                categorie_id:    parseInt(catEl.value),
+                client_id:       document.getElementById('new-client').value || null,
+                contrat_id:      document.getElementById('new-contrat')?.value || null,
+                milestone_titre: document.getElementById('new-milestone')?.value || null,
+                description:     document.getElementById('new-desc')?.value?.trim() || null,
+                type_facturation: type,
+                taux_applique:   taux,
+                heure_debut:     debut || null,
+            })
+        });
+        if (r.ok) {
+            btn.innerHTML = '✓ Démarré';
+            btn.style.background = 'var(--green)';
+            setTimeout(() => location.reload(), 500);
+        }
+        else { const d = await r.json(); alert(d.error || 'Erreur démarrage.'); btn.innerHTML = originalText; btn.disabled = false; }
+    }
 }
 
-// ── Stop timer ──────────────────────────────────────────────────────────────
+// ── Punch OUT ────────────────────────────────────────────────────────────────
 async function stopTimer() {
-    const r = await fetch('/heures/stop', { method: 'POST' });
-    if (r.ok) { location.reload(); }
-    else { alert('Erreur arrêt timer.'); }
+    const btn = document.getElementById('btn-stop-timer');
+    const originalText = btn.innerHTML;
+    btn.innerHTML = '⏳...';
+    btn.disabled = true;
+
+    const r = await fetch('/heures/stop', { method:'POST' });
+    if (r.ok) {
+        btn.innerHTML = '✓ Arrêté';
+        btn.style.background = 'var(--green)';
+        setTimeout(() => location.reload(), 500);
+    }
+    else { alert('Erreur arrêt timer.'); btn.innerHTML = originalText; btn.disabled = false; }
 }
 
-// ── Supprimer une entrée ─────────────────────────────────────────────────────
+// ── Ajuster heure de départ du timer ─────────────────────────────────────────
+async function ajusterHeureDepart(val) {
+    const feedback = document.getElementById('timer-start-feedback');
+    const r = await fetch('/heures/timer/start-time', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ heure_debut: val })
+    });
+    if (r.ok) {
+        const d = await r.json();
+        window._timerStartOverride = new Date(d.new_start+(d.new_start.includes('Z')?'':'Z')).getTime();
+        feedback.style.display = 'inline';
+        setTimeout(()=>{ feedback.style.display='none'; }, 2000);
+    } else {
+        alert("Impossible de modifier l'heure de départ.");
+    }
+}
+
+// ── Supprimer entrée ─────────────────────────────────────────────────────────
 async function deleteEntree(id) {
-    const r = await fetch('/heures/supprimer/' + id, { method: 'POST' });
-    if (r.ok) { location.reload(); }
+    const r = await fetch('/heures/supprimer/'+id, { method:'POST' });
+    if (r.ok) location.reload();
 }
 
-// ── Modal édition d'une entrée ────────────────────────────────────────────────
+// ── Modal édition ────────────────────────────────────────────────────────────
 function ouvrirEditEntree(id, date, debut, fin, duree, desc, type, taux, catId) {
-    document.getElementById('edit-entree-form').action = '/heures/' + id + '/edit';
+    document.getElementById('edit-entree-form').action = '/heures/'+id+'/edit';
     document.getElementById('edit-date').value     = date;
     document.getElementById('edit-debut').value    = debut;
     document.getElementById('edit-fin').value      = fin;
@@ -556,127 +536,129 @@ function ouvrirEditEntree(id, date, debut, fin, duree, desc, type, taux, catId) 
 function fermerEditEntree() {
     document.getElementById('edit-entree-modal').style.display = 'none';
 }
-// Fermeture en cliquant sur le fond
 document.getElementById('edit-entree-modal').addEventListener('click', function(e) {
     if (e.target === this) fermerEditEntree();
 });
-
-// Calcul auto de la durée dans le modal d'édition
 function calcDureeEdit() {
-    const debut = document.getElementById('edit-debut').value;
-    const fin   = document.getElementById('edit-fin').value;
-    if (!debut || !fin) return;
-    const [dh, dm] = debut.split(':').map(Number);
-    const [fh, fm] = fin.split(':').map(Number);
-    const duree = (fh * 60 + fm) - (dh * 60 + dm);
+    const d = document.getElementById('edit-debut').value;
+    const f = document.getElementById('edit-fin').value;
+    if (!d || !f) return;
+    const duree = (parseInt(f.split(':')[0])*60+parseInt(f.split(':')[1])) -
+                  (parseInt(d.split(':')[0])*60+parseInt(d.split(':')[1]));
     if (duree > 0) document.getElementById('edit-duree').value = duree;
 }
 
-// ── Ajustement de l'heure de départ du timer en cours ────────────────────────
-async function ajusterHeureDepart(nouvelleHeure) {
-    const feedback = document.getElementById('timer-start-feedback');
-    const r = await fetch('/heures/timer/start-time', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ heure_debut: nouvelleHeure })
-    });
-    if (r.ok) {
-        // Met à jour le point de départ du timer affiché sans recharger la page
-        const data = await r.json();
-        window._timerStartOverride = new Date(data.new_start + (data.new_start.includes('Z') ? '' : 'Z')).getTime();
-        feedback.style.display = 'inline';
-        setTimeout(() => { feedback.style.display = 'none'; }, 2000);
-    } else {
-        alert('Impossible de modifier l\'heure de départ.');
-        // Remet l'ancienne valeur
-        document.getElementById('timer-start-input').value =
-            '{{ timer_actif.heure_debut if timer_actif else "" }}';
+// ── Durée preview (nouvelle entrée) ──────────────────────────────────────────
+function calcDureeNew() {
+    const d = document.getElementById('new-debut').value;
+    const f = document.getElementById('new-fin').value;
+    const el = document.getElementById('new-duree');
+    const btn = document.getElementById('btn-punch');
+    
+    if (!d || !f) { 
+        el.textContent = '—'; 
+        if (btn) { btn.innerHTML = '▶ Démarrer Timer'; btn.style.background = 'var(--accent)'; btn.style.color = 'white'; btn.style.border = 'none'; }
+        return; 
     }
+    
+    const min = (parseInt(f.split(':')[0])*60+parseInt(f.split(':')[1])) -
+                (parseInt(d.split(':')[0])*60+parseInt(d.split(':')[1]));
+    if (min > 0) {
+        const h = Math.floor(min/60), m = min%60;
+        el.textContent = (h ? h+'h' : '') + String(m).padStart(2,'0');
+        el.style.color = 'var(--text)';
+        if (btn) { btn.innerHTML = '✓ Ajouter l\'entrée'; btn.style.background = 'var(--surface2)'; btn.style.color = 'var(--text)'; btn.style.border = '1px solid var(--border)'; }
+    } else { el.textContent = '—'; el.style.color = 'var(--muted)'; }
 }
 
-// ── Toggle sections ──────────────────────────────────────────────────────────
-function toggleSection(bodyId, arrowId) {
-    const body  = document.getElementById(bodyId);
-    const arrow = document.getElementById(arrowId);
-    const open  = body.style.display !== 'none';
-    body.style.display  = open ? 'none' : 'block';
-    if (arrow) arrow.style.transform = open ? '' : 'rotate(180deg)';
-}
-
-// ── Taux fixe depuis catégorie ────────────────────────────────────────────────
-function syncTaux(ctx) {
-    const sel     = ctx === 'timer' ? document.getElementById('timer-cat')  : document.querySelector('[name="categorie_id"]');
-    const taux_el = ctx === 'timer' ? document.getElementById('timer-taux') : document.getElementById('man-taux');
-    const type_el = ctx === 'timer' ? document.getElementById('timer-type') : document.querySelector('[name="type_facturation"]');
+// ── Taux depuis catégorie ─────────────────────────────────────────────────────
+function syncTauxNew() {
+    const sel = document.getElementById('new-cat');
+    const taux_el = document.getElementById('new-taux');
+    const type_el = document.getElementById('new-type');
     if (!sel || !taux_el) return;
     const taux = parseFloat(sel.options[sel.selectedIndex]?.dataset?.taux || 0);
-    taux_el.value = (type_el && type_el.value !== 'horaire') ? 0 : (taux || '');
+    taux_el.value = (type_el?.value !== 'horaire') ? 0 : (taux || '');
 }
-
-// ── Remise à zéro si non-facturable, restaure si retour horaire ──────────────
-function syncFacturation(ctx) {
-    const type_el = ctx === 'timer' ? document.getElementById('timer-type') : document.querySelector('[name="type_facturation"]');
-    const taux_el = ctx === 'timer' ? document.getElementById('timer-taux') : document.getElementById('man-taux');
-    const sel     = ctx === 'timer' ? document.getElementById('timer-cat')  : document.querySelector('[name="categorie_id"]');
+function syncFacturationNew() {
+    const type_el = document.getElementById('new-type');
+    const taux_el = document.getElementById('new-taux');
+    const sel     = document.getElementById('new-cat');
+    const wrapper = document.getElementById('taux-wrapper');
     if (!type_el || !taux_el) return;
-    if (type_el.value !== 'horaire') {
-        taux_el.value = 0;
+    
+    if (type_el.value !== 'horaire') { 
+        taux_el.value = 0; 
+        if (wrapper) wrapper.style.opacity = '0.3';
     } else {
         const taux = parseFloat(sel?.options[sel?.selectedIndex]?.dataset?.taux || 0);
         taux_el.value = taux || '';
+        if (wrapper) wrapper.style.opacity = '1';
     }
 }
 
-// ── Calcul durée auto (saisie manuelle) ──────────────────────────────────────
-function calcDuree() {
-    const debut = document.getElementById('man-debut').value;
-    const fin   = document.getElementById('man-fin').value;
-    if (!debut || !fin) return;
-    const [dh, dm] = debut.split(':').map(Number);
-    const [fh, fm] = fin.split(':').map(Number);
-    const duree = (fh * 60 + fm) - (dh * 60 + dm);
-    if (duree > 0) document.getElementById('man-duree').value = duree;
-}
-
-// ── Filtre projets selon client sélectionné ──────────────────────────────────
-function filterContrats(ctx) {
-    const clientSel  = ctx === 'timer'
-        ? document.getElementById('timer-client')
-        : document.querySelector('[name="client_id"]');
-    const contratSel = ctx === 'timer'
-        ? document.getElementById('timer-contrat')
-        : document.getElementById('manuel-contrat');
-    if (!clientSel || !contratSel) return;
-    const clientId = clientSel.value;
+// ── Filtrer projets par client (nouvelle entrée) ──────────────────────────────
+function filterContratsNew() {
+    const clientId = document.getElementById('new-client').value;
+    const contratSel = document.getElementById('new-contrat');
+    if (!contratSel) return;
     Array.from(contratSel.options).forEach(opt => {
         if (!opt.value) return;
         opt.hidden = clientId ? String(opt.dataset.clientId) !== clientId : false;
     });
     contratSel.value = '';
-    loadMilestones(ctx);
+    loadMilestonesNew();
 }
 
-// ── Chargement milestones selon projet sélectionné ───────────────────────────
-async function loadMilestones(ctx) {
-    const contratSel = ctx === 'timer'
-        ? document.getElementById('timer-contrat')
-        : document.getElementById('manuel-contrat');
-    const msSel = ctx === 'timer'
-        ? document.getElementById('timer-milestone')
-        : document.getElementById('manuel-milestone');
+// ── Charger milestones ────────────────────────────────────────────────────────
+async function loadMilestonesNew() {
+    const contratSel = document.getElementById('new-contrat');
+    const msSel = document.getElementById('new-milestone');
     if (!contratSel || !msSel) return;
-    msSel.innerHTML = '<option value="">— Aucun —</option>';
+    msSel.innerHTML = '<option value="">— Milestone —</option>';
     if (!contratSel.value) return;
     try {
-        const r  = await fetch('/api/heures/milestones/' + contratSel.value);
+        const r = await fetch('/api/heures/milestones/'+contratSel.value);
         const ms = await r.json();
         ms.forEach(m => {
             const opt = document.createElement('option');
-            opt.value       = m.titre;
-            opt.textContent = m.titre + (m.statut ? ' (' + m.statut + ')' : '');
+            opt.value = m.titre;
+            opt.textContent = m.titre + (m.statut ? ' ('+m.statut+')' : '');
             msSel.appendChild(opt);
         });
-    } catch (e) {}
+    } catch(e) {}
+}
+
+// ── Filtres tableau ───────────────────────────────────────────────────────────
+function filterTable() {
+    const fDate      = document.getElementById('f-date')?.value || '';
+    const fCat       = document.getElementById('f-cat')?.value || '';
+    const fClient    = document.getElementById('f-client')?.value || '';
+    const fProjet    = (document.getElementById('f-projet')?.value || '').toLowerCase();
+    const fMilestone = (document.getElementById('f-milestone')?.value || '').toLowerCase();
+    const fDesc      = (document.getElementById('f-desc')?.value || '').toLowerCase();
+    const fType      = document.getElementById('f-type')?.value || '';
+
+    document.querySelectorAll('.entry-row').forEach(row => {
+        const match =
+            (!fDate      || row.dataset.date?.includes(fDate)) &&
+            (!fCat       || row.dataset.cat === fCat) &&
+            (!fClient    || row.dataset.client === fClient) &&
+            (!fProjet    || (row.dataset.projet||'').toLowerCase().includes(fProjet)) &&
+            (!fMilestone || (row.dataset.milestone||'').toLowerCase().includes(fMilestone)) &&
+            (!fDesc      || (row.dataset.desc||'').toLowerCase().includes(fDesc)) &&
+            (!fType      || row.dataset.type === fType);
+        row.classList.toggle('filtered-out', !match);
+    });
+}
+
+// ── Toggle section catégories ─────────────────────────────────────────────────
+function toggleSection(bodyId, arrowId) {
+    const body  = document.getElementById(bodyId);
+    const arrow = document.getElementById(arrowId);
+    const open  = body.style.display !== 'none';
+    body.style.display = open ? 'none' : 'block';
+    if (arrow) arrow.style.transform = open ? '' : 'rotate(180deg)';
 }
 </script>
 {% endblock %}

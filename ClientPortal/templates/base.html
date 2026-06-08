@@ -16,73 +16,101 @@
 {# Héritage Jinja2 : base.html définit la structure,
    les templates enfants remplissent les blocs avec {% block %} ... {% endblock %} #}
 
-<button id="nav-toggle" onclick="toggleNav()" title="Masquer/afficher le menu">☰</button>
-
 <div class="app-layout">
 
     {# ── SIDEBAR ─────────────────────────────────────────────────────────── #}
     <aside class="sidebar">
-        <div class="sidebar-logo"><span class="gold-title">TNT</span><span class="gold-title gold-mom">Mom</span></div>
+        <div class="sidebar-header" style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.5rem;">
+            <div class="sidebar-logo"><span class="gold-title">TNT</span><span class="gold-title gold-mom nav-label">Mom</span></div>
+            <button id="desktop-nav-toggle" onclick="toggleNav()" title="Réduire le menu">◀</button>
+        </div>
 
         <nav class="sidebar-nav">
 
+            {% if role != 'staff' %}
             <div class="sidebar-cat">Temps</div>
             <a href="/heures"
                {% if request.path == '/heures' %}class="active"{% endif %}>
-                <span class="nav-bullet">◈</span> Heures
+                <span class="nav-icon">⏱</span> <span class="nav-label">Heures</span>
             </a>
             <a href="/heures/rapports"
                {% if request.path == '/heures/rapports' %}class="active"{% endif %}>
-                <span class="nav-bullet">◈</span> Rapports
+                <span class="nav-icon">📈</span> <span class="nav-label">Rapports</span>
             </a>
 
             <div class="sidebar-cat">Clients</div>
             <a href="/dashboard"
                {% if request.path == '/dashboard' %}class="active"{% endif %}>
-                <span class="nav-bullet">◈</span> Dashboard
+                <span class="nav-icon">◈</span> <span class="nav-label">Dashboard</span>
             </a>
             <a href="/leads"
                {% if request.path == '/leads' %}class="active"{% endif %}>
-                <span class="nav-bullet">◈</span> Leads
+                <span class="nav-icon">👥</span> <span class="nav-label">Leads</span>
                 {% if leads_non_lus|default(0) > 0 %}<span class="nav-badge">{{ leads_non_lus }}</span>{% endif %}
             </a>
+            {% endif %}
 
             <div class="sidebar-cat">Finance</div>
-            <a href="/comptabilite"
-               {% if request.path == '/comptabilite' %}class="active"{% endif %}>
-                <span class="nav-bullet">◈</span> Comptabilité
-            </a>
-            <a href="/tarifs"
-               {% if request.path.startswith('/tarifs') %}class="active"{% endif %}>
-                <span class="nav-bullet">◈</span> Tarifs
-            </a>
-            <a href="/packages"
-               {% if request.path.startswith('/packages') %}class="active"{% endif %}>
-                <span class="nav-bullet">◈</span> Package Builder
-            </a>
+            {% if role == 'staff' %}
+                <a href="/admin/fiscal-summary"
+                   {% if request.path == '/admin/fiscal-summary' %}class="active"{% endif %}>
+                    <span class="nav-icon">📊</span> <span class="nav-label">Fiscal &amp; Budget Bill</span>
+                </a>
+            {% else %}
+                <a href="/comptabilite"
+                   {% if request.path == '/comptabilite' %}class="active"{% endif %}>
+                    <span class="nav-icon">◎</span> <span class="nav-label">Comptabilité</span>
+                </a>
+                <a href="/admin/fiscal-summary"
+                   {% if request.path == '/admin/fiscal-summary' %}class="active"{% endif %}>
+                    <span class="nav-icon">📊</span> <span class="nav-label">Fiscal &amp; Budget Bill</span>
+                </a>
+                <a href="/tarifs"
+                   {% if request.path.startswith('/tarifs') %}class="active"{% endif %}>
+                    <span class="nav-icon">🏷</span> <span class="nav-label">Tarifs</span>
+                </a>
+                <a href="/packages"
+                   {% if request.path.startswith('/packages') %}class="active"{% endif %}>
+                    <span class="nav-icon">📦</span> <span class="nav-label">Package Builder</span>
+                </a>
+            {% endif %}
 
+            {% if role != 'staff' %}
             <div class="sidebar-cat">Projets</div>
             <a href="/formulaires"
                {% if request.path.startswith('/formulaires') %}class="active"{% endif %}>
-                <span class="nav-bullet">◈</span> Formulaires
+                <span class="nav-icon">📄</span> <span class="nav-label">Formulaires</span>
             </a>
 
             <div class="sidebar-cat">Stratégie</div>
             <a href="/plan"
                {% if request.path == '/plan' %}class="active"{% endif %}>
-                <span class="nav-bullet">◈</span> Vision &amp; Projets
+                <span class="nav-icon">🗺️</span> <span class="nav-label">Vision &amp; Projets</span>
             </a>
+            {% endif %}
 
         </nav>
 
+
         <div class="sidebar-user">
-            <strong>{{ name }}</strong>
-            <a href="/logout" class="text-muted">→ Déconnexion</a>
+            <strong class="nav-label">{{ name }}</strong>
+            <a href="/logout" class="text-muted logout-link"><span class="nav-icon" style="color: var(--red);">⏻</span> <span class="nav-label">Déconnexion</span></a>
         </div>
     </aside>
 
     {# ── CONTENU PRINCIPAL ───────────────────────────────────────────────── #}
     <main class="main">
+        <!-- DEBUG: role = "{{ role }}" -->
+        
+        {% if admin_impersonating %}
+        <div style="background: var(--red); color: white; padding: 0.75rem 1.2rem; border-radius: var(--radius-lg); margin-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem; box-shadow: 0 4px 15px rgba(239, 68, 68, 0.3);">
+            <div style="font-weight: 700; font-size: 0.85rem; letter-spacing: 0.08em;">👀 VUE CLIENT : {{ client_nom }}</div>
+            <a href="/admin/exit-client" class="btn" style="background: rgba(0,0,0,0.25); color: white; border: 1px solid rgba(255,255,255,0.4); padding: 0.3rem 0.8rem; font-size: 0.75rem;">
+                Retour à l'Admin ✕
+            </a>
+        </div>
+        {% endif %}
+        
         {# get_flashed_messages() récupère les messages stockés par flash() dans la session.
            Ils sont automatiquement effacés après affichage — une seule fois, puis disparus. #}
         {% with messages = get_flashed_messages(with_categories=True) %}
@@ -99,12 +127,39 @@
 
 </div>
 
+{# ── FAB (Bouton d'action flottant) Mobile ── #}
+{% if not admin_impersonating and role != 'staff' %}
+<a href="/heures" class="fab-mobile" title="Punch Rapide d'Heures">＋</a>
+<style>
+.fab-mobile {
+    display: none; /* Caché par défaut (desktop) */
+    position: fixed;
+    bottom: 80px; /* Juste au-dessus de la barre de navigation mobile */
+    right: 1.2rem;
+    width: 56px;
+    height: 56px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    color: white;
+    border-radius: 50%;
+    text-align: center;
+    line-height: 56px;
+    font-size: 2rem;
+    box-shadow: 0 4px 15px rgba(217, 79, 189, 0.4);
+    z-index: 90;
+    transition: transform 0.2s;
+}
+.fab-mobile:active { transform: scale(0.9); }
+@media (max-width: 600px) { .fab-mobile { display: block; } }
+</style>
+{% endif %}
+
 {# ── Variables pour l'état actif du drawer ──────────────────────────────── #}
 {# On vérifie si la page courante est une page "Plus" (pas dans les onglets directs) #}
-{% set _plus_active = request.path in ['/formulaires','/tarifs','/packages','/plan','/heures/rapports']
+{% set _plus_active = request.path in ['/formulaires','/tarifs','/packages','/plan','/heures/rapports','/admin/fiscal-summary']
                       or request.path.startswith('/formulaires')
                       or request.path.startswith('/tarifs')
-                      or request.path.startswith('/packages') %}
+                      or request.path.startswith('/packages')
+                      or request.path == '/admin/fiscal-summary' %}
 
 {# ── BOTTOM TAB BAR ADMIN (mobile seulement) ─────────────────────────────── #}
 <nav class="admin-bottom-nav">
@@ -160,6 +215,10 @@
         <a href="/packages"
            class="pbn-drawer-item {% if request.path.startswith('/packages') %}active{% endif %}">
             <span class="pbn-drawer-icon">📦</span> Package Builder
+        </a>
+        <a href="/admin/fiscal-summary"
+           class="pbn-drawer-item {% if request.path == '/admin/fiscal-summary' %}active{% endif %}">
+            <span class="pbn-drawer-icon">📊</span> Fiscal &amp; Budget
         </a>
     </div>
 
@@ -314,7 +373,15 @@
     cursor: pointer;
     font-family: inherit;
 }
-#pbn-more-btn.active .pbn-icon,
+#pbn-more-btn .pbn-icon {
+    transition: all 0.2s ease;
+}
+#pbn-more-btn:hover .pbn-icon,
+#pbn-more-btn.active .pbn-icon {
+    color: var(--accent);
+    filter: drop-shadow(0 0 6px var(--accent));
+    transform: scale(1.15);
+}
 #pbn-more-btn.active .pbn-label { color: var(--accent); }
 </style>
 
@@ -414,12 +481,34 @@
 
 <script>
 (function() {
-    if (localStorage.getItem('sidebarCollapsed') === 'true')
+    const isCollapsed = localStorage.getItem('sidebarCollapsed') === 'true';
+    if (isCollapsed) {
         document.body.classList.add('sidebar-collapsed');
+    }
+    
+    document.addEventListener('DOMContentLoaded', function() {
+        const btn = document.getElementById('desktop-nav-toggle');
+        if (btn && isCollapsed) btn.innerHTML = '▶';
+    });
+
+    // ── Restaure la position de scroll de la sidebar ──
+    const sidebarNav = document.querySelector('.sidebar-nav');
+    if (sidebarNav) {
+        const scrollPos = localStorage.getItem('sidebarScrollPos');
+        if (scrollPos) sidebarNav.scrollTop = parseInt(scrollPos, 10);
+        sidebarNav.addEventListener('scroll', function() {
+            localStorage.setItem('sidebarScrollPos', sidebarNav.scrollTop);
+        });
+    }
 })();
 function toggleNav() {
-    document.body.classList.toggle('sidebar-collapsed');
-    localStorage.setItem('sidebarCollapsed', document.body.classList.contains('sidebar-collapsed'));
+    const body = document.body;
+    body.classList.toggle('sidebar-collapsed');
+    const isCollapsed = body.classList.contains('sidebar-collapsed');
+    localStorage.setItem('sidebarCollapsed', isCollapsed);
+    
+    const btn = document.getElementById('desktop-nav-toggle');
+    if (btn) btn.innerHTML = isCollapsed ? '▶' : '◀';
 }
 </script>
 </body>

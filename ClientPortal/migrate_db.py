@@ -63,6 +63,50 @@ def main():
         """)
         print("   TABLE CREEE : table banque_heures")
 
+        # --- Nouvelle section : Revenus du ménage ---
+        print("\n[household_revenues]")
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS household_revenues (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                label TEXT NOT NULL,
+                amount REAL NOT NULL,
+                date_received TEXT,
+                is_taxable INTEGER DEFAULT 1,
+                added_by TEXT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        """)
+        print("   TABLE CREEE : table household_revenues")
+
+        # --- Point 4 : Rôle des utilisateurs (admin/staff/client) ---
+        print("\n[users]")
+        add_column_if_missing(cursor, "users", "role", "TEXT DEFAULT 'client'")
+
+        # --- Point 5 : Budget de Bill ---
+        print("\n[budget]")
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS budget_categories (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                nom TEXT NOT NULL,
+                type TEXT DEFAULT 'fixe',
+                budget_mensuel REAL DEFAULT 0,
+                couleur TEXT DEFAULT '#FF0090',
+                ordre INTEGER DEFAULT 0
+            )
+        """)
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS budget_expenses (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                category_id INTEGER NOT NULL,
+                montant REAL NOT NULL,
+                date TEXT NOT NULL,
+                description TEXT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (category_id) REFERENCES budget_categories(id)
+            )
+        """)
+        print("   TABLES CREEES : budget_categories, budget_expenses")
+
         conn.commit()
         print("\n=== MIGRATION TERMINEE AVEC SUCCES ===")
     

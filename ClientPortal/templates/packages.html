@@ -107,6 +107,13 @@
             </div>
         </div>
 
+        <div class="form-group" style="margin-bottom: 1.2rem;">
+            <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; color: var(--accent); font-size: 0.85rem;">
+                <input type="checkbox" id="modeMigration" name="mode_migration" style="width: auto;">
+                <span class="client-nom" style="font-size: 1.1rem; display: inline-block; letter-spacing: 0.04em; transform-origin: left; animation-delay: 2.1s;">Mode Migration (Copie Conforme)</span>
+            </label>
+        </div>
+
         <div class="section-title" style="font-size: 0.75rem; margin-bottom: 0.85rem; color: var(--muted); letter-spacing: 0.08em;">
             HEURES PAR CATÉGORIE
         </div>
@@ -195,7 +202,6 @@
                     style="padding: 0.25rem 0.6rem; font-size: 0.72rem; color: var(--muted); border-color: var(--border);">✕</button>
         </form>
     </div>
-    
 </div>
 {% endfor %}
 {% else %}
@@ -229,6 +235,25 @@ function recalcul() {
     document.getElementById('aff_avec_marge').textContent  = avec_marge.toFixed(2) + ' $';
     document.getElementById('aff_final').textContent       = final + ' $';
 }
+
+document.addEventListener('DOMContentLoaded', () => {
+    const toggleMigration = document.getElementById('modeMigration');
+    const inputDesign = document.getElementById('h_design');
+    
+    if (toggleMigration && inputDesign) {
+        toggleMigration.addEventListener('change', function() {
+            if (this.checked) {
+                inputDesign.value = 0;
+                inputDesign.setAttribute('readonly', true);
+                inputDesign.style.opacity = '0.5';
+            } else {
+                inputDesign.removeAttribute('readonly');
+                inputDesign.style.opacity = '1';
+            }
+            recalcul(); // Met à jour le total automatiquement
+        });
+    }
+});
 
 document.querySelectorAll('input[type=number], #marge')
         .forEach(el => el.addEventListener('input', recalcul));

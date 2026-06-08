@@ -99,6 +99,7 @@ h1, h2, h3, h4 {
     font-family: 'Bebas Neue', sans-serif;
     letter-spacing: 0.06em;
     line-height: 1.1;
+    font-weight: normal;
 }
 
 a { color: var(--accent2); text-decoration: none; }
@@ -128,11 +129,41 @@ a:hover { color: var(--accent); }
 }
 
 body.sidebar-collapsed .sidebar {
-    width: 0;
-    min-width: 0;
-    padding-left: 0;
-    padding-right: 0;
-    border-color: transparent;
+    width: 70px;
+    min-width: 70px;
+    padding-left: 0.6rem;
+    padding-right: 0.6rem;
+    align-items: center;
+}
+
+/* Cache le texte et garde les icônes */
+body.sidebar-collapsed .nav-label,
+body.sidebar-collapsed .sidebar-cat,
+body.sidebar-collapsed .nav-badge {
+    display: none;
+}
+
+body.sidebar-collapsed .sidebar-header {
+    flex-direction: column;
+    justify-content: center;
+    gap: 0.8rem;
+}
+
+body.sidebar-collapsed .sidebar-nav a {
+    justify-content: center;
+    padding: 0.6rem 0;
+}
+
+body.sidebar-collapsed .sidebar-user {
+    text-align: center;
+    padding-top: 1rem;
+    border-top: 1px solid var(--border);
+}
+
+/* Ajustement du bouton déconnexion sans texte */
+body.sidebar-collapsed .sidebar-user .text-muted {
+    display: inline-block;
+    margin-top: 0.4rem;
 }
 
 /* ── Bouton toggle sidebar ───────────────────────────────────────────────── */
@@ -154,6 +185,25 @@ body.sidebar-collapsed .sidebar {
 #nav-toggle:hover { color: var(--text); background: var(--surface2); }
 body.sidebar-collapsed #nav-toggle { left: 0.6rem; }
 
+/* ── Nouveau bouton intégré (Desktop) ────────────────────────────────────── */
+#desktop-nav-toggle {
+    background: transparent;
+    border: none;
+    color: var(--accent);
+    font-size: 1.1rem;
+    cursor: pointer;
+    padding: 0.2rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.2s, color 0.15s;
+    outline: none;
+}
+#desktop-nav-toggle:hover {
+    color: var(--accent2);
+    transform: scale(1.15);
+}
+
 .sidebar-logo {
     font-family: 'Bebas Neue', sans-serif;
     font-size: 1.6rem;
@@ -173,6 +223,16 @@ body.sidebar-collapsed #nav-toggle { left: 0.6rem; }
     flex: 1;
     min-height: 0;      /* permet au flex item de rétrécir et de scroller */
     overflow-y: auto;
+    scrollbar-width: none; /* Cache sur Firefox */
+}
+.sidebar-nav::-webkit-scrollbar {
+    display: none; /* Cache sur Chrome/Safari/Edge */
+}
+
+.nav-icon {
+    font-size: 1.25rem; /* Icônes plus grosses */
+    width: 24px;        /* Fixe la largeur pour que les textes soient bien alignés */
+    text-align: center;
 }
 
 .nav-bullet {
@@ -209,7 +269,7 @@ body.sidebar-collapsed #nav-toggle { left: 0.6rem; }
 
 .sidebar-nav a {
     display: flex;
-    align-items: flex-start;
+    align-items: center; /* Aligne le texte au centre des grosses icônes */
     gap: 0.5rem;
     color: var(--muted);
     padding: 0.5rem 0.8rem;
@@ -233,6 +293,13 @@ body.sidebar-collapsed #nav-toggle { left: 0.6rem; }
 }
 
 .sidebar-user strong { color: var(--text); display: block; margin-bottom: 0.3rem; }
+
+/* Animation rouge pour la déconnexion */
+.logout-link .nav-icon { transition: all 0.2s ease; }
+.logout-link:hover .nav-icon {
+    filter: drop-shadow(0 0 6px var(--red));
+    transform: scale(1.15);
+}
 
 .main {
     padding: 2.5rem 2.8rem;
@@ -887,6 +954,9 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 @media (max-width: 900px) {
     .app-layout { grid-template-columns: 1fr; align-content: start; }
 
+    /* On cache la flèche desktop (inutile sur mobile) */
+    #desktop-nav-toggle { display: none !important; }
+
     /* Le toggle flotte en haut à droite sur mobile (la sidebar est en barre horizontale) */
     #nav-toggle {
         position: static;
@@ -1188,6 +1258,24 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 .cmd-empty { padding: 0.8rem 1rem; font-size: 0.82rem; color: var(--muted); font-style: italic; }
 .cmd-montant { font-size: 0.88rem; font-weight: 700; color: var(--green); }
 @media (max-width: 700px) { .cmd-center { grid-template-columns: 1fr; } }
+
+/* ── SKELETON LOADING ────────────────────────────────────────────────────── */
+.skeleton {
+    background: var(--surface2);
+    background: linear-gradient(110deg, rgba(255,255,255,0.03) 8%, rgba(255,255,255,0.08) 18%, rgba(255,255,255,0.03) 33%);
+    background-size: 200% 100%;
+    animation: skeleton-shine 1.5s linear infinite;
+    border-radius: var(--radius);
+    border: none !important;
+}
+@keyframes skeleton-shine {
+    to { background-position-x: -200%; }
+}
+.skeleton-text { height: 0.9rem; margin-bottom: 0.4rem; border-radius: 4px; width: 100%; }
+.skeleton-text.short { width: 30%; }
+.skeleton-text.medium { width: 60%; }
+.skeleton-avatar { width: 32px; height: 32px; border-radius: 50%; }
+.skeleton-block { height: 60px; margin-bottom: 0.5rem; border-radius: var(--radius); }
 
 /* ── BADGES NAV MESSAGES ─────────────────────────────────────────────────── */
 .nav-badge {

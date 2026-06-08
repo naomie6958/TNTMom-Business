@@ -10,9 +10,16 @@ from functools import wraps
 from zoneinfo import ZoneInfo
 
 from dotenv import load_dotenv
-from flask import Flask, render_template, request, redirect, session, jsonify, flash, send_from_directory
+from flask import Flask, render_template, request, redirect, session, jsonify, flash, send_from_directory, url_for, Response
 from werkzeug.security import check_password_hash, generate_password_hash
 from werkzeug.utils import secure_filename
+
+try:
+    from weasyprint import HTML
+    WEASYPRINT_AVAILABLE = True
+except (OSError, ImportError):
+    WEASYPRINT_AVAILABLE = False
+    print("⚠️ WeasyPrint (GTK) introuvable. Génération de PDF désactivée en local.")
 
 from database import init_db, seed_db, migrate_db, get_db
 from email_templates import (
@@ -23,6 +30,11 @@ from email_templates import (
     email_facture
 )
 
+from utils import (
+    send_notification_email, _compute_deadlines, group_messages,
+    _now, login_required, client_login_required, safe_json_loads
+)
+
 _EASTERN = ZoneInfo('America/Montreal')
 
 load_dotenv()
@@ -30,80 +42,34 @@ load_dotenv()
 app = Flask(__name__)
 
 
-def send_notification_email(subject, body, to=None, html=None):
-    """Envoie un courriel via Gmail SMTP. Retourne True si envoyé, False sinon."""
-    gmail_user = os.getenv('GMAIL_USER')
-    gmail_pass = os.getenv('GMAIL_APP_PASSWORD')
-    if not gmail_user or not gmail_pass:
-        return False
-    try:
-        if html:
-            # courriel multipart : version texte + version HTML
-            msg = MIMEMultipart('alternative')
-            msg.attach(MIMEText(body, 'plain', 'utf-8'))
-            msg.attach(MIMEText(html, 'html', 'utf-8'))
-        else:
-            msg = MIMEText(body, 'plain', 'utf-8')
-        msg['Subject'] = subject
-        msg['From']    = f'Naomie | TNTMom <{gmail_user}>'
-        msg['To']      = to or 'naomiemt@tntm.ca'
-        msg['Reply-To'] = 'naomiemt@tntm.ca'
-        with smtplib.SMTP('smtp.gmail.com', 587) as server:
-            server.starttls()
-            server.login(gmail_user, gmail_pass)
-            server.send_message(msg)
-        return True
-    except Exception as e:
-        import sys
-        print(f'[EMAIL ERROR] {subject} → {to}: {e}', file=sys.stderr)
-        return False
-
-
-def _compute_deadlines(milestones):
-    """Calcule deadline[i] = milieu entre date[i] et date[i+1]. Modifie la liste en place."""
-    for i, m in enumerate(milestones):
-        if i < len(milestones) - 1:
-            d1 = m.get('date', '')
-            d2 = milestones[i + 1].get('date', '')
-            if d1 and d2:
-                try:
-                    dt1 = datetime.datetime.strptime(d1, '%Y-%m-%d')
-                    dt2 = datetime.datetime.strptime(d2, '%Y-%m-%d')
-                    mid = dt1 + (dt2 - dt1) / 2
-                    m['deadline'] = mid.strftime('%Y-%m-%d')
-                except Exception:
-                    m['deadline'] = ''
-            else:
-                m['deadline'] = ''
-        else:
-            m['deadline'] = ''
-    return milestones
-
-
-def group_messages(messages):
-    """Regroupe les messages en fils de conversation par sujet de base (ignore les Re:)."""
-    from collections import OrderedDict
-
-    def base_subject(s):
-        s = (s or '').strip()
-        while s.lower().startswith('re: '):
-            s = s[4:].strip()
-        return s or 'Sans sujet'
-
-    threads = OrderedDict()
-    for msg in messages:
-        key = base_subject(msg['sujet'])
-        if key not in threads:
-            threads[key] = []
-        threads[key].append(dict(msg))
-
-    return list(threads.items())
 # La secret_key sert à signer les cookies de session.
 # Si elle change, toutes les sessions actives sont invalidées.
 # En prod elle vient du .env — jamais hardcodée dans le code.
 app.secret_key = os.getenv('SECRET_KEY', 'dev-only-change-me')
 
+# Branchement des Blueprints
+from routes_auth import auth_bp
+app.register_blueprint(auth_bp)
+from routes_api import api_bp
+app.register_blueprint(api_bp)
+from routes_client import client_bp
+app.register_blueprint(client_bp)
+from routes_admin_clients import admin_clients_bp
+app.register_blueprint(admin_clients_bp)
+from routes_admin_compta import admin_compta_bp
+app.register_blueprint(admin_compta_bp)
+from routes_admin_tools import admin_tools_bp
+app.register_blueprint(admin_tools_bp)
+
 _MOIS = ['jan', 'fév', 'mar', 'avr', 'mai', 'juin', 'juil', 'août', 'sep', 'oct', 'nov', 'déc']
+
+
+@app.before_request
+def check_maintenance():
+    """Intercepte les requêtes clients si le mode maintenance est activé dans le .env"""
+    if os.getenv('MAINTENANCE_MODE') == '1':
+        if request.path.startswith('/portail') and not request.path.startswith('/static'):
+            return render_template('maintenance.html'), 503
 
 
 @app.context_processor
@@ -160,10 +126,6 @@ def to_local(dt_str):
         return str(dt_str)
 
 
-def _now():
-    """Heure actuelle en UTC — to_local convertit à l'affichage."""
-    return datetime.datetime.now(datetime.timezone.utc).strftime('%Y-%m-%d %H:%M:%S')
-
 # Limite la taille des uploads à 16 MB — au-delà Flask retourne une erreur 413
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024
 
@@ -173,7 +135,11 @@ app.config['SESSION_COOKIE_SECURE']   = True
 
 # Dossier de stockage des fichiers uploadés — en dehors de static/ pour ne pas
 # être servi directement. Flask contrôle qui peut télécharger quoi.
-UPLOAD_ROOT = os.path.join(os.path.dirname(__file__), 'uploads')
+RAILWAY_DIR = os.getenv('RAILWAY_VOLUME_MOUNT_PATH')
+if RAILWAY_DIR:
+    UPLOAD_ROOT = os.path.join(RAILWAY_DIR, 'uploads')
+else:
+    UPLOAD_ROOT = os.path.join(os.path.dirname(__file__), 'uploads')
 
 # On initialise et peuple la DB au démarrage de l'app
 init_db()
@@ -193,64 +159,8 @@ def inject_user():
         'name': session.get('user_name', ''),
         'client_nom': session.get('client_nom', ''),
         'admin_impersonating': session.get('admin_impersonating', False),
+        'role': session.get('user_role',''),
     }
-
-
-def login_required(f):
-    @wraps(f)  # @wraps préserve le nom et la docstring de la fonction originale
-    def decorated(*args, **kwargs):
-        if 'user_id' not in session:
-            return redirect('/login')
-        return f(*args, **kwargs)
-    return decorated
-
-def client_login_required(f):
-    @wraps(f)
-    def decorated(*args, **kwargs):
-        if 'client_id' not in session:
-            return redirect('/portail/login')
-        return f(*args, **kwargs)
-    return decorated
-
-# ─── AUTH ─────────────────────────────────────────────────────────────────────
-
-@app.route('/')
-def index():
-    if 'user_id' in session:
-        return redirect('/dashboard')
-    return redirect('/login')
-
-
-@app.route('/login', methods=['GET', 'POST'])
-def login():
-    error = None
-    if request.method == 'POST':
-        username = request.form.get('username', '').strip()
-        password = request.form.get('password', '')
-
-        conn = get_db()
-        user = conn.execute(
-            'SELECT * FROM users WHERE username = ?', (username,)
-        ).fetchone()
-        conn.close()
-
-        # check_password_hash compare le mot de passe saisi au hash stocké en DB.
-        # On ne peut pas "déhasher" — on hash la saisie et on compare les hash.
-        if user and check_password_hash(user['password'], password):
-            session['user_id']   = user['id']
-            session['user_name'] = user['name']
-            return redirect('/dashboard')
-
-        error = 'Identifiants incorrects.'
-
-    return render_template('login.html', error=error)
-
-
-@app.route('/logout')
-def logout():
-    session.clear()  # Vide toute la session = déconnexion
-    return redirect('/login')
-
 
 # ─── DASHBOARD ────────────────────────────────────────────────────────────────
 
@@ -259,7 +169,7 @@ def logout():
 def dashboard():
     conn = get_db()
     clients = conn.execute(
-        'SELECT * FROM clients ORDER BY created_at DESC'
+        'SELECT * FROM clients WHERE deleted = 0 ORDER BY created_at DESC'
     ).fetchall()
 
     stats = {
@@ -294,53 +204,7 @@ def dashboard():
         ORDER BY f.date_emission DESC
     ''').fetchall()
 
-    # ── Projets actifs (absorbés du Command Center) ──
-    clients_actifs = conn.execute(
-        "SELECT * FROM clients WHERE statut IN ('actif', 'prospect', 'complété') AND demo = 0 ORDER BY statut, nom ASC"
-    ).fetchall()
-
-    rows = []
-    for c in clients_actifs:
-        contrats = conn.execute(
-            'SELECT * FROM contrats WHERE client_id = ? ORDER BY created_at DESC',
-            (c['id'],)
-        ).fetchall()
-        for contrat in contrats:
-            ms = json.loads(contrat['milestones']) if contrat['milestones'] else []
-            ms = _compute_deadlines(ms)
-            action = None
-            for m in ms:
-                s = m.get('statut', 'en attente')
-                if s == 'livré':
-                    action = {'type': 'attente_appro', 'label': f'Client doit approuver : {m["titre"]}', 'urgent': True}
-                    break
-                if s == 'approuvé':
-                    action = {'type': 'a_payer', 'label': f'À marquer payé : {m["titre"]}', 'urgent': True}
-                    break
-                if s == 'en cours':
-                    action = {'type': 'en_cours', 'label': f'En cours : {m["titre"]}', 'urgent': False}
-                    break
-            if not action:
-                for m in ms:
-                    if m.get('statut') == 'en attente':
-                        action = {'type': 'a_demarrer', 'label': f'À démarrer : {m["titre"]}', 'urgent': False}
-                        break
-            if not action and ms:
-                action = {'type': 'termine', 'label': 'Tous les milestones complétés', 'urgent': False}
-
-            faits = sum(1 for m in ms if m.get('statut') in ('payé', 'approuvé', 'livré'))
-            factures_att = conn.execute(
-                "SELECT COUNT(*) as n FROM factures WHERE contrat_id = ? AND statut != 'payée'",
-                (contrat['id'],)
-            ).fetchone()['n']
-            rows.append({
-                'client':       dict(c),
-                'contrat':      dict(contrat),
-                'ms_total':     len(ms),
-                'ms_faits':     faits,
-                'action':       action,
-                'factures_att': factures_att,
-            })
+    # NOTE: Les projets actifs sont maintenant chargés en AJAX via /api/dashboard/active-projects
 
     week_start  = (datetime.date.today() - datetime.timedelta(days=datetime.date.today().weekday())).isoformat()
     month_start = datetime.date.today().replace(day=1).isoformat()
@@ -387,12 +251,61 @@ def dashboard():
                            unread_counts=unread_counts,
                            messages_nonlus=messages_nonlus,
                            factures_attente=factures_attente,
-                           rows=rows,
                            heures_semaine=heures_semaine,
                            heures_mois=heures_mois,
                            ratio_data=ratio_data,
                            banques_actives=banques_actives,
                            name=session['user_name'])
+
+@app.route('/api/dashboard/active-projects')
+@login_required
+def api_dashboard_active_projects():
+    """API Endpoint pour le Skeleton Loading du Dashboard"""
+    conn = get_db()
+    clients_actifs = conn.execute(
+        "SELECT * FROM clients WHERE statut IN ('actif', 'prospect', 'complété') AND demo = 0 AND deleted = 0 ORDER BY statut, nom ASC"
+    ).fetchall()
+
+    rows = []
+    for c in clients_actifs:
+        contrats = conn.execute(
+            'SELECT * FROM contrats WHERE client_id = ? ORDER BY created_at DESC',
+            (c['id'],)
+        ).fetchall()
+        for contrat in contrats:
+            ms = safe_json_loads(contrat['milestones'], default=[])
+            ms = _compute_deadlines(ms)
+            action = None
+            for m in ms:
+                s = m.get('statut', 'en attente')
+                if s == 'livré':
+                    action = {'type': 'attente_appro', 'label': f'Client doit approuver : {m["titre"]}', 'urgent': True}
+                    break
+                if s == 'approuvé':
+                    action = {'type': 'a_payer', 'label': f'À marquer payé : {m["titre"]}', 'urgent': True}
+                    break
+                if s == 'en cours':
+                    action = {'type': 'en_cours', 'label': f'En cours : {m["titre"]}', 'urgent': False}
+                    break
+            if not action:
+                for m in ms:
+                    if m.get('statut') == 'en attente':
+                        action = {'type': 'a_demarrer', 'label': f'À démarrer : {m["titre"]}', 'urgent': False}
+                        break
+            if not action and ms:
+                action = {'type': 'termine', 'label': 'Tous les milestones complétés', 'urgent': False}
+
+            faits = sum(1 for m in ms if m.get('statut') in ('payé', 'approuvé', 'livré'))
+            factures_att = conn.execute(
+                "SELECT COUNT(*) as n FROM factures WHERE contrat_id = ? AND statut != 'payée' AND deleted = 0",
+                (contrat['id'],)
+            ).fetchone()['n']
+            rows.append({
+                'client': dict(c), 'contrat': dict(contrat), 'ms_total': len(ms),
+                'ms_faits': faits, 'action': action, 'factures_att': factures_att,
+            })
+    conn.close()
+    return jsonify(rows)
 
 
 # ─── COMMAND CENTER ───────────────────────────────────────────────────────────
@@ -418,7 +331,7 @@ def command_center_legacy():
         ).fetchall()
 
         for contrat in contrats:
-            ms = json.loads(contrat['milestones']) if contrat['milestones'] else []
+            ms = safe_json_loads(contrat['milestones'], default=[])
             ms = _compute_deadlines(ms)
 
             # Milestone en cours + prochaine action
@@ -501,797 +414,6 @@ def command_center_legacy():
                            ratio_data=ratio_data, banques_actives=banques_actives)
 
 
-# ─── CLIENTS ──────────────────────────────────────────────────────────────────
-
-@app.route('/clients/new', methods=['POST'])
-@login_required
-def new_client():
-    nom = request.form.get('nom', '').strip()
-    if not nom:
-        return redirect('/dashboard')
-
-    conn = get_db()
-    # uuid.uuid4() génère un identifiant aléatoire unique — format : xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
-    # str() le convertit en texte pour le stocker dans SQLite
-    token = str(uuid.uuid4())
-    cursor = conn.execute(
-        'INSERT INTO clients (nom, email, entreprise, secteur, notes, token) VALUES (?,?,?,?,?,?)',
-        (
-            nom,
-            request.form.get('email', '').strip(),
-            request.form.get('entreprise', '').strip(),
-            request.form.get('secteur', '').strip(),
-            request.form.get('notes', '').strip(),
-            token,
-        )
-    )
-    client_id = cursor.lastrowid  # lastrowid = l'id de la ligne qu'on vient d'insérer
-    conn.commit()
-    conn.close()
-
-    return redirect(f'/clients/{client_id}')
-
-
-@app.route('/clients/<int:client_id>')
-@login_required
-def client_fiche(client_id):
-    conn = get_db()
-    client = conn.execute(
-        'SELECT * FROM clients WHERE id = ?', (client_id,)
-    ).fetchone()
-
-    if not client:
-        conn.close()
-        return redirect('/dashboard')
-
-    consultations = conn.execute(
-        'SELECT * FROM consultations WHERE client_id = ? ORDER BY created_at DESC',
-        (client_id,)
-    ).fetchall()
-
-    # On prend le contrat le plus récent (LIMIT 1) — Phase 1 = un contrat par client
-    contrat = conn.execute(
-        'SELECT * FROM contrats WHERE client_id = ? ORDER BY created_at DESC LIMIT 1',
-        (client_id,)
-    ).fetchone()
-
-    questionnaire = conn.execute(
-        'SELECT * FROM questionnaires_client WHERE client_id = ?',
-        (client_id,)
-    ).fetchone()
-
-    fichiers = conn.execute(
-        'SELECT * FROM fichiers WHERE client_id = ? ORDER BY uploaded_at DESC',
-        (client_id,)
-    ).fetchall()
-
-    messages = conn.execute(
-        'SELECT * FROM messages_client WHERE client_id = ? ORDER BY created_at ASC',
-        (client_id,)
-    ).fetchall()
-
-    factures = conn.execute(
-        'SELECT * FROM factures WHERE client_id = ? ORDER BY date_emission DESC',
-        (client_id,)
-    ).fetchall()
-
-    contrats_all = conn.execute(
-        'SELECT * FROM contrats WHERE client_id = ? ORDER BY created_at ASC',
-        (client_id,)
-    ).fetchall()
-
-    form_reponses_raw = conn.execute('''
-        SELECT fr.*, f.titre AS form_titre
-        FROM formulaire_reponses fr
-        JOIN formulaires f ON fr.formulaire_id = f.id
-        WHERE fr.client_id = ?
-        ORDER BY fr.submitted_at DESC
-    ''', (client_id,)).fetchall()
-
-    formulaires_tous = conn.execute(
-        'SELECT * FROM formulaires WHERE actif = 1 ORDER BY titre'
-    ).fetchall()
-    formulaires_assignes_ids = {
-        row['formulaire_id'] for row in conn.execute(
-            'SELECT formulaire_id FROM client_formulaires WHERE client_id = ?', (client_id,)
-        ).fetchall()
-    }
-    formulaires_assignes    = [f for f in formulaires_tous if f['id'] in formulaires_assignes_ids]
-    formulaires_disponibles = [f for f in formulaires_tous if f['id'] not in formulaires_assignes_ids]
-
-    # Auto-marque les messages comme lus dès que Naomie ouvre la fiche
-    conn.execute(
-        'UPDATE messages_client SET lu = 1 WHERE client_id = ? AND lu = 0',
-        (client_id,)
-    )
-    conn.commit()
-
-    banques_heures = conn.execute(
-        'SELECT * FROM banque_heures WHERE client_id = ? ORDER BY date_achat DESC',
-        (client_id,)
-    ).fetchall()
-
-    conn.close()
-
-    # Pareil pour les consultations — parse le JSON de chaque consultation
-    consultations_parsed = []
-    for c in consultations:
-        d = dict(c)
-        d['reponses_parsed'] = json.loads(c['reponses']) if c['reponses'] else {}
-        consultations_parsed.append(d)
-
-    # Parse les réponses du questionnaire client pour affichage clé/valeur
-    questionnaire_rep = {}
-    if questionnaire and questionnaire['reponses']:
-        questionnaire_rep = json.loads(questionnaire['reponses'])
-
-    # Parse les réponses des formulaires soumis par ce client
-    # On enrichit chaque soumission avec les titres de questions pour affichage lisible
-    conn2 = get_db()
-    form_reponses = []
-    for fr in form_reponses_raw:
-        d = dict(fr)
-        try:
-            raw = json.loads(fr['reponses'])
-        except Exception:
-            raw = {}
-        questions = conn2.execute(
-            'SELECT id, titre, type FROM formulaire_questions WHERE formulaire_id = ? ORDER BY ordre',
-            (fr['formulaire_id'],)
-        ).fetchall()
-        reponses_lisibles = []
-        for q in questions:
-            key = f'q_{q["id"]}'
-            val = raw.get(key, '')
-            if val:
-                reponses_lisibles.append({'question': q['titre'], 'reponse': val, 'type': q['type']})
-        d['reponses_lisibles'] = reponses_lisibles
-        form_reponses.append(d)
-    conn2.close()
-
-    # Construit la liste enrichie des projets (tous les contrats)
-    projets = []
-    for c in contrats_all:
-        m = _compute_deadlines(json.loads(c['milestones']) if c['milestones'] else [])
-        total = sum(float(x.get('prix', 0) or 0) for x in m)
-        projets.append({'contrat': dict(c), 'milestones': m, 'total': total})
-
-    # Garde contrat (le dernier) pour les sections qui n'ont pas encore migré
-    contrat = contrats_all[-1] if contrats_all else None
-    milestones = projets[-1]['milestones'] if projets else []
-    total_contrat = projets[-1]['total'] if projets else 0
-
-    return render_template('client_fiche.html',
-                           client=client,
-                           consultations=consultations_parsed,
-                           contrat=contrat,
-                           milestones=milestones,
-                           total_contrat=total_contrat,
-                           projets=projets,
-                           questionnaire=questionnaire,
-                           questionnaire_rep=questionnaire_rep,
-                           fichiers=fichiers,
-                           messages=messages,
-                           msg_threads=group_messages(messages),
-                           factures=factures,
-                           form_reponses=form_reponses,
-                           formulaires_assignes=formulaires_assignes,
-                           formulaires_disponibles=formulaires_disponibles,
-                           banques_heures=banques_heures,
-                           name=session['user_name'])
-
-
-@app.route('/clients/<int:client_id>/edit', methods=['POST'])
-@login_required
-def edit_client(client_id):
-    conn = get_db()
-    conn.execute('''
-        UPDATE clients
-        SET nom=?, email=?, entreprise=?, secteur=?, notes=?, statut=?
-        WHERE id=?
-    ''', (
-        request.form.get('nom', '').strip(),
-        request.form.get('email', '').strip(),
-        request.form.get('entreprise', '').strip(),
-        request.form.get('secteur', '').strip(),
-        request.form.get('notes', '').strip(),
-        request.form.get('statut', 'prospect'),
-        client_id
-    ))
-    conn.commit()
-    conn.close()
-    flash('Client mis à jour.', 'success')
-    return redirect(f'/clients/{client_id}')
-
-
-@app.route('/clients/<int:client_id>/toggle-demo', methods=['POST'])
-@login_required
-def toggle_demo(client_id):
-    conn = get_db()
-    current = conn.execute('SELECT demo FROM clients WHERE id = ?', (client_id,)).fetchone()
-    new_val = 0 if (current and current['demo']) else 1
-    conn.execute('UPDATE clients SET demo = ? WHERE id = ?', (new_val, client_id))
-    conn.commit()
-    conn.close()
-    return redirect(f'/clients/{client_id}')
-
-
-@app.route('/clients/<int:client_id>/toggle-rnd', methods=['POST'])
-@login_required
-def toggle_rnd(client_id):
-    conn = get_db()
-    current = conn.execute('SELECT rnd FROM clients WHERE id = ?', (client_id,)).fetchone()
-    new_val = 0 if (current and current['rnd']) else 1
-    conn.execute('UPDATE clients SET rnd = ? WHERE id = ?', (new_val, client_id))
-    conn.commit()
-    conn.close()
-    return redirect(f'/clients/{client_id}')
-
-
-@app.route('/clients/<int:client_id>/statut', methods=['POST'])
-@login_required
-def client_statut(client_id):
-    statut = request.form.get('statut', 'prospect')
-    conn = get_db()
-    conn.execute('UPDATE clients SET statut = ? WHERE id = ?', (statut, client_id))
-    conn.commit()
-    conn.close()
-    flash(f'Statut mis à jour : {statut}.', 'success')
-    return redirect(f'/clients/{client_id}')
-
-
-@app.route('/clients/<int:client_id>/delete', methods=['POST'])
-@login_required
-def delete_client(client_id):
-    conn = get_db()
-    # ON DELETE CASCADE dans la DB supprime automatiquement
-    # les consultations, contrats et questionnaires liés à ce client
-    conn.execute('DELETE FROM clients WHERE id = ?', (client_id,))
-    conn.commit()
-    conn.close()
-    flash('Client supprimé.', 'success')
-    return redirect('/dashboard')
-
-
-# ─── CONSULTATIONS ────────────────────────────────────────────────────────────
-
-@app.route('/clients/<int:client_id>/consultation/new', methods=['GET', 'POST'])
-@login_required
-def new_consultation(client_id):
-    conn = get_db()
-    client = conn.execute(
-        'SELECT * FROM clients WHERE id = ?', (client_id,)
-    ).fetchone()
-
-    if not client:
-        conn.close()
-        return redirect('/dashboard')
-
-    # Pré-charger les réponses du questionnaire client s'il en a soumis un
-    # Comme ça Naomie arrive avec les infos déjà lues
-    questionnaire = conn.execute(
-        'SELECT reponses FROM questionnaires_client WHERE client_id = ?',
-        (client_id,)
-    ).fetchone()
-    prefill = {}
-    if questionnaire and questionnaire['reponses']:
-        prefill = json.loads(questionnaire['reponses'])
-
-    if request.method == 'POST':
-        reponses = {
-            'activite':            request.form.get('activite', ''),
-            'clientele':           request.form.get('clientele', ''),
-            'pourquoi_maintenant': request.form.get('pourquoi_maintenant', ''),
-            'type_projet':         request.form.get('type_projet', ''),
-            'vision':              request.form.get('vision', ''),
-            'budget':              request.form.get('budget', ''),
-            'deadline':            request.form.get('deadline', ''),
-            'assets':              request.form.get('assets', ''),
-            'acces_technique':     request.form.get('acces_technique', ''),
-            'implication':         request.form.get('implication', ''),
-        }
-        today = datetime.date.today().isoformat()
-        conn.execute(
-            'INSERT INTO consultations (client_id, date, reponses, notes) VALUES (?,?,?,?)',
-            (
-                client_id,
-                today,
-                # ensure_ascii=False = garde les accents français lisibles dans la DB
-                json.dumps(reponses, ensure_ascii=False),
-                request.form.get('notes', ''),
-            )
-        )
-        conn.commit()
-        conn.close()
-        return redirect(f'/clients/{client_id}')
-
-    conn.close()
-    return render_template('consultation.html',
-                           client=client,
-                           prefill=prefill,
-                           name=session['user_name'])
-
-
-@app.route('/consultations/<int:consult_id>/delete', methods=['POST'])
-@login_required
-def delete_consultation(consult_id):
-    conn = get_db()
-    row = conn.execute(
-        'SELECT client_id FROM consultations WHERE id = ?', (consult_id,)
-    ).fetchone()
-    client_id = row['client_id'] if row else None
-    conn.execute('DELETE FROM consultations WHERE id = ?', (consult_id,))
-    conn.commit()
-    conn.close()
-    return redirect(f'/clients/{client_id}' if client_id else '/dashboard')
-
-
-# ─── CONTRATS ─────────────────────────────────────────────────────────────────
-
-@app.route('/clients/<int:client_id>/contrat')
-@login_required
-def contrat(client_id):
-    conn = get_db()
-    existing = conn.execute(
-        'SELECT id FROM contrats WHERE client_id = ? ORDER BY created_at DESC LIMIT 1',
-        (client_id,)
-    ).fetchone()
-    conn.close()
-    if existing:
-        return redirect(f'/clients/{client_id}/contrat/{existing["id"]}')
-    # Aucun contrat — on en crée un vide et on redirige vers l'édition
-    conn = get_db()
-    cursor = conn.execute(
-        'INSERT INTO contrats (client_id, scope, milestones, statut, nom) VALUES (?,?,?,?,?)',
-        (client_id, '', '[]', 'draft', 'Projet principal')
-    )
-    contrat_id = cursor.lastrowid
-    conn.commit()
-    conn.close()
-    return redirect(f'/clients/{client_id}/contrat/{contrat_id}')
-
-
-@app.route('/clients/<int:client_id>/contrat/<int:contrat_id>', methods=['GET', 'POST'])
-@login_required
-def contrat_edit(client_id, contrat_id):
-    conn = get_db()
-    client = conn.execute(
-        'SELECT * FROM clients WHERE id = ?', (client_id,)
-    ).fetchone()
-
-    if not client:
-        conn.close()
-        return redirect('/dashboard')
-
-    existing = conn.execute(
-        'SELECT * FROM contrats WHERE id = ? AND client_id = ?', (contrat_id, client_id)
-    ).fetchone()
-
-    if not existing:
-        conn.close()
-        return redirect(f'/clients/{client_id}')
-
-    if request.method == 'POST':
-        raw = request.form.get('milestones_json', '[]')
-        try:
-            milestones = json.loads(raw)
-        except json.JSONDecodeError:
-            milestones = []
-
-        conn.execute('''
-            UPDATE contrats
-            SET nom=?, scope=?, milestones=?, conditions_paiement=?,
-                politique_revisions=?, hors_scope=?, timeline=?, statut=?
-            WHERE id=?
-        ''', (
-            request.form.get('nom', '').strip() or 'Projet sans titre',
-            request.form.get('scope', ''),
-            json.dumps(milestones, ensure_ascii=False),
-            request.form.get('conditions_paiement', ''),
-            request.form.get('politique_revisions', ''),
-            request.form.get('hors_scope', ''),
-            request.form.get('timeline', ''),
-            request.form.get('statut', 'draft'),
-            contrat_id,
-        ))
-        conn.commit()
-        conn.close()
-        flash('Projet sauvegardé.', 'success')
-        return redirect(f'/clients/{client_id}')
-
-    milestones = json.loads(existing['milestones']) if existing['milestones'] else []
-    conn.close()
-    return render_template('contrat.html',
-                           client=client,
-                           contrat=existing,
-                           milestones=milestones,
-                           name=session['user_name'])
-
-
-# ─── QUESTIONNAIRE CLIENT (accès public, pas de login) ───────────────────────
-
-@app.route('/q/<token>', methods=['GET', 'POST'])
-def questionnaire_client(token):
-    conn = get_db()
-    # On cherche le client par token (pas par id) — l'id ne sort jamais dans l'URL
-    # On n'expose que le nom et l'entreprise au client
-    client = conn.execute(
-        'SELECT id, nom, entreprise FROM clients WHERE token = ?', (token,)
-    ).fetchone()
-
-    if not client:
-        conn.close()
-        return render_template('404.html'), 404
-
-    deja_soumis = conn.execute(
-        'SELECT id FROM questionnaires_client WHERE client_id = ?', (client['id'],)
-    ).fetchone()
-
-    if request.method == 'POST' and not deja_soumis:
-        reponses = {
-            'activite':            request.form.get('activite', ''),
-            'clientele':           request.form.get('clientele', ''),
-            'pourquoi_maintenant': request.form.get('pourquoi_maintenant', ''),
-            'type_projet':         request.form.get('type_projet', ''),
-            'vision':              request.form.get('vision', ''),
-            'budget':              request.form.get('budget', ''),
-            'deadline':            request.form.get('deadline', ''),
-            'assets':              request.form.get('assets', ''),
-            'acces_technique':     request.form.get('acces_technique', ''),
-            'implication':         request.form.get('implication', ''),
-        }
-        conn.execute(
-            'INSERT INTO questionnaires_client (client_id, reponses) VALUES (?,?)',
-            (client['id'], json.dumps(reponses, ensure_ascii=False))
-        )
-        conn.commit()
-        deja_soumis = True
-
-    conn.close()
-    return render_template('questionnaire_client.html',
-                           client=client,
-                           soumis=bool(deja_soumis))
-
-
-@app.route('/clients/<int:client_id>/projet/new', methods=['POST'])
-@login_required
-def projet_new(client_id):
-    nom = request.form.get('nom', '').strip() or 'Nouveau projet'
-    conn = get_db()
-    cursor = conn.execute(
-        'INSERT INTO contrats (client_id, scope, milestones, statut, nom) VALUES (?,?,?,?,?)',
-        (client_id, '', '[]', 'draft', nom)
-    )
-    contrat_id = cursor.lastrowid
-    conn.commit()
-    conn.close()
-    return redirect(f'/clients/{client_id}/contrat/{contrat_id}')
-
-
-@app.route('/clients/<int:client_id>/contrat/<int:contrat_id>/envoyer-email', methods=['POST'])
-@login_required
-def contrat_envoyer_email(client_id, contrat_id):
-    conn = get_db()
-    client  = conn.execute('SELECT * FROM clients WHERE id = ?', (client_id,)).fetchone()
-    contrat = conn.execute(
-        'SELECT * FROM contrats WHERE id = ? AND client_id = ?', (contrat_id, client_id)
-    ).fetchone()
-    conn.close()
-    if not client or not contrat:
-        flash('Client ou contrat introuvable.', 'error')
-        return redirect(f'/clients/{client_id}')
-    if not client['email']:
-        flash('Ce client n\'a pas d\'adresse email enregistrée.', 'error')
-        return redirect(f'/clients/{client_id}')
-    nom_projet = contrat['nom'] or 'ton projet'
-    ok = send_notification_email(
-        f'[TNTMom] Ton contrat est prêt à signer — {nom_projet}',
-        f'Bonjour {client["nom"]},\n\nTon contrat "{nom_projet}" est prêt. Connecte-toi pour le signer.',
-        to=client['email'],
-        html=email_contrat_envoye(client['nom'], nom_projet)
-    )
-    if ok:
-        flash(f'Email envoyé à {client["email"]}.', 'success')
-    else:
-        flash(f'Échec de l\'envoi — vérifie les variables GMAIL dans le .env de PA.', 'error')
-    return redirect(f'/clients/{client_id}')
-
-
-@app.route('/clients/<int:client_id>/contrat/<int:contrat_id>/delete', methods=['POST'])
-@login_required
-def contrat_delete(client_id, contrat_id):
-    conn = get_db()
-    conn.execute('DELETE FROM factures WHERE contrat_id = ?', (contrat_id,))
-    conn.execute('DELETE FROM contrats WHERE id = ? AND client_id = ?', (contrat_id, client_id))
-    conn.commit()
-    conn.close()
-    flash('Projet supprimé.', 'success')
-    return redirect(f'/clients/{client_id}')
-
-@app.route('/clients/<int:client_id>/banque-heures/new', methods=['POST'])
-@login_required
-def banque_heures_new(client_id):
-    conn = get_db()
-    client = conn.execute('SELECT * FROM clients WHERE id = ?', (client_id,)).fetchone()
-    if not client:
-        conn.close()
-        return redirect('/dashboard')
-
-    conn.execute(
-        """INSERT INTO banque_heures (client_id, minutes_total, minutes_utilisees, date_achat, statut)
-           VALUES (?, 300, 0, date('now'), 'actif')""",
-        (client_id,)
-    )
-    conn.commit()
-    conn.close()
-    flash(f'Banque de 5h ajoutée pour {client["nom"]}.', 'success')
-    return redirect(f'/clients/{client_id}')
-
-
-@app.route('/clients/<int:client_id>/contrat/<int:contrat_id>/print')
-@login_required
-def contrat_print(client_id, contrat_id):
-    conn = get_db()
-    client = conn.execute('SELECT * FROM clients WHERE id = ?', (client_id,)).fetchone()
-    contrat = conn.execute(
-        'SELECT * FROM contrats WHERE id = ? AND client_id = ?', (contrat_id, client_id)
-    ).fetchone()
-    conn.close()
-    if not client or not contrat:
-        return redirect(f'/clients/{client_id}')
-    milestones = json.loads(contrat['milestones']) if contrat['milestones'] else []
-    total = sum(float(m.get('prix', 0) or 0) for m in milestones)
-    return render_template('contrat_print.html',
-                           client=client, contrat=contrat,
-                           milestones=milestones, total=total)
-
-
-# ─── MILESTONES ───────────────────────────────────────────────────────────────
-
-@app.route('/clients/<int:client_id>/contrat/<int:contrat_id>/milestone/<int:index>/toggle', methods=['POST'])
-@login_required
-def toggle_milestone(client_id, contrat_id, index):
-    conn = get_db()
-    contrat = conn.execute(
-        'SELECT * FROM contrats WHERE id = ? AND client_id = ?', (contrat_id, client_id)
-    ).fetchone()
-
-    if not contrat or not contrat['milestones']:
-        conn.close()
-        return redirect(f'/clients/{client_id}')
-
-    milestones = json.loads(contrat['milestones'])
-
-    if 0 <= index < len(milestones):
-        cycle = {
-            'en attente': 'en cours',
-            'en cours':   'livré',
-            'livré':      'payé',
-            'approuvé':   'payé',
-            'payé':       'en attente',
-        }
-        actuel = milestones[index].get('statut', 'en attente')
-        nouveau = cycle.get(actuel, 'en cours')
-
-        # Bloquer le démarrage si le milestone précédent n'est pas payé
-        if nouveau == 'en cours' and index > 0:
-            prev = milestones[index - 1].get('statut', 'en attente')
-            if prev != 'payé':
-                conn.close()
-                msg = 'Le milestone précédent doit être payé avant de commencer celui-ci.'
-                if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-                    return jsonify({'error': msg}), 403
-                flash(msg, 'error')
-                return redirect(f'/clients/{client_id}')
-
-        milestones[index]['statut'] = nouveau
-
-        # Historique des changements de statut
-        hist = milestones[index].get('historique', [])
-        hist.append({'statut': nouveau, 'at': _now()[:10]})
-        milestones[index]['historique'] = hist
-
-        # Auto-créer une facture quand le milestone passe à 'livré'
-        if nouveau == 'livré':
-            m = milestones[index]
-            montant = float(m.get('prix', 0) or 0)
-            titre   = m.get('titre', f'Milestone {index + 1}')
-            deja    = conn.execute(
-                'SELECT id FROM factures WHERE contrat_id = ? AND milestone_titre = ?',
-                (contrat_id, titre)
-            ).fetchone()
-            if not deja and montant > 0:
-                count = conn.execute('SELECT COUNT(*) FROM factures').fetchone()[0]
-                numero = f"{datetime.date.today().year}-{str(count + 1).zfill(3)}"
-                conn.execute(
-                    '''INSERT INTO factures
-                       (client_id, contrat_id, numero, milestone_titre, montant, date_emission)
-                       VALUES (?, ?, ?, ?, ?, ?)''',
-                    (client_id, contrat_id, numero, titre, montant,
-                     datetime.date.today().isoformat())
-                )
-
-            # Email auto au client pour l'avertir que son livrable est prêt
-            client_notif = conn.execute(
-                'SELECT nom, email FROM clients WHERE id = ?', (client_id,)
-            ).fetchone()
-            if client_notif and client_notif['email']:
-                send_notification_email(
-                    f'[TNTMom] Ton livrable est prêt — {titre}',
-                    f'Bonjour {client_notif["nom"]},\n\nTon livrable "{titre}" est prêt. Connecte-toi pour le consulter.',
-                    to=client_notif['email'],
-                    html=email_milestone_livre(client_notif['nom'], titre)
-                )
-
-    conn.execute(
-        'UPDATE contrats SET milestones = ? WHERE id = ?',
-        (json.dumps(milestones, ensure_ascii=False), contrat['id'])
-    )
-    conn.commit()
-    conn.close()
-
-    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-        return jsonify({'statut': milestones[index]['statut']})
-    flash('Statut du milestone mis à jour.', 'success')
-    return redirect(f'/clients/{client_id}')
-
-
-# ─── FICHIERS ─────────────────────────────────────────────────────────────────
-
-@app.route('/clients/<int:client_id>/fichiers/upload', methods=['POST'])
-@login_required
-def upload_fichier(client_id):
-    fichier = request.files.get('fichier')
-    if not fichier or fichier.filename == '':
-        flash('Aucun fichier sélectionné.', 'error')
-        return redirect(f'/clients/{client_id}')
-
-    nom_original = fichier.filename
-    # secure_filename retire les / et caractères dangereux — évite les path traversal
-    nom_secure = secure_filename(nom_original)
-    if not nom_secure:
-        flash('Nom de fichier invalide.', 'error')
-        return redirect(f'/clients/{client_id}')
-
-    # UUID en préfixe = nom unique sur le disque même si deux clients uploadent le même nom
-    nom_stocke = f"{uuid.uuid4().hex}_{nom_secure}"
-
-    dossier = os.path.join(UPLOAD_ROOT, str(client_id))
-    os.makedirs(dossier, exist_ok=True)   # crée le dossier du client s'il n'existe pas
-
-    chemin = os.path.join(dossier, nom_stocke)
-    fichier.save(chemin)
-    taille = os.path.getsize(chemin)
-
-    conn = get_db()
-    conn.execute(
-        'INSERT INTO fichiers (client_id, nom_original, nom_fichier, taille) VALUES (?,?,?,?)',
-        (client_id, nom_original, nom_stocke, taille)
-    )
-    conn.commit()
-    conn.close()
-    flash(f'"{nom_original}" uploadé.', 'success')
-    return redirect(f'/clients/{client_id}')
-
-
-@app.route('/clients/<int:client_id>/fichiers/<int:fichier_id>/download')
-@login_required
-def telecharger_fichier_admin(client_id, fichier_id):
-    conn = get_db()
-    f = conn.execute(
-        'SELECT * FROM fichiers WHERE id = ? AND client_id = ?', (fichier_id, client_id)
-    ).fetchone()
-    conn.close()
-
-    if not f:
-        return redirect(f'/clients/{client_id}')
-
-    dossier = os.path.join(UPLOAD_ROOT, str(client_id))
-    # as_attachment=True = force le téléchargement (pas d'affichage dans le navigateur)
-    # download_name = nom montré à l'utilisateur (le nom original, pas le nom uuid interne)
-    return send_from_directory(dossier, f['nom_fichier'],
-                               as_attachment=True, download_name=f['nom_original'])
-
-
-@app.route('/clients/<int:client_id>/fichiers/<int:fichier_id>/delete', methods=['POST'])
-@login_required
-def delete_fichier(client_id, fichier_id):
-    conn = get_db()
-    f = conn.execute(
-        'SELECT * FROM fichiers WHERE id = ? AND client_id = ?', (fichier_id, client_id)
-    ).fetchone()
-
-    if f:
-        chemin = os.path.join(UPLOAD_ROOT, str(client_id), f['nom_fichier'])
-        if os.path.exists(chemin):
-            os.remove(chemin)  # on supprime le fichier physique avant l'entrée DB
-        conn.execute('DELETE FROM fichiers WHERE id = ?', (fichier_id,))
-        conn.commit()
-    conn.close()
-    flash('Fichier supprimé.', 'success')
-    return redirect(f'/clients/{client_id}')
-
-
-@app.route('/portail/fichiers/<int:fichier_id>')
-@client_login_required
-def telecharger_fichier_client(fichier_id):
-    conn = get_db()
-    # On vérifie que le fichier appartient bien AU client connecté — un client
-    # ne peut pas deviner l'id d'un fichier d'un autre client et le télécharger
-    f = conn.execute(
-        'SELECT * FROM fichiers WHERE id = ? AND client_id = ?',
-        (fichier_id, session['client_id'])
-    ).fetchone()
-    conn.close()
-
-    if not f:
-        return redirect('/portail/dashboard')
-
-    dossier = os.path.join(UPLOAD_ROOT, str(session['client_id']))
-    return send_from_directory(dossier, f['nom_fichier'],
-                               as_attachment=True, download_name=f['nom_original'])
-
-
-# ─── ACCÈS PORTAIL CLIENT ─────────────────────────────────────────────────────
-
-@app.route('/clients/<int:client_id>/set-password', methods=['POST'])
-@login_required
-def set_client_password(client_id):
-    password = request.form.get('password', '').strip()
-
-    # Validation minimale : on refuse un mot de passe vide
-    if not password:
-        return redirect(f'/clients/{client_id}')
-
-    conn = get_db()
-    conn.execute(
-        'UPDATE clients SET password = ? WHERE id = ?',
-        (generate_password_hash(password), client_id)
-    )
-    conn.commit()
-    client_notif = conn.execute('SELECT nom, email FROM clients WHERE id = ?', (client_id,)).fetchone()
-    conn.close()
-    if client_notif and client_notif['email']:
-        lien_portail = 'https://tntmom.pythonanywhere.com/portail/login'
-        send_notification_email(
-            '[TNTMom] Ton accès au portail client est prêt ✨',
-            f'Bonjour {client_notif["nom"]},\n\nTon portail est prêt. Connecte-toi ici : {lien_portail}',
-            to=client_notif['email'],
-            html=email_bienvenue(client_notif['nom'], lien_portail)
-        )
-
-    flash('Mot de passe mis à jour.', 'success')
-    return redirect(f'/clients/{client_id}')
-
-
-@app.route('/clients/<int:client_id>/formulaires/assign', methods=['POST'])
-@login_required
-def client_formulaire_assign(client_id):
-    fid = request.form.get('formulaire_id')
-    if fid:
-        conn = get_db()
-        conn.execute(
-            'INSERT OR IGNORE INTO client_formulaires (client_id, formulaire_id) VALUES (?,?)',
-            (client_id, int(fid))
-        )
-        conn.commit()
-        conn.close()
-    return redirect(f'/clients/{client_id}#formulaires')
-
-
-@app.route('/clients/<int:client_id>/formulaires/<int:fid>/remove', methods=['POST'])
-@login_required
-def client_formulaire_remove(client_id, fid):
-    conn = get_db()
-    conn.execute(
-        'DELETE FROM client_formulaires WHERE client_id = ? AND formulaire_id = ?',
-        (client_id, fid)
-    )
-    conn.commit()
-    conn.close()
-    return redirect(f'/clients/{client_id}#formulaires')
-
-
 @app.route('/plan')
 @login_required
 def plan():
@@ -1302,6 +424,7 @@ def plan():
             COUNT(CASE WHEN statut = 'actif' THEN 1 END) as clients_actifs,
             (SELECT COALESCE(SUM(montant), 0) FROM factures WHERE statut = 'payée') as revenus_realises
         FROM clients
+        WHERE deleted = 0
     ''').fetchone()
     conn.close()
     return render_template('plan.html', stats=plan_stats)
@@ -1311,438 +434,6 @@ def plan():
 @login_required
 def roadmap():
     return redirect('/plan')
-
-
-# ─── PORTAIL CLIENT ───────────────────────────────────────────────────────────
-
-@app.route('/portail/login', methods=['GET', 'POST'])
-def portail_login():
-    error = None
-    if request.method == 'POST':
-        email = request.form.get('email', '').strip()
-        password = request.form.get('password', '')
-
-        conn = get_db()
-        client = conn.execute(
-            'SELECT * FROM clients WHERE email = ?', (email,)
-        ).fetchone()
-        conn.close()
-
-        if client and client['password'] and check_password_hash(client['password'], password):
-            session['client_id']   = client['id']
-            session['client_nom'] = client['nom']
-            return redirect('/portail/dashboard')
-
-        error = 'Courriel ou mot de passe incorrect.'
-
-    return render_template('portail_login.html', error=error)
-
-
-@app.route('/portail/logout')
-def portail_logout():
-    if session.get('admin_impersonating'):
-        return redirect('/admin/exit-client')
-    session.pop('client_id', None)
-    session.pop('client_nom', None)
-    return redirect('/portail/login')
-
-
-@app.route('/admin/switch-client/<int:client_id>', methods=['POST'])
-@login_required
-def admin_switch_client(client_id):
-    conn = get_db()
-    client = conn.execute('SELECT * FROM clients WHERE id=?', (client_id,)).fetchone()
-    conn.close()
-    if not client:
-        flash('Client introuvable.', 'error')
-        return redirect('/dashboard')
-    session['client_id']          = client['id']
-    session['client_nom']         = client['nom']
-    session['admin_impersonating'] = True
-    return redirect('/portail/dashboard')
-
-
-@app.route('/admin/exit-client')
-def admin_exit_client():
-    client_id = session.pop('client_id', None)
-    session.pop('client_nom', None)
-    session.pop('admin_impersonating', None)
-    return redirect(f'/clients/{client_id}' if client_id else '/dashboard')
-
-
-
-@app.route('/portail/dashboard')
-@client_login_required
-def portail_dashboard():
-    conn = get_db()
-    client = conn.execute(
-        'SELECT * FROM clients WHERE id = ?', (session['client_id'],)
-    ).fetchone()
-
-    contrats_all = conn.execute(
-        'SELECT * FROM contrats WHERE client_id = ? ORDER BY created_at ASC',
-        (session['client_id'],)
-    ).fetchall()
-
-    fichiers = conn.execute(
-        'SELECT * FROM fichiers WHERE client_id = ? AND milestone_index IS NULL ORDER BY uploaded_at DESC',
-        (session['client_id'],)
-    ).fetchall()
-
-    livrables = conn.execute(
-        'SELECT * FROM fichiers WHERE client_id = ? AND milestone_index IS NOT NULL ORDER BY uploaded_at DESC',
-        (session['client_id'],)
-    ).fetchall()
-
-    formulaire_pending = conn.execute('''
-        SELECT f.id, f.titre FROM formulaires f
-        JOIN client_formulaires cf ON f.id = cf.formulaire_id
-        WHERE cf.client_id = ? AND f.actif = 1
-          AND f.id NOT IN (
-              SELECT formulaire_id FROM formulaire_reponses WHERE client_id = ?
-          )
-        ORDER BY cf.assigned_at ASC LIMIT 1
-    ''', (session['client_id'], session['client_id'])).fetchone()
-
-    facture_pending = conn.execute(
-        "SELECT * FROM factures WHERE client_id = ? AND statut != 'payée' ORDER BY date_emission ASC LIMIT 1",
-        (session['client_id'],)
-    ).fetchone()
-
-    conn.close()
-
-    projets = []
-    for c in contrats_all:
-        m = _compute_deadlines(json.loads(c['milestones']) if c['milestones'] else [])
-        total = sum(float(x.get('prix', 0) or 0) for x in m)
-        faits = sum(1 for x in m if x.get('statut') in ['livré', 'approuvé', 'payé'])
-        projets.append({
-            'contrat': dict(c),
-            'milestones': m,
-            'total': total,
-            'faits': faits,
-        })
-
-    next_action = None
-
-    for p in projets:
-        if p['contrat']['statut'] == 'envoyé':
-            next_action = {
-                'type': 'contrat',
-                'icon': '✍',
-                'label': f'Ton contrat pour « {p["contrat"]["nom"] or "ton projet"} » est prêt à signer.',
-                'cta': 'Signer maintenant',
-                'url': '#dashboard-projets',
-            }
-            break
-
-    if not next_action and formulaire_pending:
-        next_action = {
-            'type': 'formulaire',
-            'icon': '📋',
-            'label': f'Naomie attend que tu remplisses : « {formulaire_pending["titre"]} ».',
-            'cta': 'Remplir maintenant',
-            'url': f'/portail/formulaires/{formulaire_pending["id"]}',
-        }
-
-    if not next_action:
-        for p in projets:
-            for i, m in enumerate(p['milestones']):
-                if m.get('statut') == 'livré':
-                    next_action = {
-                        'type': 'approuver',
-                        'icon': '✅',
-                        'label': f'« {m["titre"]} » est livré — approuve-le pour confirmer la réception.',
-                        'cta': 'Approuver',
-                        'url': f'/portail/contrat/{p["contrat"]["id"]}/milestone/{i}/approuver',
-                    }
-                    break
-            if next_action:
-                break
-
-    if not next_action and facture_pending:
-        try:
-            montant_str = f'{int(float(facture_pending["montant"]))}$'
-        except Exception:
-            montant_str = ''
-        next_action = {
-            'type': 'facture',
-            'icon': '💳',
-            'label': f'Une facture est en attente de paiement{" — " + montant_str if montant_str else ""}.',
-            'cta': 'Voir mes factures',
-            'url': '/portail/factures',
-        }
-
-    if not next_action:
-        for p in projets:
-            for m in p['milestones']:
-                if m.get('statut') == 'en cours':
-                    next_action = {
-                        'type': 'en_cours',
-                        'icon': '⚙',
-                        'label': f'En cours de développement : « {m["titre"]} ».',
-                        'cta': None,
-                        'url': None,
-                    }
-                    break
-            if next_action:
-                break
-
-    return render_template('portail_dashboard.html',
-                            client=client,
-                            projets=projets,
-                            fichiers=fichiers,
-                            livrables=livrables,
-                            next_action=next_action)
-
-
-@app.route('/clients/<int:client_id>/messages/thread/<int:first_msg_id>/delete', methods=['POST'])
-@login_required
-def delete_thread(client_id, first_msg_id):
-    conn = get_db()
-    row = conn.execute(
-        'SELECT sujet FROM messages_client WHERE id = ? AND client_id = ?', (first_msg_id, client_id)
-    ).fetchone()
-    if row:
-        sujet = row['sujet'] or ''
-        conn.execute(
-            'DELETE FROM messages_client WHERE client_id = ? AND (sujet = ? OR (sujet IS NULL AND ? = ""))',
-            (client_id, sujet, sujet)
-        )
-        conn.commit()
-    conn.close()
-    flash('Conversation supprimée.', 'success')
-    return redirect(f'/clients/{client_id}#messages')
-
-
-@app.route('/clients/<int:client_id>/messages/<int:message_id>/reponse/delete', methods=['POST'])
-@login_required
-def delete_reponse(client_id, message_id):
-    conn = get_db()
-    conn.execute(
-        'UPDATE messages_client SET reponse = NULL, repondu_at = NULL, lu_client = 1 WHERE id = ? AND client_id = ?',
-        (message_id, client_id)
-    )
-    conn.commit()
-    conn.close()
-    flash('Réponse supprimée.', 'success')
-    return redirect(f'/clients/{client_id}#messages')
-
-
-@app.route('/clients/<int:client_id>/messages/<int:message_id>/repondre', methods=['POST'])
-@login_required
-def repondre_message(client_id, message_id):
-    reponse = request.form.get('reponse', '').strip()
-    if reponse:
-        now = _now()
-        conn = get_db()
-        conn.execute(
-            'UPDATE messages_client SET reponse=?, repondu_at=?, lu_client=0 WHERE id=? AND client_id=?',
-            (reponse, now, message_id, client_id)
-        )
-        conn.commit()
-        client_notif = conn.execute('SELECT nom, email FROM clients WHERE id = ?', (client_id,)).fetchone()
-        msg_row = conn.execute('SELECT sujet FROM messages_client WHERE id = ?', (message_id,)).fetchone()
-        conn.close()
-        if client_notif and client_notif['email']:
-            sujet = msg_row['sujet'] if msg_row and msg_row['sujet'] else 'ton message'
-            send_notification_email(
-                f'[TNTMom] Naomie t\'a répondu — {sujet}',
-                f'Bonjour {client_notif["nom"]},\n\nNaomie vient de répondre à ton message « {sujet} ».',
-                to=client_notif['email'],
-                html=email_reponse_message(client_notif['nom'], sujet)
-            )
-        flash('Réponse envoyée.', 'success')
-    return redirect(f'/clients/{client_id}')
-
-@app.route('/clients/<int:client_id>/messages/admin', methods=['POST'])
-@login_required
-def admin_message_nouveau(client_id):
-    sujet   = request.form.get('sujet', '').strip()
-    message = request.form.get('message', '').strip()
-    if not sujet or not message:
-        flash('Sujet et message requis.', 'error')
-        return redirect(f'/clients/{client_id}')
-
-    conn = get_db()
-    conn.execute(
-        '''INSERT INTO messages_client (client_id, sujet, message, reponse, repondu_at)
-           VALUES (?, ?, ?, ?, datetime('now'))''',
-        (client_id, sujet, '[Message initié par admin]', message)
-    )
-    conn.commit()
-
-    client = conn.execute('SELECT nom, email FROM clients WHERE id = ?', (client_id,)).fetchone()
-    conn.close()
-
-    if client and client['email']:
-        send_notification_email(
-            f'[TNTMom] Nouveau message de Naomie — {sujet}',
-            f'Bonjour {client["nom"]},\n\nNaomie t\'a envoyé un message : « {sujet} ».',
-            to=client['email'],
-            html=email_message_naomie(client['nom'], sujet)
-        )
-
-    flash('Message envoyé au client.', 'success')
-    return redirect(f'/clients/{client_id}')
-
-
-@app.route('/portail/contrat/<int:contrat_id>/print')
-@client_login_required
-def portail_contrat_print(contrat_id):
-    conn = get_db()
-    contrat = conn.execute(
-        'SELECT * FROM contrats WHERE id = ? AND client_id = ?',
-        (contrat_id, session['client_id'])
-    ).fetchone()
-    client = conn.execute('SELECT * FROM clients WHERE id = ?', (session['client_id'],)).fetchone()
-    conn.close()
-    if not contrat or contrat['statut'] != 'signé':
-        return redirect('/portail/dashboard')
-    milestones = json.loads(contrat['milestones']) if contrat['milestones'] else []
-    total = sum(float(m.get('prix', 0) or 0) for m in milestones)
-    return render_template('contrat_print.html', client=client, contrat=contrat,
-                           milestones=milestones, total=total)
-
-
-@app.route('/portail/contrat/<int:contrat_id>/signer', methods=['POST'])
-@client_login_required
-def portail_signer(contrat_id):
-    conn = get_db()
-    contrat = conn.execute(
-        'SELECT * FROM contrats WHERE id = ? AND client_id = ?',
-        (contrat_id, session['client_id'])
-    ).fetchone()
-
-    if contrat and contrat['statut'] == 'envoyé':
-        now = _now()
-        conn.execute(
-            "UPDATE contrats SET statut='signé', signed_at=? WHERE id=?",
-            (now, contrat_id)
-        )
-        conn.commit()
-        client_notif = conn.execute('SELECT nom FROM clients WHERE id = ?', (session['client_id'],)).fetchone()
-        nom_projet = contrat['nom'] or 'Projet sans titre'
-        send_notification_email(
-            f'[ClientPortal] ✍ Contrat signé — {nom_projet}',
-            f'{client_notif["nom"] if client_notif else "Ton client"} vient de signer le contrat « {nom_projet} ».',
-            html=email_contrat_signe_naomie(client_notif['nom'] if client_notif else 'Client', nom_projet)
-        )
-        flash('Contrat signé. Merci !', 'success')
-    conn.close()
-    return redirect('/portail/dashboard')
-
-
-@app.route('/portail/contrat/<int:contrat_id>/milestone/<int:index>/approuver', methods=['POST'])
-@client_login_required
-def portail_approuver_milestone(contrat_id, index):
-    conn = get_db()
-    contrat = conn.execute(
-        'SELECT * FROM contrats WHERE id = ? AND client_id = ?',
-        (contrat_id, session['client_id'])
-    ).fetchone()
-
-    if contrat and contrat['milestones']:
-        milestones = json.loads(contrat['milestones'])
-        if 0 <= index < len(milestones) and milestones[index].get('statut') == 'livré':
-            milestones[index]['statut'] = 'approuvé'
-            milestones[index]['approuve_at'] = _now()
-            hist = milestones[index].get('historique', [])
-            hist.append({'statut': 'approuvé', 'at': _now()[:10]})
-            milestones[index]['historique'] = hist
-            conn.execute(
-                'UPDATE contrats SET milestones = ? WHERE id = ?',
-                (json.dumps(milestones, ensure_ascii=False), contrat_id)
-            )
-            conn.commit()
-            titre = milestones[index]['titre']
-            client_notif = conn.execute('SELECT nom FROM clients WHERE id = ?', (session['client_id'],)).fetchone()
-            send_notification_email(
-                f'[ClientPortal] ✅ Milestone approuvé — {titre}',
-                f'{client_notif["nom"] if client_notif else "Ton client"} vient d\'approuver : « {titre} ».',
-                html=email_milestone_approuve_naomie(client_notif['nom'] if client_notif else 'Client', titre)
-            )
-            flash(f'✅ « {titre} » approuvé. Merci !', 'success')
-
-    conn.close()
-    return redirect('/portail/dashboard')
-
-
-def projet_est_clos(client_id, conn):
-    # On vérifie le dernier contrat du client — le dernier milestone payé = projet clos
-    contrat = conn.execute(
-        'SELECT milestones FROM contrats WHERE client_id = ? ORDER BY created_at DESC LIMIT 1',
-        (client_id,)
-    ).fetchone()
-    if not contrat or not contrat['milestones']:
-        return False
-    milestones = json.loads(contrat['milestones'])
-    return bool(milestones) and milestones[-1].get('statut') == 'payé'
-
-
-def get_banque_active(client_id, conn):
-    # Retourne la banque active avec minutes restantes, ou None
-    return conn.execute(
-        """SELECT * FROM banque_heures
-           WHERE client_id = ? AND statut = 'actif'
-           AND (minutes_total - minutes_utilisees) > 0
-           ORDER BY date_achat DESC LIMIT 1""",
-        (client_id,)
-    ).fetchone()
-
-
-@app.route('/portail/contact', methods=['GET', 'POST'])
-@client_login_required
-def portail_contact():
-    conn = get_db()
-    client = conn.execute(
-        'SELECT * FROM clients WHERE id = ?', (session['client_id'],)
-    ).fetchone()
-
-    if request.method == 'POST':
-        sujet   = request.form.get('sujet', '').strip()
-        message = request.form.get('message', '').strip()
-
-        if not message:
-            conn.close()
-            flash('Le message ne peut pas être vide.', 'error')
-            return redirect('/portail/contact')
-
-        # Si projet terminé, vérifier que le client a une banque d'heures active
-        if projet_est_clos(session['client_id'], conn):
-            banque = get_banque_active(session['client_id'], conn)
-            if not banque:
-                conn.close()
-                flash('Ton projet est terminé 🎉 Pour toute nouvelle demande, tu dois acheter un bloc de maintenance. Contacte Naomie !', 'info')
-                return redirect('/portail/contact')
-
-        conn.execute(
-            'INSERT INTO messages_client (client_id, sujet, message) VALUES (?,?,?)',
-            (session['client_id'], sujet, message)
-        )
-        conn.commit()
-        conn.close()
-        send_notification_email(
-            f'[ClientPortal] Nouveau message de {session["client_nom"]}',
-            f'Client : {session["client_nom"]}\nSujet : {sujet or "(aucun)"}\n\n{message}',
-            html=email_message_recu_naomie(session['client_nom'], sujet, message)
-        )
-        flash('Message envoyé. Naomie te reviendra sous peu !', 'success')
-        return redirect('/portail/contact')
-
-    conn.execute(
-        "UPDATE messages_client SET lu_client=1 WHERE client_id=? AND lu_client=0",
-        (session['client_id'],)
-    )
-
-    conn.commit()
-    historique = conn.execute(
-        'SELECT * FROM messages_client WHERE client_id = ? ORDER BY created_at ASC',
-        (session['client_id'],)
-    ).fetchall()
-    conn.close()
-    return render_template('portail_contact.html', client=client,
-                           threads=group_messages(historique))
 
 
 # ─── FACTURES ADMIN ──────────────────────────────────────────────────────────
@@ -1876,90 +567,31 @@ def facture_print(client_id, facture_id):
     return render_template('facture_print.html', facture=facture, client=client)
 
 
-# ─── FACTURES PORTAIL CLIENT ──────────────────────────────────────────────────
+@app.route('/clients/<int:client_id>/factures/<int:facture_id>/pdf')
+@login_required
+def facture_pdf(client_id, facture_id):
+    if not WEASYPRINT_AVAILABLE:
+        flash("La génération de PDF nécessite des librairies Linux. Teste cette fonctionnalité une fois en ligne sur Railway !", "error")
+        return redirect(f'/clients/{client_id}')
 
-@app.route('/portail/factures')
-@client_login_required
-def portail_factures():
-    conn = get_db()
-    client   = conn.execute('SELECT * FROM clients WHERE id = ?', (session['client_id'],)).fetchone()
-    factures = conn.execute(
-        'SELECT * FROM factures WHERE client_id = ? ORDER BY date_emission DESC',
-        (session['client_id'],)
-    ).fetchall()
-    conn.close()
-    return render_template('portail_factures.html', client=client, factures=factures)
-
-
-@app.route('/portail/factures/<int:facture_id>/print')
-@client_login_required
-def portail_facture_print(facture_id):
     conn = get_db()
     facture = conn.execute(
-        'SELECT * FROM factures WHERE id = ? AND client_id = ?',
-        (facture_id, session['client_id'])
+        'SELECT * FROM factures WHERE id = ? AND client_id = ?', (facture_id, client_id)
     ).fetchone()
-    client = conn.execute('SELECT * FROM clients WHERE id = ?', (session['client_id'],)).fetchone()
+    client = conn.execute('SELECT * FROM clients WHERE id = ?', (client_id,)).fetchone()
     conn.close()
     if not facture:
-        return redirect('/portail/factures')
-    return render_template('facture_print.html', facture=facture, client=client)
+        return redirect(f'/clients/{client_id}')
+        
+    html_content = render_template('facture_print.html', facture=facture, client=client)
+    pdf_data = HTML(string=html_content, base_url=request.url_root).write_pdf()
+    
+    response = Response(pdf_data, mimetype='application/pdf')
+    response.headers['Content-Disposition'] = f'attachment; filename="Facture_{facture["numero"] or "sans-numero"}.pdf"'
+    return response
 
 
 # ── LEADS (formulaire de contact public tntm.ca) ──────────────────────────────
-
-@app.route('/api/public/contact', methods=['POST', 'OPTIONS'])
-def api_public_contact():
-    # Preflight CORS
-    if request.method == 'OPTIONS':
-        resp = app.make_response('')
-        resp.headers['Access-Control-Allow-Origin']  = '*'
-        resp.headers['Access-Control-Allow-Methods'] = 'POST, OPTIONS'
-        resp.headers['Access-Control-Allow-Headers'] = 'Content-Type'
-        return resp, 204
-
-    data    = request.get_json(silent=True) or request.form
-    nom     = (data.get('nom') or '').strip()
-    email   = (data.get('email') or data.get('courriel') or '').strip()
-    message = (data.get('message') or '').strip()
-
-    if not nom or not message:
-        resp = jsonify({'error': 'Nom et message requis.'})
-        resp.headers['Access-Control-Allow-Origin'] = '*'
-        return resp, 400
-
-    conn = get_db()
-
-    token        = secrets.token_urlsafe(32)
-    token_expiry = (datetime.datetime.now() + datetime.timedelta(days=7)).strftime('%Y-%m-%d %H:%M:%S')
-
-    conn.execute(
-        'INSERT INTO leads (nom, email, message, access_token, token_expiry) VALUES (?, ?, ?, ?, ?)',
-        (nom, email, message, token, token_expiry)
-    )
-    conn.commit()
-    conn.close()
-
-    # Courriel à Naomie — notification interne
-    send_notification_email(
-        f'[TNTMom] Nouveau message de {nom}',
-        f'Nom : {nom}\nCourriel : {email or "(non fourni)"}\n\n{message}',
-        html=email_lead_naomie(nom, email, message)
-    )
-
-    # Courriel automatique au client — seulement si un email a été fourni
-    if email:
-        send_notification_email(
-            'Merci pour ton message — TNTMom',
-            f'Bonjour {nom},\n\nMerci pour ton message ! Je l\'ai bien reçu et je te répondrai dans les 24-48h.',
-            to=email,
-            html=email_lead_confirmation(nom)
-        )
-
-    resp = jsonify({'ok': True})
-    resp.headers['Access-Control-Allow-Origin'] = '*'
-    return resp
-
 
 @app.route('/leads')
 @login_required
@@ -2150,226 +782,6 @@ def formulaire_questions_reorder(fid):
     return {'ok': True}
 
 
-# ── FORMULAIRES PORTAIL CLIENT ────────────────────────────────────────────────
-
-@app.route('/portail/formulaires')
-@client_login_required
-def portail_formulaires():
-    conn = get_db()
-    client = conn.execute('SELECT * FROM clients WHERE id = ?', (session['client_id'],)).fetchone()
-    formulaires = conn.execute('''
-        SELECT f.* FROM formulaires f
-        JOIN client_formulaires cf ON f.id = cf.formulaire_id
-        WHERE cf.client_id = ? AND f.actif = 1
-        ORDER BY cf.assigned_at DESC
-    ''', (session['client_id'],)).fetchall()
-    deja_remplis = {
-        row['formulaire_id']
-        for row in conn.execute(
-            'SELECT formulaire_id FROM formulaire_reponses WHERE client_id = ?',
-            (session['client_id'],)
-        ).fetchall()
-    }
-    questionnaire = conn.execute(
-        'SELECT reponses FROM questionnaires_client WHERE client_id = ?',
-        (session['client_id'],)
-    ).fetchone()
-    conn.close()
-    return render_template('portail_formulaires.html',
-                           client=client,
-                           formulaires=formulaires,
-                           deja_remplis=deja_remplis,
-                           questionnaire=questionnaire)
-
-
-@app.route('/portail/formulaires/<int:fid>')
-@client_login_required
-def portail_formulaire_fill(fid):
-    conn = get_db()
-    client = conn.execute('SELECT * FROM clients WHERE id = ?', (session['client_id'],)).fetchone()
-    f = conn.execute('SELECT * FROM formulaires WHERE id = ? AND actif = 1', (fid,)).fetchone()
-    if not f:
-        conn.close()
-        return redirect('/portail/formulaires')
-    questions = conn.execute(
-        'SELECT * FROM formulaire_questions WHERE formulaire_id = ? ORDER BY ordre', (fid,)
-    ).fetchall()
-    deja = conn.execute(
-        'SELECT id FROM formulaire_reponses WHERE formulaire_id = ? AND client_id = ?',
-        (fid, session['client_id'])
-    ).fetchone()
-
-    # Build prefill dict from existing client data
-    prefill = {
-        'client.nom':        client['nom'] or '',
-        'client.email':      client['email'] or '',
-        'client.entreprise': client['entreprise'] or '',
-        'client.secteur':    client['secteur'] or '',
-    }
-    q_row = conn.execute(
-        'SELECT reponses FROM questionnaires_client WHERE client_id = ?', (session['client_id'],)
-    ).fetchone()
-    if q_row and q_row['reponses']:
-        try:
-            for k, v in json.loads(q_row['reponses']).items():
-                prefill[f'questionnaire.{k}'] = v or ''
-        except Exception:
-            pass
-    c_row = conn.execute(
-        'SELECT reponses FROM consultations WHERE client_id = ? ORDER BY created_at DESC LIMIT 1',
-        (session['client_id'],)
-    ).fetchone()
-    if c_row and c_row['reponses']:
-        try:
-            for k, v in json.loads(c_row['reponses']).items():
-                prefill[f'consultation.{k}'] = v or ''
-        except Exception:
-            pass
-
-    conn.close()
-    if deja:
-        flash('Tu as déjà rempli ce formulaire.', 'success')
-        return redirect('/portail/formulaires')
-    return render_template('portail_formulaire_fill.html',
-                           client=client, formulaire=f, questions=questions, prefill=prefill)
-
-
-@app.route('/portail/formulaires/<int:fid>/submit', methods=['POST'])
-@client_login_required
-def portail_formulaire_submit(fid):
-    conn = get_db()
-    deja = conn.execute(
-        'SELECT id FROM formulaire_reponses WHERE formulaire_id = ? AND client_id = ?',
-        (fid, session['client_id'])
-    ).fetchone()
-    if not deja:
-        reponses = {k: v for k, v in request.form.items() if k != 'csrf_token'}
-        conn.execute(
-            'INSERT INTO formulaire_reponses (formulaire_id, client_id, reponses) VALUES (?,?,?)',
-            (fid, session['client_id'], json.dumps(reponses, ensure_ascii=False))
-        )
-        conn.commit()
-        client = conn.execute('SELECT nom FROM clients WHERE id = ?', (session['client_id'],)).fetchone()
-        formulaire = conn.execute('SELECT titre FROM formulaires WHERE id = ?', (fid,)).fetchone()
-        if client and formulaire:
-            send_notification_email(
-                f'[ClientPortal] Formulaire rempli par {client["nom"]}',
-                f'{client["nom"]} a rempli le formulaire : {formulaire["titre"]}',
-                html=email_formulaire_naomie(client['nom'], formulaire['titre'])
-            )
-    conn.close()
-    flash('Formulaire envoyé, merci !', 'success')
-    return redirect('/portail/formulaires')
-
-
-# ── COMPTABILITÉ ──────────────────────────────────────────────────────────────
-
-@app.route('/comptabilite')
-@login_required
-def comptabilite():
-    from collections import OrderedDict
-    from compta_logic import (
-        verifier_et_mettre_retards,
-        calculer_tax_tracker,
-        calculer_provision_fiscale,
-    )
-
-    # ?demo=1 dans l'URL active le mode présentation (inclut Sophie Tremblay)
-    inclure_demo = request.args.get('demo', '0') == '1'
-
-    # IMPORTANT : appeler en premier — met à jour les statuts "en retard"
-    # en DB avant qu'on lise les factures pour le tableau mensuel.
-    alertes_retard = verifier_et_mettre_retards(inclure_demo=inclure_demo)
-
-    conn = get_db()
-    filtre_demo_sql = '' if inclure_demo else 'AND c.demo = 0'
-    factures = conn.execute(f'''
-        SELECT f.*, c.nom as client_nom
-        FROM factures f
-        JOIN clients c ON c.id = f.client_id
-        WHERE 1=1 {filtre_demo_sql}
-        ORDER BY f.date_emission DESC
-    ''').fetchall()
-    conn.close()
-
-    mois = OrderedDict()
-    total_realise = 0
-    total_attente = 0
-
-    for f in factures:
-        key = (f['date_emission'] or '')[:7] or 'Sans date'
-        if key not in mois:
-            mois[key] = {'factures': [], 'total_payee': 0, 'total_attente': 0}
-        mois[key]['factures'].append(dict(f))
-        montant = float(f['montant'] or 0)
-        if f['statut'] == 'payée':
-            mois[key]['total_payee'] += montant
-            total_realise += montant
-        else:
-            mois[key]['total_attente'] += montant
-            total_attente += montant
-
-    tracker  = calculer_tax_tracker(inclure_demo=inclure_demo)
-    provision = calculer_provision_fiscale(inclure_demo=inclure_demo)
-
-    conn = get_db()
-    depenses = conn.execute(
-        'SELECT * FROM depenses ORDER BY date DESC'
-    ).fetchall()
-    conn.close()
-
-    return render_template('comptabilite.html',
-                           mois=mois,
-                           total_realise=total_realise,
-                           total_attente=total_attente,
-                           alertes_retard=alertes_retard,
-                           tracker=tracker,
-                           provision=provision,
-                           depenses=depenses,
-                           today=datetime.date.today().isoformat(),
-                           inclure_demo=inclure_demo)
-
-
-@app.route('/depenses/new', methods=['POST'])
-@login_required
-def depense_new():
-    date_dep   = request.form.get('date', '').strip()
-    description = request.form.get('description', '').strip()
-    montant    = request.form.get('montant', '0').strip()
-    categorie  = request.form.get('categorie', 'Autre').strip()
-
-    if not date_dep or not description or not montant:
-        flash('Tous les champs sont requis.', 'error')
-        return redirect('/comptabilite')
-
-    try:
-        montant = float(montant)
-    except ValueError:
-        flash('Montant invalide.', 'error')
-        return redirect('/comptabilite')
-
-    conn = get_db()
-    conn.execute(
-        'INSERT INTO depenses (date, description, montant, categorie) VALUES (?,?,?,?)',
-        (date_dep, description, montant, categorie or 'Autre')
-    )
-    conn.commit()
-    conn.close()
-    flash('Dépense ajoutée.', 'success')
-    return redirect('/comptabilite')
-
-
-@app.route('/depenses/<int:dep_id>/delete', methods=['POST'])
-@login_required
-def depense_delete(dep_id):
-    conn = get_db()
-    conn.execute('DELETE FROM depenses WHERE id = ?', (dep_id,))
-    conn.commit()
-    conn.close()
-    flash('Dépense supprimée.', 'success')
-    return redirect('/comptabilite')
-
-
 # ── TARIFS ────────────────────────────────────────────────────────────────────
 
 @app.route('/tarifs')
@@ -2438,411 +850,6 @@ def tarif_delete(tid):
     conn.close()
     flash('Tarif supprimé.', 'success')
     return redirect('/tarifs')
-
-
-@app.route('/api/public/tarifs')
-def api_public_tarifs():
-    conn = get_db()
-    rows = conn.execute(
-        'SELECT titre, description, prix, unite, inclus, non_inclus FROM tarifs WHERE actif = 1 ORDER BY ordre, id'
-    ).fetchall()
-    conn.close()
-    resp = jsonify([dict(r) for r in rows])
-    resp.headers['Access-Control-Allow-Origin'] = '*'
-    return resp
-
-
-# ─── HEURES ───────────────────────────────────────────────────────────────────
-
-@app.route('/heures')
-@login_required
-def heures():
-    conn = get_db()
-    categories = conn.execute(
-        'SELECT * FROM categories_temps WHERE actif=1 ORDER BY ordre, id'
-    ).fetchall()
-    clients = conn.execute(
-        "SELECT id, nom FROM clients WHERE statut != 'archivé' ORDER BY nom"
-    ).fetchall()
-    contrats = conn.execute('''
-        SELECT co.id, co.nom, co.client_id, cl.nom as client_nom
-        FROM contrats co JOIN clients cl ON cl.id = co.client_id
-        WHERE cl.statut != 'archivé'
-        ORDER BY cl.nom, co.nom
-    ''').fetchall()
-    timer_actif = conn.execute('''
-        SELECT e.*, c.nom as cat_nom, c.couleur as cat_couleur
-        FROM entrees_temps e
-        JOIN categories_temps c ON c.id = e.categorie_id
-        WHERE e.heure_fin IS NULL AND e.mode = 'timer'
-        ORDER BY e.created_at DESC LIMIT 1
-    ''').fetchone()
-    entrees = conn.execute('''
-        SELECT e.*, c.nom as cat_nom, c.couleur as cat_couleur, cl.nom as client_nom
-        FROM entrees_temps e
-        JOIN categories_temps c ON c.id = e.categorie_id
-        LEFT JOIN clients cl ON cl.id = e.client_id
-        WHERE e.heure_fin IS NOT NULL OR e.mode = 'manuel'
-        ORDER BY e.date DESC, e.created_at DESC
-        LIMIT 30
-    ''').fetchall()
-
-    week_start  = (datetime.date.today() - datetime.timedelta(days=datetime.date.today().weekday())).isoformat()
-    month_start = datetime.date.today().replace(day=1).isoformat()
-
-    stats_semaine = conn.execute('''
-        SELECT COALESCE(SUM(duree_minutes), 0) as total_min,
-               COALESCE(SUM(CASE WHEN type_facturation='horaire' AND taux_applique IS NOT NULL
-                    THEN (duree_minutes / 60.0) * taux_applique ELSE 0 END), 0) as montant
-        FROM entrees_temps
-        WHERE date >= ? AND (heure_fin IS NOT NULL OR mode = 'manuel')
-    ''', (week_start,)).fetchone()
-
-    stats_mois = conn.execute('''
-        SELECT COALESCE(SUM(duree_minutes), 0) as total_min,
-               COALESCE(SUM(CASE WHEN type_facturation='horaire' AND taux_applique IS NOT NULL
-                    THEN (duree_minutes / 60.0) * taux_applique ELSE 0 END), 0) as montant
-        FROM entrees_temps
-        WHERE date >= ? AND (heure_fin IS NOT NULL OR mode = 'manuel')
-    ''', (month_start,)).fetchone()
-
-    conn.close()
-    return render_template('heures.html',
-        categories=categories,
-        clients=clients,
-        contrats=contrats,
-        timer_actif=timer_actif,
-        entrees=entrees,
-        stats_semaine=stats_semaine,
-        stats_mois=stats_mois,
-        today=datetime.date.today().isoformat()
-    )
-
-
-@app.route('/heures/start', methods=['POST'])
-@login_required
-def heures_start():
-    conn = get_db()
-    if conn.execute("SELECT id FROM entrees_temps WHERE heure_fin IS NULL AND mode='timer'").fetchone():
-        conn.close()
-        return jsonify({'error': 'Un timer est déjà en cours.'}), 400
-
-    data       = request.json or {}
-    now_local  = datetime.datetime.now(_EASTERN)
-
-    conn.execute('''
-        INSERT INTO entrees_temps
-        (client_id, contrat_id, milestone_titre, categorie_id,
-         description, date, heure_debut, mode, type_facturation, taux_applique)
-        VALUES (?,?,?,?,?,?,?,?,?,?)
-    ''', (
-        data.get('client_id') or None,
-        data.get('contrat_id') or None,
-        data.get('milestone_titre') or None,
-        data['categorie_id'],
-        data.get('description') or None,
-        now_local.strftime('%Y-%m-%d'),
-        now_local.strftime('%H:%M'),
-        'timer',
-        data.get('type_facturation', 'horaire'),
-        data.get('taux_applique') or None,
-    ))
-    conn.commit()
-    conn.close()
-    return jsonify({'ok': True})
-
-
-@app.route('/heures/stop', methods=['POST'])
-@login_required
-def heures_stop():
-    conn = get_db()
-    entree = conn.execute(
-        "SELECT * FROM entrees_temps WHERE heure_fin IS NULL AND mode='timer' ORDER BY created_at DESC LIMIT 1"
-    ).fetchone()
-    if not entree:
-        conn.close()
-        return jsonify({'error': 'Aucun timer actif.'}), 404
-
-    now_local  = datetime.datetime.now(_EASTERN)
-    heure_fin  = now_local.strftime('%H:%M')
-    try:
-        debut_dt = datetime.datetime.strptime(entree['date'] + ' ' + entree['heure_debut'], '%Y-%m-%d %H:%M')
-        fin_dt   = datetime.datetime.strptime(entree['date'] + ' ' + heure_fin, '%Y-%m-%d %H:%M')
-        duree    = max(0, int((fin_dt - debut_dt).total_seconds() / 60))
-    except Exception:
-        duree = 0
-
-    conn.execute('UPDATE entrees_temps SET heure_fin=?, duree_minutes=? WHERE id=?',
-                 (heure_fin, duree, entree['id']))
-    if entree['client_id'] and duree:
-        banque = conn.execute(
-            "SELECT id FROM banque_heures WHERE client_id=? AND statut='actif' ORDER BY date_achat DESC LIMIT 1",
-            (entree['client_id'],)
-        ).fetchone()
-        if banque:
-            conn.execute(
-                "UPDATE banque_heures SET minutes_utilisees = minutes_utilisees + ? WHERE id=?",
-                (duree, banque['id'])
-            )
-    conn.commit()
-    conn.close()
-    return jsonify({'ok': True, 'duree_minutes': duree})
-
-
-@app.route('/heures/manuel', methods=['POST'])
-@login_required
-def heures_manuel():
-    f = request.form
-    try:
-        duree = int(f.get('duree_minutes') or 0)
-        hd, hf = f.get('heure_debut') or None, f.get('heure_fin') or None
-        if hd and hf and not duree:
-            date_s   = f.get('date') or datetime.date.today().isoformat()
-            debut_dt = datetime.datetime.strptime(date_s + ' ' + hd, '%Y-%m-%d %H:%M')
-            fin_dt   = datetime.datetime.strptime(date_s + ' ' + hf, '%Y-%m-%d %H:%M')
-            duree    = max(0, int((fin_dt - debut_dt).total_seconds() / 60))
-    except Exception:
-        duree = 0
-
-    taux = None
-    try:
-        v = f.get('taux_applique')
-        if v:
-            taux = float(v) or None
-    except Exception:
-        pass
-
-    conn = get_db()
-    conn.execute('''
-        INSERT INTO entrees_temps
-        (client_id, contrat_id, milestone_titre, categorie_id,
-         description, date, heure_debut, heure_fin, duree_minutes,
-         mode, type_facturation, taux_applique)
-        VALUES (?,?,?,?,?,?,?,?,?,?,?,?)
-    ''', (
-        f.get('client_id') or None,
-        f.get('contrat_id') or None,
-        f.get('milestone_titre') or None,
-        f.get('categorie_id'),
-        f.get('description') or None,
-        f.get('date') or datetime.date.today().isoformat(),
-        f.get('heure_debut') or None,
-        f.get('heure_fin') or None,
-        duree,
-        'manuel',
-        f.get('type_facturation', 'horaire'),
-        taux,
-    ))
-    client_id_val = f.get('client_id') or None
-    if client_id_val and duree:
-        banque = conn.execute(
-            "SELECT id FROM banque_heures WHERE client_id=? AND statut='actif' ORDER BY date_achat DESC LIMIT 1",
-            (client_id_val,)
-        ).fetchone()
-        if banque:
-            conn.execute(
-                "UPDATE banque_heures SET minutes_utilisees = minutes_utilisees + ? WHERE id=?",
-                (duree, banque['id'])
-            )
-    conn.commit()
-    conn.close()
-    flash('Entrée ajoutée.', 'success')
-    return redirect('/heures')
-
-
-@app.route('/heures/supprimer/<int:eid>', methods=['POST'])
-@login_required
-def heures_supprimer(eid):
-    conn = get_db()
-    conn.execute('DELETE FROM entrees_temps WHERE id=?', (eid,))
-    conn.commit()
-    conn.close()
-    return jsonify({'ok': True})
-
-
-@app.route('/heures/<int:eid>/edit', methods=['POST'])
-@login_required
-def heures_edit(eid):
-    """Modifie une entrée existante dans l'historique."""
-    f = request.form
-
-    # Recalcul de la durée si les heures sont fournies
-    hd = f.get('heure_debut') or None
-    hf = f.get('heure_fin') or None
-    try:
-        duree = int(f.get('duree_minutes') or 0)
-        if hd and hf and not duree:
-            date_s   = f.get('date') or datetime.date.today().isoformat()
-            debut_dt = datetime.datetime.strptime(date_s + ' ' + hd, '%Y-%m-%d %H:%M')
-            fin_dt   = datetime.datetime.strptime(date_s + ' ' + hf, '%Y-%m-%d %H:%M')
-            duree    = max(0, int((fin_dt - debut_dt).total_seconds() / 60))
-    except Exception:
-        duree = 0
-
-    taux = None
-    try:
-        v = f.get('taux_applique')
-        if v:
-            taux = float(v) or None
-    except Exception:
-        pass
-
-    conn = get_db()
-    conn.execute('''
-        UPDATE entrees_temps
-        SET date=?, heure_debut=?, heure_fin=?, duree_minutes=?,
-            description=?, type_facturation=?, taux_applique=?, categorie_id=?
-        WHERE id=?
-    ''', (
-        f.get('date') or datetime.date.today().isoformat(),
-        hd, hf, duree,
-        f.get('description') or None,
-        f.get('type_facturation', 'horaire'),
-        taux,
-        f.get('categorie_id') or None,
-        eid,
-    ))
-    conn.commit()
-    conn.close()
-    flash('Entrée mise à jour.', 'success')
-    return redirect('/heures')
-
-
-@app.route('/heures/timer/start-time', methods=['POST'])
-@login_required
-def heures_timer_start_time():
-    """Ajuste l'heure de départ du timer en cours sans arrêter le timer."""
-    nouvelle_heure = (request.json or {}).get('heure_debut', '')
-    if not nouvelle_heure:
-        return jsonify({'error': 'Heure manquante.'}), 400
-
-    conn = get_db()
-    entree = conn.execute(
-        "SELECT * FROM entrees_temps WHERE heure_fin IS NULL AND mode='timer' ORDER BY created_at DESC LIMIT 1"
-    ).fetchone()
-    if not entree:
-        conn.close()
-        return jsonify({'error': 'Aucun timer actif.'}), 404
-
-    # Reconstruire le datetime de départ avec la nouvelle heure (même date)
-    try:
-        debut_dt = datetime.datetime.strptime(entree['date'] + ' ' + nouvelle_heure, '%Y-%m-%d %H:%M')
-    except ValueError:
-        conn.close()
-        return jsonify({'error': 'Format invalide (HH:MM attendu).'}), 400
-
-    conn.execute(
-        'UPDATE entrees_temps SET heure_debut=?, created_at=? WHERE id=?',
-        (nouvelle_heure, debut_dt.strftime('%Y-%m-%d %H:%M:%S'), entree['id'])
-    )
-    conn.commit()
-    conn.close()
-    return jsonify({'ok': True, 'new_start': debut_dt.isoformat()})
-
-
-@app.route('/heures/categories', methods=['POST'])
-@login_required
-def heures_categories():
-    nom = request.form.get('nom', '').strip()
-    if not nom:
-        flash('Le nom est requis.', 'error')
-        return redirect('/heures')
-    conn = get_db()
-    max_ordre = conn.execute('SELECT COALESCE(MAX(ordre), 0) FROM categories_temps').fetchone()[0]
-    taux_min = None
-    taux_max = None
-    try:
-        v = request.form.get('taux_min')
-        if v:
-            taux_min = float(v) or None
-    except Exception:
-        pass
-    try:
-        v = request.form.get('taux_max')
-        if v:
-            taux_max = float(v) or None
-    except Exception:
-        pass
-    conn.execute(
-        'INSERT INTO categories_temps (nom, description, taux_min, taux_max, couleur, ordre) VALUES (?,?,?,?,?,?)',
-        (nom, request.form.get('description', '').strip() or None,
-         taux_min, taux_max, request.form.get('couleur', '#d94fbd'), max_ordre + 1)
-    )
-    conn.commit()
-    conn.close()
-    flash('Catégorie ajoutée.', 'success')
-    return redirect('/heures')
-
-
-@app.route('/heures/rapports')
-@login_required
-def heures_rapports():
-    conn = get_db()
-    par_categorie = conn.execute('''
-        SELECT c.nom as cat_nom, c.couleur,
-               COALESCE(SUM(e.duree_minutes), 0) as total_min,
-               COALESCE(SUM(CASE WHEN e.type_facturation='horaire' AND e.taux_applique IS NOT NULL
-                    THEN (e.duree_minutes / 60.0) * e.taux_applique ELSE 0 END), 0) as montant,
-               COUNT(*) as nb_entrees
-        FROM entrees_temps e
-        JOIN categories_temps c ON c.id = e.categorie_id
-        WHERE e.heure_fin IS NOT NULL OR e.mode = 'manuel'
-        GROUP BY e.categorie_id
-        ORDER BY total_min DESC
-    ''').fetchall()
-
-    par_projet = conn.execute('''
-        SELECT cl.nom as client_nom, co.nom as projet_nom,
-               COALESCE(cl.rnd, 0) as rnd,
-               COALESCE(SUM(e.duree_minutes), 0) as total_min,
-               COALESCE(SUM(CASE WHEN e.type_facturation='horaire' AND e.taux_applique IS NOT NULL
-                    THEN (e.duree_minutes / 60.0) * e.taux_applique ELSE 0 END), 0) as montant_facturable,
-               COALESCE(SUM(CASE WHEN cl.id IS NOT NULL AND COALESCE(cl.rnd, 0) = 0
-                    THEN (e.duree_minutes / 60.0) * COALESCE(e.taux_applique, cat.taux_max, 0)
-                    ELSE 0 END), 0) as valeur_accumulee
-        FROM entrees_temps e
-        JOIN categories_temps cat ON cat.id = e.categorie_id
-        LEFT JOIN clients cl ON cl.id = e.client_id
-        LEFT JOIN contrats co ON co.id = e.contrat_id
-        WHERE e.heure_fin IS NOT NULL OR e.mode = 'manuel'
-        GROUP BY e.contrat_id, e.client_id
-        ORDER BY total_min DESC
-    ''').fetchall()
-
-    par_semaine = conn.execute('''
-        SELECT strftime('%Y — sem. %W', e.date) as semaine,
-               strftime('%Y%W', e.date) as semaine_sort,
-               COALESCE(SUM(e.duree_minutes), 0) as total_min,
-               COALESCE(SUM(CASE WHEN e.type_facturation='horaire' AND e.taux_applique IS NOT NULL
-                    THEN (e.duree_minutes / 60.0) * e.taux_applique ELSE 0 END), 0) as montant
-        FROM entrees_temps e
-        WHERE e.heure_fin IS NOT NULL OR e.mode = 'manuel'
-        GROUP BY semaine_sort
-        ORDER BY semaine_sort DESC
-        LIMIT 8
-    ''').fetchall()
-
-    conn.close()
-    return render_template('heures_rapports.html',
-        par_categorie=par_categorie,
-        par_projet=par_projet,
-        par_semaine=par_semaine
-    )
-
-
-@app.route('/api/heures/milestones/<int:contrat_id>')
-@login_required
-def api_heures_milestones(contrat_id):
-    conn = get_db()
-    contrat = conn.execute('SELECT milestones FROM contrats WHERE id=?', (contrat_id,)).fetchone()
-    conn.close()
-    if not contrat or not contrat['milestones']:
-        return jsonify([])
-    try:
-        ms = json.loads(contrat['milestones'])
-        return jsonify([{'titre': m.get('titre', ''), 'statut': m.get('statut', '')} for m in ms])
-    except Exception:
-        return jsonify([])
 
 
 # ── PACKAGES ──────────────────────────────────────────────────────────────────
@@ -2943,13 +950,16 @@ def package_creer_contrat(pkg_id):
         'prix_final': pkg['prix_final'],
     }
 
-    scope_auto = (
-        f"Développement web complet — {pkg['nom']}\n\n"
-        f"• Développement : {pkg['heures_dev']}h\n"
-        f"• Design UI/UX : {pkg['heures_design']}h\n"
-        f"• Intégration & Maintenance : {pkg['heures_integration']}h\n"
-        f"• Admin & Gestion : {pkg['heures_admin']}h"
-    )
+    titre_scope = "Migration / Copie Conforme" if pkg['heures_design'] == 0 else "Développement web complet"
+
+    scope_auto = f"{titre_scope} — {pkg['nom']}\n\n"
+    scope_auto += f"• Développement : {pkg['heures_dev']}h\n"
+    
+    if pkg['heures_design'] > 0:
+        scope_auto += f"• Design UI/UX : {pkg['heures_design']}h\n"
+        
+    scope_auto += f"• Intégration & Maintenance : {pkg['heures_integration']}h\n"
+    scope_auto += f"• Admin & Gestion : {pkg['heures_admin']}h"
 
     cursor = conn.execute(
         'INSERT INTO contrats (client_id, nom, scope, milestones, statut, package_snapshot) VALUES (?,?,?,?,?,?)',

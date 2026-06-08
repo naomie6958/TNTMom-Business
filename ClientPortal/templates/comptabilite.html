@@ -31,13 +31,17 @@
         <h1 class="page-title">Ma <span class="client-nom" style="font-size:inherit; display:inline-block;">comptabilité</span></h1>
         <div class="page-sub">Vue globale des finances de ton entreprise.</div>
     </div>
-    {# Bouton toggle démo — lien GET qui bascule ?demo=0/1 dans l'URL #}
-    <a href="?demo={{ '0' if inclure_demo else '1' }}"
-       class="btn {{ 'btn-danger' if inclure_demo else 'btn-secondary' }}"
-       style="font-size: 0.75rem; white-space: nowrap;"
-       title="{{ 'Retour aux vrais chiffres' if inclure_demo else 'Afficher avec le client démo (Sophie Tremblay)' }}">
-        {% if inclure_demo %}🎭 Démo ON{% else %}🎭 Démo{% endif %}
-    </a>
+    <div style="display: flex; gap: 0.5rem; align-items: center;">
+        <a href="/admin/export/csv" class="btn btn-primary" style="font-size: 0.75rem;">⬇ Exporter CSV</a>
+        
+        {# Bouton toggle démo #}
+        <a href="?demo={{ '0' if inclure_demo else '1' }}"
+           class="btn {{ 'btn-danger' if inclure_demo else 'btn-secondary' }}"
+           style="font-size: 0.75rem; white-space: nowrap;"
+           title="{{ 'Retour aux vrais chiffres' if inclure_demo else 'Afficher avec le client démo' }}">
+            {% if inclure_demo %}🎭 Démo ON{% else %}🎭 Démo{% endif %}
+        </a>
+    </div>
 </div>
 
 {# ── BANNIÈRE MODE DÉMO ──────────────────────────────────────── #}
@@ -156,7 +160,7 @@
 <div class="card" style="margin-bottom: 2rem;">
     <div class="section-title" style="margin-bottom: 1rem;">Dépenses d'entreprise</div>
 
-    <form method="POST" action="/depenses/new" class="compta-dep-form">
+    <form id="formAjoutDepense" method="POST" action="/depenses/new" class="compta-dep-form">
         <div>
             <label style="font-size: 0.7rem; color: var(--muted); display: block; margin-bottom: 0.25rem;">Date</label>
             <input type="date" name="date" required class="form-control"
@@ -194,6 +198,7 @@
             </button>
         </div>
     </form>
+    <div id="depenseMessage" style="display:none; font-size: 0.82rem; margin-bottom: 1rem; padding: 0.5rem 1rem; border-radius: var(--radius);"></div>
 
     {% if depenses %}
     <div class="compta-table-wrap">
@@ -287,4 +292,51 @@
 {% else %}
     <div class="card"><div class="empty-state">Aucune facture pour le moment.</div></div>
 {% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const formDepense = document.getElementById('formAjoutDepense');
+    if (formDepense) {
+        formDepense.addEventListener('submit', async function(e) {
+            e.preventDefault(); // <-- TA MAGIE EST ICI ✨
+            
+            const msgEl = document.getElementById('depenseMessage');
+            if (msgEl) msgEl.style.display = 'none';
+
+            const btn = formDepense.querySelector('button[type="submit"]');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '⏳...';
+            btn.disabled = true;
+
+            try {
+                const response = await fetch('/depenses/new', {
+                    method: 'POST',
+                    body: new FormData(formDepense),
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                });
+                const data = await response.json();
+                
+                if (data.success) {
+                    msgEl.textContent = '✓ Dépense ajoutée avec succès !';
+                    msgEl.style.cssText = 'display:block; color:var(--green); background:rgba(62,207,142,0.15); border:1px solid var(--green); padding:0.5rem 1rem; border-radius:var(--radius); margin-bottom:1rem;';
+                    formDepense.reset();
+                    setTimeout(() => window.location.reload(), 1000); // Soft reload
+                } else {
+                    msgEl.textContent = '✗ Erreur : ' + data.error;
+                    msgEl.style.cssText = 'display:block; color:var(--red); background:rgba(239,68,68,0.15); border:1px solid var(--red); padding:0.5rem 1rem; border-radius:var(--radius); margin-bottom:1rem;';
+                    btn.disabled = false;
+                    btn.innerHTML = originalText;
+                }
+            } catch (err) {
+                msgEl.textContent = '✗ Erreur de réseau.';
+                msgEl.style.display = 'block';
+                btn.disabled = false;
+                btn.innerHTML = originalText;
+            }
+        });
+    }
+});
+</script>
 {% endblock %}
