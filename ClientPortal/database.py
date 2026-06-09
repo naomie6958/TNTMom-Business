@@ -487,6 +487,66 @@ def migrate_db():
     except Exception:
         pass
 
+    # Tables V2: Banque d'heures, Revenus ménage, Budget de Bill
+    try:
+        conn.executescript('''
+            CREATE TABLE IF NOT EXISTS banque_heures (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                client_id INTEGER NOT NULL,
+                minutes_total INTEGER NOT NULL DEFAULT 300,
+                minutes_utilisees INTEGER NOT NULL DEFAULT 0,
+                date_achat TEXT,
+                statut TEXT NOT NULL DEFAULT 'actif',
+                stripe_payment_id TEXT,
+                FOREIGN KEY (client_id) REFERENCES clients(id) ON DELETE CASCADE
+            );
+
+            CREATE TABLE IF NOT EXISTS household_revenues (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                label TEXT NOT NULL,
+                amount REAL NOT NULL,
+                date_received TEXT,
+                is_taxable INTEGER DEFAULT 1,
+                added_by TEXT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
+
+            CREATE TABLE IF NOT EXISTS budget_categories (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                nom TEXT NOT NULL,
+                type TEXT DEFAULT 'fixe',
+                budget_mensuel REAL DEFAULT 0,
+                couleur TEXT DEFAULT '#FF0090',
+                ordre INTEGER DEFAULT 0
+            );
+
+            CREATE TABLE IF NOT EXISTS budget_expenses (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                category_id INTEGER NOT NULL,
+                montant REAL NOT NULL,
+                date TEXT NOT NULL,
+                description TEXT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (category_id) REFERENCES budget_categories(id) ON DELETE CASCADE
+            );
+        ''')
+        conn.commit()
+    except Exception:
+        pass
+
+    # Ajout des colonnes de la V2 pour éviter les futurs crashs
+    for table, col, col_type in [
+        ('contrats', 'package_snapshot', 'TEXT'),
+        ('leads', 'access_token', 'TEXT'),
+        ('leads', 'token_expiry', 'TEXT'),
+        ('consultations', 'banque_heures_id', 'INTEGER')
+    ]:
+        try:
+            conn.execute(f"ALTER TABLE {table} ADD COLUMN {col} {col_type}")
+            conn.commit()
+        except Exception:
+            pass
+
     # Normalise les statuts de factures sans accent vers les valeurs canoniques.
     # Les anciennes données démo étaient seedées avec 'payee'/'envoyee' (sans é).
     try:
