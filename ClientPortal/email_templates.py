@@ -105,7 +105,7 @@ def email_contrat_envoye(nom_client, nom_projet):
       <table cellpadding="0" cellspacing="0" style="margin:0 0 32px;">
         <tr>
           <td style="background-color:#FF0090;border-radius:6px;padding:14px 32px;text-align:center;">
-            <a href="https://tntmom.pythonanywhere.com/portail/login" style="color:#ffffff;text-decoration:none;font-weight:bold;font-size:15px;">Lire et signer mon contrat</a>
+            <a href="https://portail.tntm.ca/portail/login" style="color:#ffffff;text-decoration:none;font-weight:bold;font-size:15px;">Lire et signer mon contrat</a>
           </td>
         </tr>
       </table>
@@ -128,7 +128,7 @@ def email_milestone_livre(nom_client, titre_milestone):
       <table cellpadding="0" cellspacing="0" style="margin:0 0 32px;">
         <tr>
           <td style="background-color:#FF0090;border-radius:6px;padding:14px 32px;text-align:center;">
-            <a href="https://tntmom.pythonanywhere.com/portail/login" style="color:#ffffff;text-decoration:none;font-weight:bold;font-size:15px;">Voir mon livrable</a>
+            <a href="https://portail.tntm.ca/portail/login" style="color:#ffffff;text-decoration:none;font-weight:bold;font-size:15px;">Voir mon livrable</a>
           </td>
         </tr>
       </table>
@@ -151,7 +151,7 @@ def email_reponse_message(nom_client, sujet):
       <table cellpadding="0" cellspacing="0" style="margin:0 0 32px;">
         <tr>
           <td style="background-color:#FF0090;border-radius:6px;padding:14px 32px;text-align:center;">
-            <a href="https://tntmom.pythonanywhere.com/portail/login" style="color:#ffffff;text-decoration:none;font-weight:bold;font-size:15px;">Lire la réponse</a>
+            <a href="https://portail.tntm.ca/portail/login" style="color:#ffffff;text-decoration:none;font-weight:bold;font-size:15px;">Lire la réponse</a>
           </td>
         </tr>
       </table>
@@ -174,7 +174,7 @@ def email_message_naomie(nom_client, sujet):
       <table cellpadding="0" cellspacing="0" style="margin:0 0 32px;">
         <tr>
           <td style="background-color:#FF0090;border-radius:6px;padding:14px 32px;text-align:center;">
-            <a href="https://tntmom.pythonanywhere.com/portail/login" style="color:#ffffff;text-decoration:none;font-weight:bold;font-size:15px;">Lire mon message</a>
+            <a href="https://portail.tntm.ca/portail/login" style="color:#ffffff;text-decoration:none;font-weight:bold;font-size:15px;">Lire mon message</a>
           </td>
         </tr>
       </table>
@@ -216,7 +216,7 @@ def email_contrat_signe_naomie(nom_client, nom_projet):
       <table cellpadding="0" cellspacing="0" style="margin:0 0 32px;">
         <tr>
           <td style="background-color:#00CED1;border-radius:6px;padding:14px 32px;text-align:center;">
-            <a href="https://tntmom.pythonanywhere.com/dashboard" style="color:#111111;text-decoration:none;font-weight:bold;font-size:15px;">Voir le portail</a>
+            <a href="https://portail.tntm.ca/dashboard" style="color:#111111;text-decoration:none;font-weight:bold;font-size:15px;">Voir le portail</a>
           </td>
         </tr>
       </table>
@@ -232,7 +232,7 @@ def email_milestone_approuve_naomie(nom_client, titre):
       <table cellpadding="0" cellspacing="0" style="margin:0 0 32px;">
         <tr>
           <td style="background-color:#00CED1;border-radius:6px;padding:14px 32px;text-align:center;">
-            <a href="https://tntmom.pythonanywhere.com/dashboard" style="color:#111111;text-decoration:none;font-weight:bold;font-size:15px;">Voir le portail</a>
+            <a href="https://portail.tntm.ca/dashboard" style="color:#111111;text-decoration:none;font-weight:bold;font-size:15px;">Voir le portail</a>
           </td>
         </tr>
       </table>
@@ -248,7 +248,7 @@ def email_message_recu_naomie(nom_client, sujet, message):
       <table cellpadding="0" cellspacing="0" style="margin:0 0 32px;">
         <tr>
           <td style="background-color:#00CED1;border-radius:6px;padding:14px 32px;text-align:center;">
-            <a href="https://tntmom.pythonanywhere.com/dashboard" style="color:#111111;text-decoration:none;font-weight:bold;font-size:15px;">Répondre dans le portail</a>
+            <a href="https://portail.tntm.ca/dashboard" style="color:#111111;text-decoration:none;font-weight:bold;font-size:15px;">Répondre dans le portail</a>
           </td>
         </tr>
       </table>
@@ -266,7 +266,7 @@ def email_lead_naomie(nom, email_client, message):
       <table cellpadding="0" cellspacing="0" style="margin:0 0 32px;">
         <tr>
           <td style="background-color:#00CED1;border-radius:6px;padding:14px 32px;text-align:center;">
-            <a href="https://tntmom.pythonanywhere.com/leads" style="color:#111111;text-decoration:none;font-weight:bold;font-size:15px;">Voir les leads</a>
+            <a href="https://portail.tntm.ca/leads" style="color:#111111;text-decoration:none;font-weight:bold;font-size:15px;">Voir les leads</a>
           </td>
         </tr>
       </table>
@@ -281,7 +281,7 @@ def email_formulaire_naomie(nom_client, titre_formulaire):
       <table cellpadding="0" cellspacing="0" style="margin:0 0 32px;">
         <tr>
           <td style="background-color:#00CED1;border-radius:6px;padding:14px 32px;text-align:center;">
-            <a href="https://tntmom.pythonanywhere.com/dashboard" style="color:#111111;text-decoration:none;font-weight:bold;font-size:15px;">Voir les réponses</a>
+            <a href="https://portail.tntm.ca/dashboard" style="color:#111111;text-decoration:none;font-weight:bold;font-size:15px;">Voir les réponses</a>
           </td>
         </tr>
       </table>

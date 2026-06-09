@@ -47,7 +47,7 @@
                 <a href="tarifs.html">Tarifs</a>
                 <a href="about.html">À propos</a>
                 <a href="contact.html">Contact</a>
-                <a href="https://tntmom.pythonanywhere.com/portail/login" target="_blank" class="nav-portail">Portail client →</a>
+                <a href="https://portail.tntm.ca/portail/login" target="_blank" class="nav-portail">Portail client →</a>
             </nav>
             <button id="menu-toggle">☰</button>
         </header>
@@ -81,7 +81,7 @@
         </footer>
         <script src="js/script.js"></script>
         <script>
-        fetch('https://tntmom.pythonanywhere.com/api/public/tarifs')
+        fetch('https://portail.tntm.ca/api/public/tarifs')
             .then(r => r.json())
             .then(tarifs => {
                 const grid = document.getElementById('tarifs-grid');
