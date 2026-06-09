@@ -286,6 +286,12 @@ def migrate_db():
         pass
 
     try:
+        conn.execute("ALTER TABLE clients ADD COLUMN rnd INTEGER DEFAULT 0")
+        conn.commit()
+    except Exception:
+        pass
+
+    try:
         conn.execute('''CREATE TABLE IF NOT EXISTS tarifs (
             id         INTEGER PRIMARY KEY AUTOINCREMENT,
             titre      TEXT NOT NULL,
