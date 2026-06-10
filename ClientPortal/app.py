@@ -430,23 +430,6 @@ def plan():
     return render_template('plan.html', stats=plan_stats)
 
 
-@app.route('/transfert-secret', methods=['GET', 'POST'])
-@login_required
-def transfert_secret():
-    if request.method == 'POST':
-        f = request.files.get('fichier_db')
-        if f:
-            chemin = os.path.join(os.getenv('RAILWAY_VOLUME_MOUNT_PATH', ''), 'portal.db')
-            f.save(chemin)
-            return "✅ Base de données écrasée avec succès ! Retourne au dashboard et vérifie tes clients."
-    return '''
-    <form method="post" enctype="multipart/form-data" style="margin:50px; padding:20px; background:#1a1a24; color:#fff; border-radius:8px;">
-        <h2 style="color:#d94fbd;">Récupération de la DB</h2>
-        <p>Sélectionne ton vrai fichier portal.db téléchargé depuis PythonAnywhere :</p>
-        <input type="file" name="fichier_db" accept=".db"><br><br>
-        <button type="submit" style="padding:10px 20px; background:#d94fbd; color:#fff; border:none; border-radius:4px; cursor:pointer;">Transférer la DB</button>
-    </form>
-    '''
 
 @app.route('/roadmap')
 @login_required
