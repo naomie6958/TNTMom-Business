@@ -10,6 +10,7 @@
         <meta property="og:url" content="https://tntm.ca/">
         <meta property="og:type" content="website">
         <meta name="twitter:card" content="summary_large_image">
+        <link rel="canonical" href="https://tntm.ca/">
         <title>The Nerdy Trap Mom</title>
         <link rel="preconnect" href="https://fonts.googleapis.com">
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -18,7 +19,24 @@
         <link rel="icon" href="images/tntmom-icone-dark-magenta.svg" type="image/svg+xml">
         <link rel="apple-touch-icon" href="images/tntmom-icone-dark-magenta.svg">
         <script src="/js/components.js"></script>
-        <script src="/js/components.js"></script>
+        <script type="application/ld+json">
+        {
+          "@context": "https://schema.org",
+          "@type": "ProfessionalService",
+          "name": "The Nerdy Trap Mom",
+          "founder": {
+            "@type": "Person",
+            "name": "Naomie McMahon Tanguay"
+          },
+          "url": "https://tntm.ca",
+          "image": "https://tntm.ca/images/tntmom-banner.png",
+          "description": "Développeuse web indépendante spécialisée en apps web, outils et automatisation.",
+          "address": {
+            "@type": "PostalAddress",
+            "addressCountry": "CA"
+          }
+        }
+        </script>
     </head>
     <body>
         <tntm-header></tntm-header>

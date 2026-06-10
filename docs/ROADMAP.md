@@ -21,9 +21,9 @@
 
 ## 📍 Milestone 4 : Contenu & SEO Avancé
 *Préparer le terrain pour attirer plus de trafic organique.*
-- [ ] **Balises Canoniques** : Ajouter `<link rel="canonical">` pour indiquer à Google l'URL "officielle" de chaque page et éviter le contenu dupliqué.
+- [x] **Balises Canoniques** : Ajouter `<link rel="canonical">` pour indiquer à Google l'URL "officielle" de chaque page et éviter le contenu dupliqué.
 - [ ] **Open Graph (Social Media)** : Créer des images spécifiques par page (ex: une image avec écrit "Tarifs") pour un meilleur impact lors des partages de liens.
-- [ ] **Données Structurées (Schema.org)** : Ajouter du JSON-LD pour que Google comprenne parfaitement tes services et tes prix (Bonus Senior).
+- [x] **Données Structurées (Schema.org)** : Ajouter du JSON-LD pour que Google comprenne parfaitement tes services et tes prix (Bonus Senior).
 
 ---
 *Mise à jour suite à la migration vers l'infrastructure Cloud indépendante (Railway / Namecheap).*
