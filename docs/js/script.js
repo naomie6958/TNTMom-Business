@@ -26,50 +26,6 @@ document.querySelectorAll('.screenshot-item img').forEach(img => {
     img.addEventListener('click', () => openLightbox(img.src, img.alt));
 });
 
-// ── Nav toggle ────────────────────────────────────────────────────────────
-const toggle = document.querySelector('#menu-toggle')
-const nav = document.querySelector('nav')
-
-const isDesktop = () => window.matchMedia('(min-width: 900px)').matches;
-
-// Sur desktop : se souvenir si le menu était ouvert (fermé par défaut)
-if (isDesktop()) {
-    if (localStorage.getItem('tntmNavOpen') === 'true') nav.classList.add('open');
-}
-
-toggle.addEventListener('click', function() {
-    nav.classList.toggle('open')
-    if (!nav.classList.contains('open')) {
-        const sub = document.querySelector('.nav-sub')
-        const chevron = document.querySelector('.nav-chevron-btn')
-        if (sub) sub.classList.remove('open')
-        if (chevron) { chevron.setAttribute('aria-expanded', 'false'); chevron.textContent = '▾'; }
-    }
-    if (isDesktop()) {
-        localStorage.setItem('tntmNavOpen', nav.classList.contains('open'));
-    }
-})
-
-// ── Sous-menu Mes projets ─────────────────────────────────────────────────
-const chevronBtn = document.querySelector('.nav-chevron-btn')
-const navSub = document.querySelector('.nav-sub')
-
-if (chevronBtn && navSub) {
-    chevronBtn.addEventListener('click', function() {
-        navSub.classList.toggle('open')
-        const isOpen = navSub.classList.contains('open')
-        chevronBtn.setAttribute('aria-expanded', String(isOpen))
-        chevronBtn.textContent = isOpen ? '▴' : '▾'
-    })
-}
-
-const currentPage = window.location.pathname.split('/').pop() || 'index.html';
-document.querySelectorAll('nav a').forEach(link => {
-    if (link.getAttribute('href') === currentPage) {
-        link.classList.add('active');
-    }
-})
-
 const STATUT_LABELS = {
     'live':      { label: '● Live',       cls: 'statut-live' },
     'en-cours':  { label: '◐ En cours',   cls: 'statut-en-cours' },
