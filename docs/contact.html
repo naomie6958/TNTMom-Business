@@ -46,8 +46,8 @@
                 document.getElementById('contact-form').addEventListener('submit', function(e) {
                     e.preventDefault();
                     const btn = document.getElementById('contact-submit');
+                    btn.classList.add('loading');
                     btn.disabled = true;
-                    btn.textContent = 'Envoi...';
                     const data = {
                         nom:     document.getElementById('nom').value,
                         email:   document.getElementById('courriel').value,
@@ -72,8 +72,8 @@
                         fb.style.display = 'block';
                         fb.style.color = '#f87171';
                         fb.textContent = 'Erreur — écris directement à naomiemt@tntm.ca';
+                        btn.classList.remove('loading');
                         btn.disabled = false;
-                        btn.textContent = 'Envoyer';
                     });
                 });
                 </script>
