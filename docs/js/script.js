@@ -32,9 +32,9 @@ const nav = document.querySelector('nav')
 
 const isDesktop = () => window.matchMedia('(min-width: 900px)').matches;
 
-// Sur desktop : ouvrir par défaut sauf si localStorage dit fermé
+// Sur desktop : se souvenir si le menu était ouvert (fermé par défaut)
 if (isDesktop()) {
-    if (localStorage.getItem('tntmNavOpen') !== 'false') nav.classList.add('open');
+    if (localStorage.getItem('tntmNavOpen') === 'true') nav.classList.add('open');
 }
 
 toggle.addEventListener('click', function() {
