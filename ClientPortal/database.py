@@ -116,6 +116,17 @@ def init_db():
             FOREIGN KEY(client_id) REFERENCES clients(id) ON DELETE CASCADE
         );
 
+        -- Commentaires liés à un fichier spécifique (collaboration)
+        CREATE TABLE IF NOT EXISTS fichier_commentaires (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            fichier_id INTEGER NOT NULL,
+            auteur_type TEXT NOT NULL, -- 'client' ou 'admin'
+            auteur_nom TEXT NOT NULL,
+            commentaire TEXT NOT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY(fichier_id) REFERENCES fichiers(id) ON DELETE CASCADE
+        );
+
         -- Messages envoyés par le client depuis son portail vers Naomie.
         -- lu = 0 tant que Naomie n'a pas ouvert la fiche client.
         CREATE TABLE IF NOT EXISTS messages_client (
@@ -124,6 +135,15 @@ def init_db():
             sujet      TEXT,
             message    TEXT NOT NULL,
             lu         INTEGER DEFAULT 0,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY(client_id) REFERENCES clients(id) ON DELETE CASCADE
+        );
+
+        CREATE TABLE IF NOT EXISTS client_activity (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            client_id INTEGER NOT NULL,
+            action TEXT NOT NULL,
+            details TEXT,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY(client_id) REFERENCES clients(id) ON DELETE CASCADE
         );
@@ -190,6 +210,39 @@ def migrate_db():
         conn.commit()
     except Exception:
         pass  # Colonne déjà présente, rien à faire
+
+    try:
+        conn.execute("ALTER TABLE clients ADD COLUMN last_login_at TEXT")
+        conn.commit()
+    except Exception:
+        pass
+
+    try:
+        conn.execute('''CREATE TABLE IF NOT EXISTS client_activity (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            client_id INTEGER NOT NULL,
+            action TEXT NOT NULL,
+            details TEXT,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY(client_id) REFERENCES clients(id) ON DELETE CASCADE
+        )''')
+        conn.commit()
+    except Exception:
+        pass
+
+    try:
+        conn.execute('''CREATE TABLE IF NOT EXISTS fichier_commentaires (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            fichier_id INTEGER NOT NULL,
+            auteur_type TEXT NOT NULL,
+            auteur_nom TEXT NOT NULL,
+            commentaire TEXT NOT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY(fichier_id) REFERENCES fichiers(id) ON DELETE CASCADE
+        )''')
+        conn.commit()
+    except Exception:
+        pass
 
     try:
         # password est nullable : NULL = pas de compte client encore créé.

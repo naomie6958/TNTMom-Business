@@ -141,6 +141,11 @@ if RAILWAY_DIR:
 else:
     UPLOAD_ROOT = os.path.join(os.path.dirname(__file__), 'uploads')
 
+ALLOWED_EXTENSIONS = {
+    '.pdf', '.png', '.jpg', '.jpeg', '.gif', '.webp', '.svg',
+    '.zip', '.doc', '.docx', '.xls', '.xlsx', '.mp4', '.mov', '.txt', '.fig',
+}
+
 # On initialise et peuple la DB au démarrage de l'app
 init_db()
 migrate_db()  # Ajoute token aux clients existants si nécessaire
@@ -262,49 +267,71 @@ def dashboard():
 def api_dashboard_active_projects():
     """API Endpoint pour le Skeleton Loading du Dashboard"""
     conn = get_db()
+
     clients_actifs = conn.execute(
         "SELECT * FROM clients WHERE statut IN ('actif', 'prospect', 'complété') AND demo = 0 AND deleted = 0 ORDER BY statut, nom ASC"
     ).fetchall()
 
-    rows = []
-    for c in clients_actifs:
-        contrats = conn.execute(
-            'SELECT * FROM contrats WHERE client_id = ? ORDER BY created_at DESC',
-            (c['id'],)
-        ).fetchall()
-        for contrat in contrats:
-            ms = safe_json_loads(contrat['milestones'], default=[])
-            ms = _compute_deadlines(ms)
-            action = None
-            for m in ms:
-                s = m.get('statut', 'en attente')
-                if s == 'livré':
-                    action = {'type': 'attente_appro', 'label': f'Client doit approuver : {m["titre"]}', 'urgent': True}
-                    break
-                if s == 'approuvé':
-                    action = {'type': 'a_payer', 'label': f'À marquer payé : {m["titre"]}', 'urgent': True}
-                    break
-                if s == 'en cours':
-                    action = {'type': 'en_cours', 'label': f'En cours : {m["titre"]}', 'urgent': False}
-                    break
-            if not action:
-                for m in ms:
-                    if m.get('statut') == 'en attente':
-                        action = {'type': 'a_demarrer', 'label': f'À démarrer : {m["titre"]}', 'urgent': False}
-                        break
-            if not action and ms:
-                action = {'type': 'termine', 'label': 'Tous les milestones complétés', 'urgent': False}
+    if not clients_actifs:
+        conn.close()
+        return jsonify([])
 
-            faits = sum(1 for m in ms if m.get('statut') in ('payé', 'approuvé', 'livré'))
-            factures_att = conn.execute(
-                "SELECT COUNT(*) as n FROM factures WHERE contrat_id = ? AND statut != 'payée' AND deleted = 0",
-                (contrat['id'],)
-            ).fetchone()['n']
-            rows.append({
-                'client': dict(c), 'contrat': dict(contrat), 'ms_total': len(ms),
-                'ms_faits': faits, 'action': action, 'factures_att': factures_att,
-            })
+    # Batch: tous les contrats en une seule requête au lieu de 1 par client
+    client_ids    = [c['id'] for c in clients_actifs]
+    placeholders  = ','.join('?' * len(client_ids))
+    contrats_all  = conn.execute(
+        f'SELECT * FROM contrats WHERE client_id IN ({placeholders}) ORDER BY created_at DESC',
+        client_ids
+    ).fetchall()
+
+    # Batch: toutes les factures en attente groupées par contrat
+    factures_counts = {}
+    if contrats_all:
+        contrat_ids  = [c['id'] for c in contrats_all]
+        ph_contrats  = ','.join('?' * len(contrat_ids))
+        factures_counts = {
+            row['contrat_id']: row['n']
+            for row in conn.execute(
+                f"SELECT contrat_id, COUNT(*) as n FROM factures WHERE contrat_id IN ({ph_contrats}) AND statut != 'payée' AND deleted = 0 GROUP BY contrat_id",
+                contrat_ids
+            ).fetchall()
+        }
+
     conn.close()
+
+    clients_dict = {c['id']: c for c in clients_actifs}
+
+    rows = []
+    for contrat in contrats_all:
+        c  = clients_dict[contrat['client_id']]
+        ms = safe_json_loads(contrat['milestones'], default=[])
+        ms = _compute_deadlines(ms)
+        action = None
+        for m in ms:
+            s = m.get('statut', 'en attente')
+            if s == 'livré':
+                action = {'type': 'attente_appro', 'label': f'Client doit approuver : {m["titre"]}', 'urgent': True}
+                break
+            if s == 'approuvé':
+                action = {'type': 'a_payer', 'label': f'À marquer payé : {m["titre"]}', 'urgent': True}
+                break
+            if s == 'en cours':
+                action = {'type': 'en_cours', 'label': f'En cours : {m["titre"]}', 'urgent': False}
+                break
+        if not action:
+            for m in ms:
+                if m.get('statut') == 'en attente':
+                    action = {'type': 'a_demarrer', 'label': f'À démarrer : {m["titre"]}', 'urgent': False}
+                    break
+        if not action and ms:
+            action = {'type': 'termine', 'label': 'Tous les milestones complétés', 'urgent': False}
+
+        faits = sum(1 for m in ms if m.get('statut') in ('payé', 'approuvé', 'livré'))
+        rows.append({
+            'client': dict(c), 'contrat': dict(contrat), 'ms_total': len(ms),
+            'ms_faits': faits, 'action': action, 'factures_att': factures_counts.get(contrat['id'], 0),
+        })
+
     return jsonify(rows)
 
 
@@ -320,7 +347,7 @@ def command_center():
 def command_center_legacy():
     conn = get_db()
     clients_all = conn.execute(
-        "SELECT * FROM clients WHERE statut IN ('actif', 'prospect', 'complété') AND demo = 0 ORDER BY statut, nom ASC"
+        "SELECT * FROM clients WHERE statut IN ('actif', 'prospect', 'complété') AND demo = 0 AND deleted = 0 ORDER BY statut, nom ASC"
     ).fetchall()
 
     rows = []
@@ -592,29 +619,6 @@ def facture_pdf(client_id, facture_id):
     return response
 
 
-# ── LEADS (formulaire de contact public tntm.ca) ──────────────────────────────
-
-@app.route('/leads')
-@login_required
-def leads_list():
-    conn = get_db()
-    leads = conn.execute('SELECT * FROM leads ORDER BY created_at DESC').fetchall()
-    conn.execute('UPDATE leads SET lu = 1 WHERE lu = 0')
-    conn.commit()
-    conn.close()
-    return render_template('leads.html', leads=leads)
-
-
-@app.route('/leads/<int:lead_id>/delete', methods=['POST'])
-@login_required
-def lead_delete(lead_id):
-    conn = get_db()
-    conn.execute('DELETE FROM leads WHERE id = ?', (lead_id,))
-    conn.commit()
-    conn.close()
-    return redirect('/leads')
-
-
 # ── GALERIE LIVRABLES ─────────────────────────────────────────────────────────
 
 @app.route('/clients/<int:client_id>/contrat/<int:contrat_id>/milestone/<int:index>/livrables/upload', methods=['POST'])
@@ -625,9 +629,16 @@ def livrable_upload(client_id, contrat_id, index):
         flash('Aucun fichier sélectionné.', 'error')
         return redirect(f'/clients/{client_id}')
     nom_original = fichier.filename
-    ext          = os.path.splitext(nom_original)[1].lower()
+    nom_secure   = secure_filename(nom_original)
+    if not nom_secure:
+        flash('Nom de fichier invalide.', 'error')
+        return redirect(f'/clients/{client_id}')
+    ext = os.path.splitext(nom_secure)[1].lower()
+    if ext not in ALLOWED_EXTENSIONS:
+        flash(f'Type de fichier non autorisé ({ext or "sans extension"}).', 'error')
+        return redirect(f'/clients/{client_id}')
     nom_stocke   = str(uuid.uuid4()) + ext
-    dossier      = os.path.join('uploads', str(client_id))
+    dossier      = os.path.join(UPLOAD_ROOT, str(client_id))
     os.makedirs(dossier, exist_ok=True)
     fichier.save(os.path.join(dossier, nom_stocke))
     conn = get_db()
@@ -642,343 +653,6 @@ def livrable_upload(client_id, contrat_id, index):
     flash('Livrable ajouté.', 'success')
     return redirect(f'/clients/{client_id}')
 
-
-# ── FORMULAIRES CUSTOM ────────────────────────────────────────────────────────
-
-@app.route('/formulaires')
-@login_required
-def formulaires():
-    conn = get_db()
-    rows = conn.execute('''
-        SELECT f.*,
-               (SELECT COUNT(*) FROM formulaire_questions WHERE formulaire_id = f.id) AS nb_questions
-        FROM formulaires f ORDER BY f.created_at DESC
-    ''').fetchall()
-    conn.close()
-    return render_template('formulaires.html', formulaires=rows)
-
-
-@app.route('/formulaires/new', methods=['POST'])
-@login_required
-def formulaire_new():
-    titre = request.form.get('titre', '').strip()
-    desc  = request.form.get('description', '').strip()
-    if not titre:
-        flash('Le titre est requis.', 'error')
-        return redirect('/formulaires')
-    conn = get_db()
-    cur = conn.execute('INSERT INTO formulaires (titre, description) VALUES (?, ?)', (titre, desc or None))
-    conn.commit()
-    fid = cur.lastrowid
-    conn.close()
-    return redirect(f'/formulaires/{fid}')
-
-
-@app.route('/formulaires/<int:fid>')
-@login_required
-def formulaire_edit(fid):
-    conn = get_db()
-    f = conn.execute('SELECT * FROM formulaires WHERE id = ?', (fid,)).fetchone()
-    if not f:
-        conn.close()
-        flash('Formulaire introuvable.', 'error')
-        return redirect('/formulaires')
-    questions = conn.execute(
-        'SELECT * FROM formulaire_questions WHERE formulaire_id = ? ORDER BY ordre', (fid,)
-    ).fetchall()
-    conn.close()
-    return render_template('formulaire_edit.html', formulaire=f, questions=questions)
-
-
-@app.route('/formulaires/<int:fid>/edit', methods=['POST'])
-@login_required
-def formulaire_update(fid):
-    titre = request.form.get('titre', '').strip()
-    desc  = request.form.get('description', '').strip()
-    conn = get_db()
-    conn.execute('UPDATE formulaires SET titre = ?, description = ? WHERE id = ?', (titre, desc or None, fid))
-    conn.commit()
-    conn.close()
-    flash('Formulaire mis à jour.', 'success')
-    return redirect(f'/formulaires/{fid}')
-
-
-@app.route('/formulaires/<int:fid>/delete', methods=['POST'])
-@login_required
-def formulaire_delete(fid):
-    conn = get_db()
-    conn.execute('DELETE FROM formulaires WHERE id = ?', (fid,))
-    conn.commit()
-    conn.close()
-    flash('Formulaire supprimé.', 'success')
-    return redirect('/formulaires')
-
-
-@app.route('/formulaires/<int:fid>/questions/add', methods=['POST'])
-@login_required
-def formulaire_question_add(fid):
-    titre        = request.form.get('titre', '').strip()
-    type_        = request.form.get('type', 'texte')
-    sous_titre   = request.form.get('sous_titre', '').strip()
-    options      = request.form.get('options', '').strip()
-    requis       = 1 if request.form.get('requis') else 0
-    prefill_field = request.form.get('prefill_field', '').strip() or None
-    if not titre and type_ != 'section':
-        flash('Le titre de la question est requis.', 'error')
-        return redirect(f'/formulaires/{fid}')
-    conn = get_db()
-    max_ordre = conn.execute(
-        'SELECT COALESCE(MAX(ordre), -1) FROM formulaire_questions WHERE formulaire_id = ?', (fid,)
-    ).fetchone()[0]
-    conn.execute(
-        'INSERT INTO formulaire_questions (formulaire_id, ordre, titre, sous_titre, type, options, requis, prefill_field) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
-        (fid, max_ordre + 1, titre or '—', sous_titre or None, type_, options or None, requis, prefill_field)
-    )
-    conn.commit()
-    conn.close()
-    return redirect(f'/formulaires/{fid}')
-
-
-@app.route('/formulaires/<int:fid>/questions/<int:qid>/edit', methods=['POST'])
-@login_required
-def formulaire_question_edit(fid, qid):
-    titre         = request.form.get('titre', '').strip()
-    sous_titre    = request.form.get('sous_titre', '').strip()
-    type_         = request.form.get('type', 'texte')
-    options       = request.form.get('options', '').strip()
-    requis        = 1 if request.form.get('requis') else 0
-    prefill_field = request.form.get('prefill_field', '').strip() or None
-    conn = get_db()
-    conn.execute(
-        'UPDATE formulaire_questions SET titre=?, sous_titre=?, type=?, options=?, requis=?, prefill_field=? WHERE id=? AND formulaire_id=?',
-        (titre, sous_titre or None, type_, options or None, requis, prefill_field, qid, fid)
-    )
-    conn.commit()
-    conn.close()
-    return redirect(f'/formulaires/{fid}')
-
-
-@app.route('/formulaires/<int:fid>/questions/<int:qid>/delete', methods=['POST'])
-@login_required
-def formulaire_question_delete(fid, qid):
-    conn = get_db()
-    conn.execute('DELETE FROM formulaire_questions WHERE id = ? AND formulaire_id = ?', (qid, fid))
-    conn.commit()
-    conn.close()
-    return redirect(f'/formulaires/{fid}')
-
-
-@app.route('/formulaires/<int:fid>/questions/reorder', methods=['POST'])
-@login_required
-def formulaire_questions_reorder(fid):
-    data  = request.get_json(silent=True) or {}
-    ordre = data.get('ordre', [])
-    conn  = get_db()
-    for i, qid in enumerate(ordre):
-        conn.execute(
-            'UPDATE formulaire_questions SET ordre = ? WHERE id = ? AND formulaire_id = ?', (i, qid, fid)
-        )
-    conn.commit()
-    conn.close()
-    return {'ok': True}
-
-
-# ── TARIFS ────────────────────────────────────────────────────────────────────
-
-@app.route('/tarifs')
-@login_required
-def tarifs():
-    conn = get_db()
-    rows = conn.execute('SELECT * FROM tarifs ORDER BY id DESC').fetchall()
-    conn.close()
-    return render_template('tarifs_admin.html', tarifs=rows)
-
-
-@app.route('/tarifs/new', methods=['POST'])
-@login_required
-def tarif_new():
-    conn = get_db()
-    max_ordre = conn.execute('SELECT COALESCE(MAX(ordre), -1) FROM tarifs').fetchone()[0]
-    conn.execute(
-        'INSERT INTO tarifs (titre, description, prix, unite, inclus, non_inclus, actif, ordre) VALUES (?,?,?,?,?,?,?,?)',
-        (
-            request.form.get('titre', '').strip(),
-            request.form.get('description', '').strip() or None,
-            float(request.form.get('prix') or 0) or None,
-            request.form.get('unite', '/ projet').strip(),
-            request.form.get('inclus', '').strip() or None,
-            request.form.get('non_inclus', '').strip() or None,
-            1 if request.form.get('actif') else 0,
-            max_ordre + 1,
-        )
-    )
-    conn.commit()
-    conn.close()
-    flash('Tarif ajouté.', 'success')
-    return redirect('/tarifs')
-
-
-@app.route('/tarifs/<int:tid>/edit', methods=['POST'])
-@login_required
-def tarif_edit(tid):
-    conn = get_db()
-    conn.execute(
-        'UPDATE tarifs SET titre=?, description=?, prix=?, unite=?, inclus=?, non_inclus=?, actif=?, ordre=? WHERE id=?',
-        (
-            request.form.get('titre', '').strip(),
-            request.form.get('description', '').strip() or None,
-            float(request.form.get('prix') or 0) or None,
-            request.form.get('unite', '/ projet').strip(),
-            request.form.get('inclus', '').strip() or None,
-            request.form.get('non_inclus', '').strip() or None,
-            1 if request.form.get('actif') else 0,
-            int(request.form.get('ordre', 0)),
-            tid,
-        )
-    )
-    conn.commit()
-    conn.close()
-    flash('Tarif mis à jour.', 'success')
-    return redirect('/tarifs')
-
-
-@app.route('/tarifs/<int:tid>/delete', methods=['POST'])
-@login_required
-def tarif_delete(tid):
-    conn = get_db()
-    conn.execute('DELETE FROM tarifs WHERE id = ?', (tid,))
-    conn.commit()
-    conn.close()
-    flash('Tarif supprimé.', 'success')
-    return redirect('/tarifs')
-
-
-# ── PACKAGES ──────────────────────────────────────────────────────────────────
-
-@app.route('/packages', methods=['GET', 'POST'])
-@login_required
-def packages():
-    conn = get_db()
-    clients = conn.execute(
-        "SELECT id, nom FROM clients WHERE demo = 0 ORDER BY nom"
-    ).fetchall()
-
-    if request.method == 'POST':
-        nom           = request.form.get('nom', '').strip()
-        client_id     = int(request.form.get('client_id', 0))
-        h_dev         = float(request.form.get('h_dev') or 0)
-        h_design      = float(request.form.get('h_design') or 0)
-        h_integration = float(request.form.get('h_integration') or 0)
-        h_admin       = float(request.form.get('h_admin') or 0)
-        marge         = int(request.form.get('marge') or 0)
-
-        sous_total = h_dev * 80 + h_design * 65 + h_integration * 55 + h_admin * 50
-        avec_marge = sous_total * (1 + marge / 100)
-
-        def _arrondir(montant):
-            if montant <= 0:
-                return 0
-            centaine = int(montant // 100) * 100
-            for candidat in (centaine + 50, centaine + 99, centaine + 150):
-                if candidat >= montant:
-                    return candidat
-            return centaine + 199
-
-        prix_final = _arrondir(avec_marge)
-
-        conn.execute('''
-            INSERT INTO packages
-                (nom, client_id, heures_dev, heures_design, heures_integration, heures_admin, marge, prix_final)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-        ''', (nom, client_id, h_dev, h_design, h_integration, h_admin, marge, prix_final))
-        conn.commit()
-        flash(f'Forfait "{nom}" enregistré — {prix_final:.0f}$', 'success')
-        conn.close()
-        return redirect('/packages')
-
-    packages_list = conn.execute('''
-        SELECT p.*, c.nom as client_nom
-        FROM packages p
-        JOIN clients c ON p.client_id = c.id
-        ORDER BY p.created_at DESC
-    ''').fetchall()
-    conn.close()
-
-    return render_template('packages.html', clients=clients, packages=packages_list)
-
-
-@app.route('/packages/<int:pkg_id>/delete', methods=['POST'])
-@login_required
-def package_delete(pkg_id):
-    conn = get_db()
-    conn.execute('DELETE FROM packages WHERE id = ?', (pkg_id,))
-    conn.commit()
-    conn.close()
-    flash('Forfait supprimé.', 'success')
-    return redirect('/packages')
-
-@app.route('/packages/<int:pkg_id>/creer-contrat', methods=['POST'])
-@login_required
-def package_creer_contrat(pkg_id):
-    conn = get_db()
-    pkg = conn.execute(
-        'SELECT p.*, c.nom as client_nom FROM packages p JOIN clients c ON c.id = p.client_id WHERE p.id = ?',
-        (pkg_id,)
-    ).fetchone()
-
-    if not pkg:
-        conn.close()
-        flash('Forfait introuvable.', 'error')
-        return redirect('/packages')
-
-    prix = pkg['prix_final']
-
-    # 4 milestones pré-remplis avec la répartition standard 25/25/35/15%
-    milestones = [
-        {'titre': 'M1 — Démarrage & Contrat', 'livrable': 'Acompte initial — lancement du projet', 'prix': str(round(prix * 0.25)), 'date': '', 'statut': 'en attente', 'lien_preview': '', 'preview_visible': False},
-        {'titre': 'M2 — Design & Maquettes', 'livrable': 'Maquettes approuvées par le client', 'prix': str(round(prix * 0.25)), 'date': '', 'statut': 'en attente', 'lien_preview': '', 'preview_visible': False},
-        {'titre': 'M3 — Développement', 'livrable': 'Site fonctionnel livré en prévisualisation', 'prix': str(round(prix * 0.35)), 'date': '', 'statut': 'en attente', 'lien_preview': '', 'preview_visible': False},
-        {'titre': 'M4 — Livraison finale', 'livrable': 'Mise en ligne + passation de dossier', 'prix': str(round(prix * 0.15)), 'date': '', 'statut': 'en attente', 'lien_preview': '', 'preview_visible': False},
-    ]
-
-    snapshot = {
-        'nom': pkg['nom'],
-        'heures_dev': pkg['heures_dev'],
-        'heures_design': pkg['heures_design'],
-        'heures_integration': pkg['heures_integration'],
-        'heures_admin': pkg['heures_admin'],
-        'marge': pkg['marge'],
-        'prix_final': pkg['prix_final'],
-    }
-
-    titre_scope = "Migration / Copie Conforme" if pkg['heures_design'] == 0 else "Développement web complet"
-
-    scope_auto = f"{titre_scope} — {pkg['nom']}\n\n"
-    scope_auto += f"• Développement : {pkg['heures_dev']}h\n"
-    
-    if pkg['heures_design'] > 0:
-        scope_auto += f"• Design UI/UX : {pkg['heures_design']}h\n"
-        
-    scope_auto += f"• Intégration & Maintenance : {pkg['heures_integration']}h\n"
-    scope_auto += f"• Admin & Gestion : {pkg['heures_admin']}h"
-
-    cursor = conn.execute(
-        'INSERT INTO contrats (client_id, nom, scope, milestones, statut, package_snapshot) VALUES (?,?,?,?,?,?)',
-        (
-            pkg['client_id'],
-            pkg['nom'],
-            scope_auto,
-            json.dumps(milestones, ensure_ascii=False),
-            'draft',
-            json.dumps(snapshot, ensure_ascii=False),
-        )
-    )
-    contrat_id = cursor.lastrowid
-    conn.commit()
-    conn.close()
-
-    flash(f'Contrat créé depuis le forfait « {pkg["nom"]} ». Révise et envoie au client !', 'success')
-    return redirect(f'/clients/{pkg["client_id"]}/contrat/{contrat_id}')
 
 if __name__ == '__main__':
     app.run(debug=True)

@@ -9,7 +9,8 @@ from database import get_db
 from email_templates import (email_contrat_signe_naomie,
                              email_message_recu_naomie,
                              email_milestone_approuve_naomie,
-                             email_formulaire_naomie)
+                             email_formulaire_naomie,
+                             email_commentaire_fichier_client)
 from utils import (_compute_deadlines, _now, client_login_required,
                    group_messages, send_notification_email)
 
@@ -31,13 +32,22 @@ def portail_login():
 
         conn = get_db()
         client = conn.execute(
-            'SELECT * FROM clients WHERE email = ?', (email,)
+            'SELECT * FROM clients WHERE email = ? AND deleted = 0', (email,)
         ).fetchone()
         conn.close()
 
         if client and client['password'] and check_password_hash(client['password'], password):
             session['client_id']   = client['id']
             session['client_nom'] = client['nom']
+
+            # --- Tracker de connexion ---
+            conn2 = get_db()
+            conn2.execute('UPDATE clients SET last_login_at = ? WHERE id = ?', (_now(), client['id']))
+            conn2.execute('INSERT INTO client_activity (client_id, action, details) VALUES (?, ?, ?)',
+                          (client['id'], 'Connexion', 'Connexion au portail client'))
+            conn2.commit()
+            conn2.close()
+
             return redirect('/portail/dashboard')
 
         error = 'Courriel ou mot de passe incorrect.'
@@ -67,15 +77,29 @@ def portail_dashboard():
         (session['client_id'],)
     ).fetchall()
 
-    fichiers = conn.execute(
+    fichiers_raw = conn.execute(
         'SELECT * FROM fichiers WHERE client_id = ? AND milestone_index IS NULL ORDER BY uploaded_at DESC',
         (session['client_id'],)
     ).fetchall()
 
-    livrables = conn.execute(
+    livrables_raw = conn.execute(
         'SELECT * FROM fichiers WHERE client_id = ? AND milestone_index IS NOT NULL ORDER BY uploaded_at DESC',
         (session['client_id'],)
     ).fetchall()
+
+    comments_raw = conn.execute(
+        '''SELECT fc.* FROM fichier_commentaires fc
+           JOIN fichiers f ON f.id = fc.fichier_id
+           WHERE f.client_id = ? ORDER BY fc.created_at ASC''',
+        (session['client_id'],)
+    ).fetchall()
+
+    comments_by_file = {}
+    for c in comments_raw:
+        comments_by_file.setdefault(c['fichier_id'], []).append(dict(c))
+
+    fichiers = [dict(f, commentaires=comments_by_file.get(f['id'], [])) for f in fichiers_raw]
+    livrables = [dict(f, commentaires=comments_by_file.get(f['id'], [])) for f in livrables_raw]
 
     formulaire_pending = conn.execute('''
         SELECT f.id, f.titre FROM formulaires f
@@ -266,15 +290,45 @@ def telecharger_fichier_client(fichier_id):
         'SELECT * FROM fichiers WHERE id = ? AND client_id = ?',
         (fichier_id, session['client_id'])
     ).fetchone()
-    conn.close()
 
     if not f:
+        conn.close()
         return redirect('/portail/dashboard')
+
+    # --- Tracker de téléchargement ---
+    conn.execute('INSERT INTO client_activity (client_id, action, details) VALUES (?, ?, ?)',
+                 (session['client_id'], 'Téléchargement', f"Fichier : {f['nom_original']}"))
+    conn.commit()
+    conn.close()
 
     dossier = os.path.join(UPLOAD_ROOT, str(session['client_id']))
     return send_from_directory(dossier, f['nom_fichier'],
                                as_attachment=True, download_name=f['nom_original'])
 
+
+@client_bp.route('/portail/fichiers/<int:fichier_id>/commenter', methods=['POST'])
+@client_login_required
+def commenter_fichier_client(fichier_id):
+    commentaire = request.form.get('commentaire', '').strip()
+    if commentaire:
+        conn = get_db()
+        f = conn.execute('SELECT * FROM fichiers WHERE id = ? AND client_id = ?', (fichier_id, session['client_id'])).fetchone()
+        if f:
+            conn.execute(
+                'INSERT INTO fichier_commentaires (fichier_id, auteur_type, auteur_nom, commentaire) VALUES (?, ?, ?, ?)',
+                (fichier_id, 'client', session.get('client_nom', 'Client'), commentaire)
+            )
+            conn.execute('INSERT INTO client_activity (client_id, action, details) VALUES (?, ?, ?)',
+                         (session['client_id'], 'Commentaire', f'Sur le fichier : {f["nom_original"]}'))
+            conn.commit()
+            send_notification_email(
+                f'[ClientPortal] Nouveau commentaire de {session.get("client_nom")}',
+                f'Client : {session.get("client_nom")}\nFichier : {f["nom_original"]}\n\n"{commentaire}"',
+                html=email_commentaire_fichier_client(session.get("client_nom"), f["nom_original"], commentaire)
+            )
+        conn.close()
+        flash('Commentaire ajouté.', 'success')
+    return redirect('/portail/dashboard')
 
 @client_bp.route('/portail/contrat/<int:contrat_id>/print')
 @client_login_required

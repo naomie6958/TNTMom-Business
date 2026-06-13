@@ -190,20 +190,36 @@
     <div class="card" style="margin-top: 1rem;">
         <div class="section-title" style="margin-bottom: 1rem;">Fichiers partagés</div>
         {% for f in fichiers %}
-        <div class="fichier-row" style="display: flex; justify-content: space-between; align-items: center;
-                    padding: 0.6rem 0; border-bottom: 1px solid var(--border);">
-            <div>
-                <div style="font-size: 0.88rem;">{{ f.nom_original }}</div>
-                <div class="text-muted" style="font-size: 0.75rem;">
-                    {% if f.taille > 1048576 %}{{ (f.taille / 1048576) | round(1) }} MB
-                    {% elif f.taille > 1024 %}{{ (f.taille / 1024) | int }} KB
-                    {% else %}{{ f.taille }} B{% endif %}
+        <div style="border: 1px solid var(--border); border-radius: var(--radius); padding: 0.8rem; margin-bottom: 0.8rem; background: var(--surface);">
+            <div class="fichier-row" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                <div>
+                    <div style="font-weight: 500;">{{ f.nom_original }}</div>
+                    <div class="text-muted" style="font-size: 0.75rem;">
+                        {% if f.taille > 1048576 %}{{ (f.taille / 1048576) | round(1) }} MB
+                        {% elif f.taille > 1024 %}{{ (f.taille / 1024) | int }} KB
+                        {% else %}{{ f.taille }} B{% endif %}
+                        · {{ f.uploaded_at[:10] }}
+                    </div>
                 </div>
+                <a href="/portail/fichiers/{{ f.id }}"
+                   class="btn btn-secondary" style="font-size: 0.78rem;">
+                    ↓
+                </a>
             </div>
-            <a href="/portail/fichiers/{{ f.id }}"
-               class="btn btn-secondary" style="font-size: 0.82rem;">
-                ↓ Télécharger
-            </a>
+            
+            <div style="background: rgba(0,0,0,0.15); border-radius: var(--radius); padding: 0.6rem;">
+                {% for c in f.commentaires %}
+                <div style="margin-bottom: 0.4rem; font-size: 0.82rem;">
+                    <span style="color: {% if c.auteur_type == 'admin' %}var(--gold){% else %}#87CEEB{% endif %}; font-weight: 500;">{{ c.auteur_nom }}</span>
+                    <span class="text-muted" style="font-size: 0.7rem; margin-left: 0.3rem;">{{ c.created_at | to_local | replace('T', ' ') }}</span>
+                    <div style="color: var(--text); margin-top: 0.1rem;">{{ c.commentaire }}</div>
+                </div>
+                {% endfor %}
+                <form method="POST" action="/portail/fichiers/{{ f.id }}/commenter" style="display: flex; gap: 0.4rem; margin-top: 0.6rem;">
+                    <input type="text" name="commentaire" placeholder="Ajouter un commentaire..." required style="flex: 1; font-size: 0.8rem; padding: 0.3rem 0.5rem; border-radius: var(--radius); border: 1px solid var(--border); background: var(--surface2); color: var(--text);">
+                    <button type="submit" class="btn btn-secondary" style="font-size: 0.75rem;">Envoyer</button>
+                </form>
+            </div>
         </div>
         {% endfor %}
     </div>

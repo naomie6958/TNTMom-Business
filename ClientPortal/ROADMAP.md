@@ -22,10 +22,10 @@
 
 ## 💼 4. Fonctionnalités Produit (Business)
 - [ ] **Paiement Stripe** : Bouton "Payer" directement sur les factures du portail.
-- [ ] **Générateur PDF** : Créer un vrai fichier PDF pour les factures et contrats (WeasyPrint).
-- [ ] **Journal d'activité client** : Voir l'heure de dernière connexion et les fichiers téléchargés.
-- [ ] **Commentaires sur fichiers** : Feedback direct sur les maquettes dans le portail.
-- [ ] **Templates de Contrats** : Sauvegarder des structures de projets réutilisables.
+- [x] **Générateur PDF** : Créer un vrai fichier PDF pour les factures et contrats (Intégré via WeasyPrint).
+- [x] **Journal d'activité client** : Voir l'heure de dernière connexion et les fichiers téléchargés.
+- [x] **Commentaires sur fichiers** : Feedback direct sur les maquettes dans le portail.
+- [x] **Templates de Contrats** : Sauvegarder des structures de projets réutilisables (Géré via les Forfaits/Packages).
 
 ---
 *Prochaines étapes définies en collaboration avec l'assistant Tech Lead.*

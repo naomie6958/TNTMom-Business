@@ -272,5 +272,46 @@ def package_delete(pkg_id):
 @admin_tools_bp.route('/packages/<int:pkg_id>/creer-contrat', methods=['POST'])
 @login_required
 def package_creer_contrat(pkg_id):
-    # ... Logique intacte pour générer les milestones du contrat
-    pass
+    conn = get_db()
+    pkg = conn.execute(
+        'SELECT p.*, c.nom as client_nom FROM packages p JOIN clients c ON c.id = p.client_id WHERE p.id = ?',
+        (pkg_id,)
+    ).fetchone()
+
+    if not pkg:
+        conn.close()
+        flash('Forfait introuvable.', 'error')
+        return redirect('/packages')
+
+    prix = pkg['prix_final']
+
+    milestones = [
+        {'titre': 'M1 — Démarrage & Contrat',  'livrable': 'Acompte initial — lancement du projet',      'prix': str(round(prix * 0.25)), 'date': '', 'statut': 'en attente', 'lien_preview': '', 'preview_visible': False},
+        {'titre': 'M2 — Design & Maquettes',    'livrable': 'Maquettes approuvées par le client',         'prix': str(round(prix * 0.25)), 'date': '', 'statut': 'en attente', 'lien_preview': '', 'preview_visible': False},
+        {'titre': 'M3 — Développement',         'livrable': 'Site fonctionnel livré en prévisualisation', 'prix': str(round(prix * 0.35)), 'date': '', 'statut': 'en attente', 'lien_preview': '', 'preview_visible': False},
+        {'titre': 'M4 — Livraison finale',      'livrable': 'Mise en ligne + passation de dossier',       'prix': str(round(prix * 0.15)), 'date': '', 'statut': 'en attente', 'lien_preview': '', 'preview_visible': False},
+    ]
+
+    snapshot = {
+        'nom': pkg['nom'], 'heures_dev': pkg['heures_dev'], 'heures_design': pkg['heures_design'],
+        'heures_integration': pkg['heures_integration'], 'heures_admin': pkg['heures_admin'],
+        'marge': pkg['marge'], 'prix_final': pkg['prix_final'],
+    }
+
+    titre_scope = "Migration / Copie Conforme" if pkg['heures_design'] == 0 else "Développement web complet"
+    scope_auto  = f"{titre_scope} — {pkg['nom']}\n\n• Développement : {pkg['heures_dev']}h\n"
+    if pkg['heures_design'] > 0:
+        scope_auto += f"• Design UI/UX : {pkg['heures_design']}h\n"
+    scope_auto += f"• Intégration & Maintenance : {pkg['heures_integration']}h\n"
+    scope_auto += f"• Admin & Gestion : {pkg['heures_admin']}h"
+
+    cursor = conn.execute(
+        'INSERT INTO contrats (client_id, nom, scope, milestones, statut, package_snapshot) VALUES (?,?,?,?,?,?)',
+        (pkg['client_id'], pkg['nom'], scope_auto, json.dumps(milestones, ensure_ascii=False), 'draft', json.dumps(snapshot, ensure_ascii=False))
+    )
+    contrat_id = cursor.lastrowid
+    conn.commit()
+    conn.close()
+
+    flash(f'Contrat créé depuis le forfait « {pkg["nom"]} ». Révise et envoie au client !', 'success')
+    return redirect(f'/clients/{pkg["client_id"]}/contrat/{contrat_id}')

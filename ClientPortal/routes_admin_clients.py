@@ -5,7 +5,7 @@ import os
 from flask import Blueprint, render_template, request, redirect, session, flash, jsonify, send_from_directory
 from database import get_db
 from utils import login_required, _compute_deadlines, group_messages, send_notification_email, _now, safe_json_loads
-from email_templates import email_contrat_envoye, email_milestone_livre, email_bienvenue, email_reponse_message, email_message_naomie
+from email_templates import email_contrat_envoye, email_milestone_livre, email_bienvenue, email_reponse_message, email_message_naomie, email_commentaire_fichier_admin
 from werkzeug.utils import secure_filename
 from werkzeug.security import generate_password_hash
 
@@ -15,6 +15,11 @@ if os.getenv('RAILWAY_VOLUME_MOUNT_PATH'):
     UPLOAD_ROOT = os.path.join(os.getenv('RAILWAY_VOLUME_MOUNT_PATH'), 'uploads')
 else:
     UPLOAD_ROOT = os.path.join(os.path.dirname(__file__), 'uploads')
+
+ALLOWED_EXTENSIONS = {
+    '.pdf', '.png', '.jpg', '.jpeg', '.gif', '.webp', '.svg',
+    '.zip', '.doc', '.docx', '.xls', '.xlsx', '.mp4', '.mov', '.txt', '.fig',
+}
 
 # ─── CLIENTS ──────────────────────────────────────────────────────────────────
 
@@ -72,10 +77,27 @@ def client_fiche(client_id):
         (client_id,)
     ).fetchone()
 
-    fichiers = conn.execute(
+    fichiers_raw = conn.execute(
         'SELECT * FROM fichiers WHERE client_id = ? ORDER BY uploaded_at DESC',
         (client_id,)
     ).fetchall()
+
+    comments_raw = conn.execute(
+        '''SELECT fc.* FROM fichier_commentaires fc
+           JOIN fichiers f ON f.id = fc.fichier_id
+           WHERE f.client_id = ? ORDER BY fc.created_at ASC''',
+        (client_id,)
+    ).fetchall()
+
+    comments_by_file = {}
+    for c in comments_raw:
+        comments_by_file.setdefault(c['fichier_id'], []).append(dict(c))
+
+    fichiers = []
+    for f in fichiers_raw:
+        fd = dict(f)
+        fd['commentaires'] = comments_by_file.get(f['id'], [])
+        fichiers.append(fd)
 
     messages = conn.execute(
         'SELECT * FROM messages_client WHERE client_id = ? ORDER BY created_at ASC',
@@ -119,6 +141,11 @@ def client_fiche(client_id):
 
     banques_heures = conn.execute(
         'SELECT * FROM banque_heures WHERE client_id = ? ORDER BY date_achat DESC',
+        (client_id,)
+    ).fetchall()
+
+    activites = conn.execute(
+        'SELECT * FROM client_activity WHERE client_id = ? ORDER BY created_at DESC LIMIT 50',
         (client_id,)
     ).fetchall()
 
@@ -171,7 +198,7 @@ def client_fiche(client_id):
                            fichiers=fichiers, messages=messages, msg_threads=group_messages(messages),
                            factures=factures, form_reponses=form_reponses,
                            formulaires_assignes=formulaires_assignes, formulaires_disponibles=formulaires_disponibles,
-                           banques_heures=banques_heures, name=session['user_name'])
+                           banques_heures=banques_heures, activites=activites, name=session['user_name'])
 
 
 @admin_clients_bp.route('/clients/<int:client_id>/edit', methods=['POST'])
@@ -504,6 +531,11 @@ def upload_fichier(client_id):
         flash('Nom de fichier invalide.', 'error')
         return redirect(f'/clients/{client_id}')
 
+    ext = os.path.splitext(nom_secure)[1].lower()
+    if ext not in ALLOWED_EXTENSIONS:
+        flash(f'Type de fichier non autorisé ({ext or "sans extension"}).', 'error')
+        return redirect(f'/clients/{client_id}')
+
     nom_stocke = f"{uuid.uuid4().hex}_{nom_secure}"
     dossier = os.path.join(UPLOAD_ROOT, str(client_id))
     os.makedirs(dossier, exist_ok=True)
@@ -546,6 +578,31 @@ def delete_fichier(client_id, fichier_id):
         conn.commit()
     conn.close()
     flash('Fichier supprimé.', 'success')
+    return redirect(f'/clients/{client_id}')
+
+@admin_clients_bp.route('/clients/<int:client_id>/fichiers/<int:fichier_id>/commenter', methods=['POST'])
+@login_required
+def commenter_fichier_admin(client_id, fichier_id):
+    commentaire = request.form.get('commentaire', '').strip()
+    if commentaire:
+        conn = get_db()
+        f = conn.execute('SELECT * FROM fichiers WHERE id = ? AND client_id = ?', (fichier_id, client_id)).fetchone()
+        if f:
+            conn.execute(
+                'INSERT INTO fichier_commentaires (fichier_id, auteur_type, auteur_nom, commentaire) VALUES (?, ?, ?, ?)',
+                (fichier_id, 'admin', session.get('user_name', 'Admin'), commentaire)
+            )
+            conn.commit()
+            client = conn.execute('SELECT nom, email FROM clients WHERE id = ?', (client_id,)).fetchone()
+            if client and client['email']:
+                send_notification_email(
+                    f'[TNTMom] Nouveau commentaire sur le fichier {f["nom_original"]}',
+                    f'Bonjour {client["nom"]},\n\nNaomie a ajouté un commentaire sur le fichier "{f["nom_original"]}" :\n\n"{commentaire}"\n\nConnecte-toi à ton portail pour répondre.',
+                    to=client['email'],
+                    html=email_commentaire_fichier_admin(client['nom'], f['nom_original'], commentaire)
+                )
+        conn.close()
+        flash('Commentaire ajouté.', 'success')
     return redirect(f'/clients/{client_id}')
 
 # ─── ACCÈS PORTAIL CLIENT ─────────────────────────────────────────────────────

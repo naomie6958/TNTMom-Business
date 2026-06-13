@@ -141,7 +141,7 @@
 {% for m in messages %}{% if not m.reponse %}{% set ns_unr.n = ns_unr.n + 1 %}{% endif %}{% endfor %}
 <div class="fiche-tabs">
     <button class="tab-btn active" data-tab="projets"     onclick="switchTab('projets')">Projets</button>
-    <button class="tab-btn"        data-tab="resume"      onclick="switchTab('resume')">Consultations</button>
+    <button class="tab-btn"        data-tab="resume"      onclick="switchTab('resume')">Historique</button>
     <button class="tab-btn"        data-tab="formulaires" onclick="switchTab('formulaires')">Formulaires</button>
     <button class="tab-btn"        data-tab="messages"    onclick="switchTab('messages')">
         Messages{% if ns_unr.n > 0 %} <span class="tab-count">{{ ns_unr.n }}</span>{% endif %}
@@ -155,6 +155,42 @@
 <div class="fiche-content">
 
 <div id="tab-resume" class="tab-panel">
+
+        {# ── JOURNAL D'ACTIVITÉ ───────────────────────────────────────── #}
+        <div class="card">
+            <div class="section-header">
+                <div class="section-title">Journal d'activité</div>
+            </div>
+            
+            {% if client.last_login_at %}
+            <div class="text-muted" style="font-size: 0.82rem; margin-bottom: 1rem;">
+                Dernière connexion : <strong style="color: #87CEEB;">{{ client.last_login_at | to_local | replace('T', ' à ') }}</strong>
+            </div>
+            {% endif %}
+
+            {% if activites %}
+            <div style="max-height: 280px; overflow-y: auto; padding-right: 5px;" class="timeline-scroll">
+                <div style="display: flex; flex-direction: column; gap: 0.8rem;">
+                    {% for act in activites %}
+                    <div style="display: flex; gap: 0.8rem; align-items: flex-start; padding-bottom: 0.6rem; border-bottom: 1px solid rgba(255,255,255,0.03);">
+                        <div style="flex-shrink: 0; margin-top: 0.1rem; font-size: 1.1rem; color: var(--accent);">
+                            {% if act.action == 'Connexion' %}🔑{% elif act.action == 'Téléchargement' %}⬇️{% else %}◈{% endif %}
+                        </div>
+                        <div>
+                            <div style="font-size: 0.85rem; color: var(--text); font-weight: 500;">{{ act.action }}</div>
+                            {% if act.details %}
+                            <div style="font-size: 0.78rem; color: var(--muted); margin-top: 0.1rem;">{{ act.details }}</div>
+                            {% endif %}
+                            <div style="font-size: 0.7rem; color: rgba(240,238,255,0.4); margin-top: 0.2rem;">{{ act.created_at | to_local | replace('T', ' ') }}</div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% else %}
+            <div class="empty-state">Aucune activité récente du client.</div>
+            {% endif %}
+        </div>
 
 {# ── CONSULTATIONS ────────────────────────────────────────────── #}
         <div class="card">
@@ -561,9 +597,10 @@
 
             {% if fichiers %}
                 {% for f in fichiers %}
-                <div class="fiche-file-row">
+            <div style="border: 1px solid var(--border); border-radius: var(--radius); padding: 0.8rem; margin-bottom: 0.8rem; background: var(--surface);">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
                     <div>
-                        <div>{{ f.nom_original }}</div>
+                        <div style="font-weight: 500;">{{ f.nom_original }}</div>
                         <div class="text-muted" style="font-size: 0.75rem;">
                             {% if f.taille > 1048576 %}{{ (f.taille / 1048576) | round(1) }} MB
                             {% elif f.taille > 1024 %}{{ (f.taille / 1024) | int }} KB
@@ -584,6 +621,21 @@
                             </button>
                         </form>
                     </div>
+                    </div>
+                
+                <div style="background: rgba(0,0,0,0.15); border-radius: var(--radius); padding: 0.6rem;">
+                    {% for c in f.commentaires %}
+                    <div style="margin-bottom: 0.4rem; font-size: 0.82rem;">
+                        <span style="color: {% if c.auteur_type == 'admin' %}var(--gold){% else %}#87CEEB{% endif %}; font-weight: 500;">{{ c.auteur_nom }}</span>
+                        <span class="text-muted" style="font-size: 0.7rem; margin-left: 0.3rem;">{{ c.created_at | to_local | replace('T', ' ') }}</span>
+                        <div style="color: var(--text); margin-top: 0.1rem;">{{ c.commentaire }}</div>
+                    </div>
+                    {% endfor %}
+                    <form method="POST" action="/clients/{{ client.id }}/fichiers/{{ f.id }}/commenter" style="display: flex; gap: 0.4rem; margin-top: 0.6rem;">
+                        <input type="text" name="commentaire" placeholder="Ajouter un commentaire..." required style="flex: 1; font-size: 0.8rem; padding: 0.3rem 0.5rem; border-radius: var(--radius); border: 1px solid var(--border); background: var(--surface2); color: var(--text);">
+                        <button type="submit" class="btn btn-secondary" style="font-size: 0.75rem;">Envoyer</button>
+                    </form>
+                </div>
                 </div>
                 {% endfor %}
             {% else %}
