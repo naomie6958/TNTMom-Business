@@ -47,6 +47,12 @@ app = Flask(__name__)
 # En prod elle vient du .env — jamais hardcodée dans le code.
 app.secret_key = os.getenv('SECRET_KEY', 'dev-only-change-me')
 
+@app.before_request
+def maintenance_mode():
+    if os.getenv('MAINTENANCE_MODE', '0') in ('1', 'true'):
+        if not request.path.startswith('/static'):
+            return render_template('maintenance.html'), 503
+
 # Branchement des Blueprints
 from routes_auth import auth_bp
 app.register_blueprint(auth_bp)
