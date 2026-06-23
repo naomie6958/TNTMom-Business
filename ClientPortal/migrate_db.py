@@ -12,6 +12,10 @@ def get_existing_columns(cursor, table_name):
 
 
 def add_column_if_missing(cursor, table_name, column_name, column_definition):
+    cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name=?", (table_name,))
+    if not cursor.fetchone():
+        print(f"   SKIP      : table '{table_name}' inexistante (sera créée par init_db)")
+        return
     existing = get_existing_columns(cursor, table_name)
     if column_name not in existing:
         cursor.execute(
