@@ -85,7 +85,9 @@ class TntmFooter extends HTMLElement {
                     <span>The Nerdy Trap Mom</span>
                 </div>
                 <div id="footer-links">
-                    <a href="https://www.facebook.com/profile.php?id=61589509485529" target="_blank" class="footer-social">Facebook</a>
+                    <a href="https://www.facebook.com/profile.php?id=61589509485529" target="_blank" class="footer-social">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor" style="vertical-align:middle;margin-right:0.4rem;"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></svg>TNTMom
+                    </a>
                     <a href="https://buymeacoffee.com/tntm" target="_blank" class="bmc-btn">☕ Buy me a coffee</a>
                 </div>
                 <span id="footer-copy">© 2026 TNTM — Naomie McMahon Tanguay</span>
