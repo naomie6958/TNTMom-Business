@@ -177,21 +177,34 @@ def add_household_revenue():
 @login_required
 def bill_budget():
     if session.get('user_role') != 'staff': return redirect(url_for('auth.login'))
+
+    mois = request.args.get('mois') or datetime.datetime.now().strftime('%Y-%m')
+
     conn = get_db()
     business_brut = conn.execute("SELECT SUM(montant) FROM factures WHERE statut = 'payée' AND strftime('%Y', date_emission) = '2026'").fetchone()[0] or 0
     autres_revenus = conn.execute("SELECT SUM(amount) FROM household_revenues WHERE strftime('%Y', date_received) = '2026'").fetchone()[0] or 0
     business_net = business_brut * 0.75
-    
+
     categories = conn.execute("SELECT * FROM budget_categories ORDER BY ordre").fetchall()
     categories_list = []
     for cat in categories:
-        spent = conn.execute("SELECT SUM(montant) FROM budget_expenses WHERE category_id = ? AND strftime('%Y-%m', date) = strftime('%Y-%m', 'now')", (cat['id'],)).fetchone()[0] or 0
+        spent = conn.execute(
+            "SELECT SUM(montant) FROM budget_expenses WHERE category_id = ? AND strftime('%Y-%m', date) = ?",
+            (cat['id'], mois)
+        ).fetchone()[0] or 0
         cat_dict = dict(cat)
         cat_dict['spent'] = spent
         categories_list.append(cat_dict)
-        
-    expenses = conn.execute("SELECT e.*, c.nom as category_nom FROM budget_expenses e JOIN budget_categories c ON e.category_id = c.id ORDER BY e.date DESC LIMIT 20").fetchall()
-    return render_template('bill/budget.html', revenu_global=business_net + autres_revenus, business_net=business_net, autres_revenus=autres_revenus, categories=categories_list, expenses=expenses)
+
+    expenses = conn.execute(
+        "SELECT e.*, c.nom as category_nom FROM budget_expenses e JOIN budget_categories c ON e.category_id = c.id WHERE strftime('%Y-%m', e.date) = ? ORDER BY e.date DESC",
+        (mois,)
+    ).fetchall()
+    conn.close()
+    return render_template('bill/budget.html', revenu_global=business_net + autres_revenus,
+                           business_net=business_net, autres_revenus=autres_revenus,
+                           categories=categories_list, expenses=expenses, mois_actif=mois)
+
 
 @admin_compta_bp.route('/api/budget-expense', methods=['POST'])
 @login_required
@@ -204,6 +217,21 @@ def add_budget_expense():
         conn.commit()
         return jsonify({'success': True})
     except Exception as e: return jsonify({'success': False, 'error': str(e)})
+
+@admin_compta_bp.route('/api/budget-expense/<int:expense_id>', methods=['DELETE'])
+@login_required
+def delete_budget_expense(expense_id):
+    if session.get('user_role') != 'staff':
+        return jsonify({'success': False, 'error': 'Accès refusé'}), 403
+    try:
+        conn = get_db()
+        conn.execute("DELETE FROM budget_expenses WHERE id = ?", (expense_id,))
+        conn.commit()
+        conn.close()
+        return jsonify({'success': True})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)})
+    
 
 # ─── HEURES ───────────────────────────────────────────────────────────────────
 

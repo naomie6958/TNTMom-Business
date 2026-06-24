@@ -6,6 +6,20 @@
 <div class="bill-container">
     <h1 class="page-title">💰 BUDGET MENSUEL BILL</h1>
 
+    <!-- SÉLECTEUR DE MOIS -->
+    <div style="text-align:center; margin-bottom: 2rem;">
+        <form method="GET" action="/bill/budget" style="display:inline-flex; gap:0.75rem; align-items:center;">
+            <label style="color:#aaa; font-size:0.9rem; text-transform:uppercase; letter-spacing:1px;">Mois :</label>
+            <input type="month" name="mois" value="{{ mois_actif }}"
+                style="background:#2a2a2a; border:1px solid #444; color:#fff;
+                        padding:0.5rem 1rem; border-radius:4px; font-size:1rem; cursor:pointer;">
+            <button type="submit"
+                    style="background:linear-gradient(135deg,#FF0090,#FF6600); color:#fff;
+                        border:none; padding:0.5rem 1.25rem; border-radius:4px;
+                        cursor:pointer; font-weight:bold;">Voir</button>
+        </form>
+    </div>
+
     <!-- GESTION DES CATÉGORIES -->
     <div class="categories-management">
         <h2>⚙️ Gestion des Catégories</h2>
@@ -115,6 +129,7 @@
                     <th>Montant</th>
                     <th>Date</th>
                     <th>Description</th>
+                    <th>Actions</th>
                 </tr>
             </thead>
             <tbody>
@@ -124,6 +139,9 @@
                     <td>${{ "%.2f"|format(exp['montant']) }}</td>
                     <td>{{ exp['date'] }}</td>
                     <td>{{ exp['description'] or '-' }}</td>
+                    <td>
+                        <button class="btn-delete" onclick="openDeleteExpenseModal({{ exp['id'] }})">🗑️</button>
+                    </td>
                 </tr>
                 {% endfor %}
             </tbody>
@@ -164,7 +182,21 @@
     </div>
 </div>
 
-
+<!-- MODEL SUPPRESSION DÉPENSE -->
+<div id="confirmDeleteExpenseModal"
+    style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);
+            z-index:1000;align-items:center;justify-content:center;backdrop-filter:blur(3px);">
+    <div style="background:#1a1a1a;border:1px solid rgba(217,79,189,0.3);
+                border-radius:12px;padding:2rem;width:90%;max-width:400px;
+                box-shadow:0 24px 60px rgba(0,0,0,0.5);">
+        <h3 style="color:#FF0090;margin-bottom:1rem;font-family:'Bebas Neue',sans-serif;">Supprimer la dépense?</h3>
+        <p style="color:#ccc;margin-bottom:1.5rem;">Cette action ne peut pas être annulée.</p>
+        <div style="display:flex;gap:1rem;justify-content:flex-end;">
+            <button onclick="closeDeleteExpenseModal()" style="padding:0.75rem 1.5rem;background:#444;color:#fff;border:none;border-radius:4px;cursor:pointer;">Annuler</button>
+            <button onclick="confirmDeleteExpense()" style="padding:0.75rem 1.5rem;background:linear-gradient(135deg,#FF0090,#FF6600);color:#fff;border:none;border-radius:4px;cursor:pointer;font-weight:bold;">Supprimer</button>
+        </div>
+    </div>
+</div>
 <style>
 .bill-container {
     max-width: 1200px;
@@ -693,5 +725,37 @@ document.getElementById('expenseForm').addEventListener('submit', async (e) => {
         messageEl.className = 'error';
     }
 });
+
+let expenseIdToDelete = null;
+
+function openDeleteExpenseModal(id) {
+    expenseIdToDelete = id;
+    document.getElementById('confirmDeleteExpenseModal').style.display = 'flex';
+}
+
+function closeDeleteExpenseModal() {
+    document.getElementById('confirmDeleteExpenseModal').style.display = 'none';
+    expenseIdToDelete = null;
+}
+
+function confirmDeleteExpense() {
+    if (!expenseIdToDelete) return;
+    fetch(`/api/budget-expense/${expenseIdToDelete}`, { method: 'DELETE' })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                closeDeleteExpenseModal();
+                location.reload();
+            } else {
+                alert('Erreur: ' + (data.error || 'Impossible de supprimer'));
+            }
+        })
+        .catch(err => alert('Erreur réseau: ' + err));
+}
+
+document.getElementById('confirmDeleteExpenseModal').addEventListener('click', function(e) {
+    if (e.target === this) closeDeleteExpenseModal();
+});
+
 </script>
 {% endblock %}
