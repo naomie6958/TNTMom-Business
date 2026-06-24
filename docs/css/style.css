@@ -2101,3 +2101,21 @@ h3.projet-section-titre {
         box-shadow: 0 3px 10px rgba(135,206,235,0.35) !important;
     }
 }
+
+#footer-links {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+}
+
+.footer-social {
+    color: rgba(240,238,255,0.5);
+    text-decoration: none;
+    font-size: 0.85rem;
+    letter-spacing: 1px;
+    transition: color 0.2s;
+}
+
+.footer-social:hover {
+    color: #FF0090;
+}

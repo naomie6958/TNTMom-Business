@@ -2,8 +2,8 @@
     {
         "nom": "Chopper Burger",
         "tagline": "Site vitrine pour un casse-croûte de St-Rosaire",
-        "description": "Site one-page Flask avec menu interactif par catégorie, galerie photos, infos et design dark orange Harley Davidson. Mobile friendly, déployé sur Render avec domaine custom à venir.",
-        "tags": ["Python", "Flask", "Jinja2", "CSS", "Render"],
+        "description": "Site one-page Flask avec menu interactif par catégorie, galerie photos, infos et design dark orange Harley Davidson. Mobile friendly, déployé sur Railway.",
+        "tags": ["Python", "Flask", "Jinja2", "CSS", "Railway"],
         "statut": "live",
         "couleur": "bleu",
         "image": "images/Screenshots/2026-05/chopperburger-desktop.png",
@@ -13,7 +13,7 @@
         "nom": "ClientPortal",
         "tagline": "Back-office freelance déployé en production",
         "description": "Gestion clients, contrats avec timeline milestones, facturation automatique, portail client sécurisé, messagerie intégrée, formulaires personnalisés et envoi de factures par courriel. Premier client actif.",
-        "tags": ["Python", "Flask", "SQLite", "Gmail SMTP", "PythonAnywhere"],
+        "tags": ["Python", "Flask", "SQLite", "Gmail SMTP", "Railway"],
         "statut": "live",
         "couleur": "magenta",
         "image": "images/Screenshots/2026-05/clientportal-fiche.png",
@@ -22,9 +22,9 @@
     {
         "nom": "Family Dashboard",
         "tagline": "App homeschool familiale avec IA",
-        "description": "Calendrier partagé, suivi homeschool, système de points et récompenses pour les enfants, et app d'anglais avec exercices générés par Claude AI. 4 profils, 4 thèmes visuels.",
-        "tags": ["Python", "Flask", "Claude API", "SQLite"],
-        "statut": "en-cours",
+        "description": "Calendrier partagé, suivi homeschool, système de points et récompenses pour les enfants, et app d'anglais avec exercices générés par Claude AI. 4 profils, 4 thèmes visuels. Déployé sur Railway.",
+        "tags": ["Python", "Flask", "Claude API", "SQLite", "Railway"],
+        "statut": "live",
         "couleur": "bleu",
         "image": "images/Screenshots/2026-05/familydashboard-enfant.png",
         "link": "familydashboard.html"

@@ -84,7 +84,10 @@ class TntmFooter extends HTMLElement {
                     <img src="/images/tntmom-favicon-bleu.svg" alt="TNTM" id="footer-favicon">
                     <span>The Nerdy Trap Mom</span>
                 </div>
-                <a href="https://buymeacoffee.com/tntm" target="_blank" class="bmc-btn">☕ Buy me a coffee</a>
+                <div id="footer-links">
+                    <a href="https://www.facebook.com/profile.php?id=61589509485529" target="_blank" class="footer-social">Facebook</a>
+                    <a href="https://buymeacoffee.com/tntm" target="_blank" class="bmc-btn">☕ Buy me a coffee</a>
+                </div>
                 <span id="footer-copy">© 2026 TNTM — Naomie McMahon Tanguay</span>
             </footer>
         `;
