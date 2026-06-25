@@ -42,7 +42,6 @@ class TntmHeader extends HTMLElement {
         const nav = this.querySelector('nav');
         const isDesktop = () => window.matchMedia('(min-width: 900px)').matches;
 
-        if (isDesktop() && localStorage.getItem('tntmNavOpen') === 'true') nav.classList.add('open');
 
         toggle.addEventListener('click', () => {
             nav.classList.toggle('open');
@@ -52,7 +51,6 @@ class TntmHeader extends HTMLElement {
                 if (sub) sub.classList.remove('open');
                 if (chevron) { chevron.setAttribute('aria-expanded', 'false'); chevron.textContent = '▾'; }
             }
-            if (isDesktop()) localStorage.setItem('tntmNavOpen', nav.classList.contains('open'));
         });
 
         const chevronBtn = this.querySelector('.nav-chevron-btn');
@@ -81,7 +79,7 @@ class TntmFooter extends HTMLElement {
         this.innerHTML = `
             <footer>
                 <div id="footer-brand">
-                    <img src="/images/tntmom-favicon-bleu.svg" alt="TNTM" id="footer-favicon">
+                    <img src="images/tntmom-favicon-bleu.svg" alt="TNTM" id="footer-favicon">
                     <span>The Nerdy Trap Mom</span>
                 </div>
                 <div id="footer-links">

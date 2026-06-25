@@ -1,11 +1,11 @@
-[
+﻿[
     {
         "nom": "Chopper Burger",
         "tagline": "Site vitrine pour un casse-croûte de St-Rosaire",
         "description": "Site one-page Flask avec menu interactif par catégorie, galerie photos, infos et design dark orange Harley Davidson. Mobile friendly, déployé sur Railway.",
         "tags": ["Python", "Flask", "Jinja2", "CSS", "Railway"],
         "statut": "live",
-        "couleur": "bleu",
+        "couleur": "orange",
         "image": "images/Screenshots/2026-05/chopperburger-desktop.png",
         "link": "https://chopperburger.tntm.ca"
     },
@@ -28,5 +28,14 @@
         "couleur": "bleu",
         "image": "images/Screenshots/2026-05/familydashboard-enfant.png",
         "link": "familydashboard.html"
+    },
+    {
+        "nom": "Underground Motorsport",
+        "tagline": "Site vitrine pour atelier mécanique spécialisé",
+        "description": "Site vitrine statique avec présentation des services, galerie photos et prise de rendez-vous via Calendly. Design dark et moderne. Hébergé sur GitHub Pages.",
+        "tags": ["HTML", "CSS", "JavaScript", "GitHub Pages", "Calendly"],
+        "statut": "en-cours",
+        "couleur": "rouge",
+        "link": "https://undergroundmotorsport.tntm.ca"
     }
 ]

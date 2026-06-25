@@ -751,6 +751,14 @@ form {
     background: linear-gradient(135deg, #0a1e12 0%, #0f2d1a 50%, #0a1e12 100%);
     border-bottom: 1px solid rgba(62, 207, 142, 0.3);
 }
+.projet-card-preview--rouge {
+    background: linear-gradient(135deg, #1e0a0a 0%, #2d0f0f 50%, #1e0a0a 100%);
+    border-bottom: 1px solid rgba(220, 50, 50, 0.3);
+}
+.projet-card-preview--orange {
+    background: linear-gradient(135deg, #1e1200 0%, #2d1c00 50%, #1e1200 100%);
+    border-bottom: 1px solid rgba(255, 140, 0, 0.3);
+}
 
 .projet-card-img {
     width: 100%;
@@ -775,6 +783,8 @@ form {
 .projet-card-preview--magenta .projet-card-initiales { color: #d94fbd; }
 .projet-card-preview--bleu    .projet-card-initiales { color: #87CEEB; }
 .projet-card-preview--vert    .projet-card-initiales { color: #3ecf8e; }
+.projet-card-preview--rouge   .projet-card-initiales { color: #dc3232; }
+.projet-card-preview--orange  .projet-card-initiales { color: #ff8c00; }
 
 /* Corps */
 .projet-card-body {
@@ -862,6 +872,10 @@ form {
 .projet-card--magenta:hover { border-color: #d94fbd; box-shadow: 0 0 22px rgba(217,79,189,0.35); }
 .projet-card--bleu:hover    { border-color: #87CEEB; box-shadow: 0 0 22px rgba(135,206,235,0.3); }
 .projet-card--vert:hover    { border-color: #3ecf8e; box-shadow: 0 0 22px rgba(62,207,142,0.25); }
+.projet-card--rouge    { border-color: rgba(220,50,50,0.35);  box-shadow: 0 0 14px rgba(220,50,50,0.15); }
+.projet-card--rouge:hover  { border-color: #dc3232; box-shadow: 0 0 22px rgba(220,50,50,0.35); }
+.projet-card--orange    { border-color: rgba(255,140,0,0.35);  box-shadow: 0 0 14px rgba(255,140,0,0.15); }
+.projet-card--orange:hover { border-color: #ff8c00; box-shadow: 0 0 22px rgba(255,140,0,0.35); }
 
 footer {
     max-width: 1100px;
@@ -2119,3 +2133,4 @@ h3.projet-section-titre {
 .footer-social:hover {
     color: #FF0090;
 }
+

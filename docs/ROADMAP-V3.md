@@ -1,4 +1,4 @@
-# 🚀 ROADMAP V3.0 — tntm.ca (Site Vitrine)
+﻿# 🚀 ROADMAP V3.0 — tntm.ca (Site Vitrine)
 > Analyse complète — 2026-06-24
 > V1 + V2 complètes. Ce roadmap couvre les correctifs urgents et les améliorations futures.
 
@@ -17,7 +17,7 @@
 - [ ] **`familydashboard.html` — statut périmé**
   - Badge `"◐ En cours — développement actif"` → `"● Live — Usage privé"` (pas de lien public — app familiale avec données enfants)
 
-- [ ] **`about.html` — skills périmées**
+- [x] **`about.html` — skills périmées**
   - Section Outils : `"PythonAnywhere"` → `"Railway"`
   - Ajouter `"Sass/SCSS"` (Module 05 complété) aux compétences Frontend
   - Second témoignage placeholder `"À venir / Prochain projet"` → retirer ou remplir
@@ -26,7 +26,7 @@
 
 ## 🟠 2. Fonctionnalités manquantes
 
-- [ ] **Underground Motorsport dans la galerie**
+- [x] **Underground Motorsport dans la galerie**
   - Ajouter entrée dans `projets.json` (statut : "en-cours", couleur : "vert")
   - Ajouter dans la nav dropdown de `components.js`
   - Créer `undergroundmotorsport.html` (fiche projet) quand le projet est plus avancé
@@ -68,7 +68,7 @@
   - Fonctionne parfaitement sur GitHub Pages mais casse si tu testes en local (file://)
   - Solution : utiliser Live Server en local, pas de changement de code nécessaire
 
-- [ ] **Menu nav ouvert par défaut au chargement**
+- [x] **Menu nav ouvert par défaut au chargement**
   - `components.js` ligne 45 : `if (isDesktop() && localStorage.getItem('tntmNavOpen') === 'true')` → si l'utilisateur avait laissé le menu ouvert, il reste ouvert au prochain chargement
   - Fix : retirer la persistance localStorage du menu, ou forcer `closed` au chargement de la homepage
 
