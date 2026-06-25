@@ -36,7 +36,8 @@ function initiales(nom) {
     return nom.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
 }
 
-fetch('data/projets.json')
+fetch('https://portail.tntm.ca/api/public/projets')
+    .catch(() => fetch('data/projets.json'))
     .then(r => r.json())
     .then(projets => {
         const galerie = document.querySelector('#galerie');
