@@ -1,5 +1,6 @@
 import datetime
 import secrets
+import json
 from flask import Blueprint, request, jsonify, current_app
 from database import get_db
 from utils import send_notification_email
@@ -65,5 +66,31 @@ def api_public_tarifs():
     ).fetchall()
     conn.close()
     resp = jsonify([dict(r) for r in rows])
+    resp.headers['Access-Control-Allow-Origin'] = '*'
+    return resp
+
+
+@api_bp.route('/public/projets')
+def api_public_projets():
+    conn = get_db()
+    rows = conn.execute(
+        'SELECT nom, tagline, description, tags, statut, couleur, image_url, link FROM portfolio_projets WHERE actif = 1 ORDER BY ordre, id'
+    ).fetchall()
+    conn.close()
+
+    projets = []
+    for r in rows:
+        projets.append({
+            'nom':          r['nom'],
+            'tagline':      r['tagline'],
+            'description':  r['description'],
+            'tags':         json.loads(r['tags'] or '[]'),
+            'statut':       r['statut'],
+            'couleur':      r['couleur'],
+            'image':        r['image_url'],
+            'link':         r['link'],
+        })
+
+    resp = jsonify(projets)
     resp.headers['Access-Control-Allow-Origin'] = '*'
     return resp

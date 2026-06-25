@@ -609,6 +609,44 @@ def migrate_db():
     except Exception:
         pass
 
+    # Table portfolio - cartes de projets pour tntm.ca
+    try:
+        conn.execute('''CREATE TABLE IF NOT EXISTS portfolio_projets (
+            id          INTEGER PRIMARY KEY AUTOINCREMENT,
+            nom         TEXT NOT NULL,
+            tagline     TEXT,
+            description TEXT,
+            tags        TEXT,
+            statut      TEXT DEFAULT 'en-cours',
+            couleur     TEXT DEFAULT 'magenta',
+            image_url   TEXT,
+            link        TEXT,
+            ordre       INTEGER DEFAULT 0,
+            actif       INTEGER DEFAULT 1,
+            created_at  TEXT DEFAULT (datetime('now'))
+        )''')
+        conn.commit()
+    except Exception:
+        pass
+
+    # Seed initial des projets portfolio (si table vide)
+    try:
+        if conn.execute('SELECT COUNT(*) FROM portfolio_projets').fetchone()[0] == 0:
+            projets = [
+                ('Chopper Burger', 'Site vitrine pour un casse-croûte de St-Rosaire', 'Site one-page Flask avec menu interactif par catégorie, galerie photos, infos et design dark orange Harley Davidson. Mobile friendly, déployé sur Railway.', '["Python","Flask","Jinja2","CSS","Railway"]', 'live', 'orange', 'images/Screenshots/2026-05/chopperburger-desktop.png', 'https://chopperburger.tntm.ca', 1),
+                ('ClientPortal', 'Back-office freelance déployé en production', 'Gestion clients, contrats avec timeline milestones, facturation automatique, portail client sécurisé, messagerie intégrée, formulaires personnalisés et envoi de factures par courriel. Premier client actif.', '["Python","Flask","SQLite","Gmail SMTP","Railway"]', 'live', 'magenta', 'images/Screenshots/2026-05/clientportal-fiche.png', 'clientportal.html', 2),
+                ('Family Dashboard', 'App homeschool familiale avec IA', 'Calendrier partagé, suivi homeschool, système de points et récompenses pour les enfants, et app d\'anglais avec exercices générés par Claude AI. 4 profils, 4 thèmes visuels. Déployé sur Railway.', '["Python","Flask","Claude API","SQLite","Railway"]', 'live', 'bleu', 'images/Screenshots/2026-05/familydashboard-enfant.png', 'familydashboard.html', 3),
+                ('Underground Motorsport', 'Site vitrine pour atelier mécanique spécialisé', 'Site vitrine statique avec présentation des services, galerie photos et prise de rendez-vous via Calendly. Design dark et moderne. Hébergé sur GitHub Pages.', '["HTML","CSS","JavaScript","GitHub Pages","Calendly"]', 'en-cours', 'rouge', 'images/Screenshots/UndergroundMotorsport_Screenshot.png', 'https://undergroundmotorsport.tntm.ca', 4),
+            ]
+            for p in projets:
+                conn.execute(
+                    'INSERT INTO portfolio_projets (nom, tagline, description, tags, statut, couleur, image_url, link, ordre) VALUES (?,?,?,?,?,?,?,?,?)',
+                    p
+                )
+            conn.commit()
+    except Exception:
+        pass
+
     conn.close()
 
 

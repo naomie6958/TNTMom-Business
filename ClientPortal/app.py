@@ -40,6 +40,7 @@ _EASTERN = ZoneInfo('America/Montreal')
 load_dotenv()
 
 app = Flask(__name__)
+app.json.ensure_ascii = False
 
 
 # La secret_key sert à signer les cookies de session.
