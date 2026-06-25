@@ -1,0 +1,64 @@
+{% extends 'base.html' %}
+{% block title %}Portfolio | Admin{% endblock %}
+
+{% block content %}
+<div class="admin-container">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:2rem;">
+        <h1 class="page-title">🖼️ Portfolio tntm.ca</h1>
+        <a href="/portfolio/new" class="btn btn-primary">+ Nouveau projet</a>
+    </div>
+
+    <table style="width:100%; border-collapse:collapse;">
+        <thead>
+            <tr style="color:#aaa; font-size:0.85rem; text-transform:uppercase; border-bottom:1px solid #333;">
+                <th style="padding:0.75rem; text-align:left;">Projet</th>
+                <th style="padding:0.75rem; text-align:left;">Statut</th>
+                <th style="padding:0.75rem; text-align:left;">Couleur</th>
+                <th style="padding:0.75rem; text-align:left;">Ordre</th>
+                <th style="padding:0.75rem; text-align:left;">Visible</th>
+                <th style="padding:0.75rem;"></th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for p in projets %}
+            <tr style="border-bottom:1px solid #2a2a2a;">
+                <td style="padding:0.75rem;">
+                    <div style="font-weight:bold; color:#eee;">{{ p['nom'] }}</div>
+                    <div style="font-size:0.85rem; color:#aaa;">{{ p['tagline'] }}</div>
+                </td>
+                <td style="padding:0.75rem;">
+                    {% if p['statut'] == 'live' %}
+                        <span style="color:#4ade80;">● Live</span>
+                    {% elif p['statut'] == 'en-cours' %}
+                        <span style="color:#fb923c;">◐ En cours</span>
+                    {% else %}
+                        <span style="color:#888;">○ Archivé</span>
+                    {% endif %}
+                </td>
+                <td style="padding:0.75rem;">
+                    <span style="display:inline-block; width:14px; height:14px; border-radius:50%;
+                        background:{{ {'magenta':'#FF0090','bleu':'#00BFFF','orange':'#FF8C00','rouge':'#DC3232','vert':'#4ade80'}.get(p['couleur'], '#888') }};
+                        margin-right:0.4rem; vertical-align:middle;"></span>
+                    {{ p['couleur'] }}
+                </td>
+                <td style="padding:0.75rem; color:#aaa;">{{ p['ordre'] }}</td>
+                <td style="padding:0.75rem;">
+                    <form method="POST" action="/portfolio/{{ p['id'] }}/toggle">
+                        <button type="submit"
+                                style="background:none; border:1px solid #444; color:{% if p['actif'] %}#4ade80{% else %}#888{% endif %};
+                                       padding:0.2rem 0.75rem; border-radius:4px; cursor:pointer; font-size:0.85rem;">
+                            {% if p['actif'] %}Actif{% else %}Masqué{% endif %}
+                        </button>
+                    </form>
+                </td>
+                <td style="padding:0.75rem; text-align:right;">
+                    <a href="/portfolio/{{ p['id'] }}/edit"
+                       style="color:#aaa; text-decoration:none; border:1px solid #444;
+                              padding:0.2rem 0.75rem; border-radius:4px; font-size:0.85rem;">✏️ Modifier</a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

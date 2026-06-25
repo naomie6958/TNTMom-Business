@@ -315,3 +315,20 @@ def package_creer_contrat(pkg_id):
 
     flash(f'Contrat créé depuis le forfait « {pkg["nom"]} ». Révise et envoie au client !', 'success')
     return redirect(f'/clients/{pkg["client_id"]}/contrat/{contrat_id}')
+
+@admin_tools_bp.route('/portfolio')
+@login_required
+def portfolio_list():
+    conn = get_db()
+    projets = conn.execute('SELECT * FROM portfolio_projets ORDER BY ordre, id').fetchall()
+    conn.close()
+    return render_template('admin/portfolio.html', projets=projets)
+
+@admin_tools_bp.route('/portfolio/<int:pid>/toggle', methods=['POST'])
+@login_required
+def portfolio_toggle(pid):
+    conn = get_db()
+    conn.execute('UPDATE portfolio_projets SET actif = CASE WHEN actif = 1 THEN 0 ELSE 1 END WHERE id = ?', (pid,))
+    conn.commit()
+    conn.close()
+    return redirect('/portfolio')
