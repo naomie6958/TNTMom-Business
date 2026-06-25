@@ -66,7 +66,12 @@ def comptabilite():
 @login_required
 def fiscal_summary():
     conn = get_db()
-    factures_2026 = conn.execute("SELECT SUM(montant) as brut FROM factures WHERE statut = 'payée' AND strftime('%Y', date_emission) = '2026'").fetchone()
+    factures_2026 = conn.execute("""
+        SELECT SUM(f.montant) as brut FROM factures f
+        JOIN clients c ON c.id = f.client_id
+        WHERE f.statut = 'payée' AND strftime('%Y', f.date_emission) = '2026'
+        AND c.demo = 0
+    """).fetchone()
     business_brut = float(factures_2026['brut'] or 0)
     provision_fiscale = business_brut * 0.25
     business_net = business_brut * 0.75
@@ -173,6 +178,20 @@ def add_household_revenue():
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
 
+@admin_compta_bp.route('/api/household-revenues/<int:rev_id>', methods=['DELETE'])
+@login_required
+def delete_household_revenue(rev_id):
+    if session.get('user_role') != 'staff':
+        return jsonify({'success': False, 'error': 'Accès refusé'}), 403
+    try:
+        conn = get_db()
+        conn.execute('DELETE FROM household_revenues WHERE id = ?', (rev_id,))
+        conn.commit()
+        conn.close()
+        return jsonify({'success': True})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
 @admin_compta_bp.route('/bill/budget')
 @login_required
 def bill_budget():
@@ -180,12 +199,16 @@ def bill_budget():
 
     mois = request.args.get('mois') or datetime.datetime.now().strftime('%Y-%m')
 
-    conn = get_db()
+    conn          = get_db()
     business_brut = conn.execute("SELECT SUM(montant) FROM factures WHERE statut = 'payée' AND strftime('%Y', date_emission) = '2026'").fetchone()[0] or 0
-    autres_revenus = conn.execute("SELECT SUM(amount) FROM household_revenues WHERE strftime('%Y', date_received) = '2026'").fetchone()[0] or 0
-    business_net = business_brut * 0.75
+    revenus_mois  = conn.execute(
+        "SELECT * FROM household_revenues WHERE strftime('%Y-%m', date_received) = ? ORDER BY date_received DESC",
+        (mois,)
+    ).fetchall()
+    autres_revenus = sum(r['amount'] for r in revenus_mois)
+    business_net    = business_brut * 0.75
 
-    categories = conn.execute("SELECT * FROM budget_categories ORDER BY ordre").fetchall()
+    categories      = conn.execute("SELECT * FROM budget_categories ORDER BY ordre").fetchall()
     categories_list = []
     for cat in categories:
         spent = conn.execute(
@@ -203,7 +226,9 @@ def bill_budget():
     conn.close()
     return render_template('bill/budget.html', revenu_global=business_net + autres_revenus,
                            business_net=business_net, autres_revenus=autres_revenus,
-                           categories=categories_list, expenses=expenses, mois_actif=mois)
+                           categories=categories_list, expenses=expenses, mois_actif=mois,
+                           revenus=revenus_mois)
+
 
 
 @admin_compta_bp.route('/api/budget-expense', methods=['POST'])

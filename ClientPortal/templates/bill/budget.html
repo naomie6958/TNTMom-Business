@@ -80,6 +80,69 @@
         </div>
     </div>
     
+    <!--- REVENUS DU MÉNAGE --->
+    <div class="revenus-menage-section">
+        <h2>💵 Revenus du ménage — {{ mois_actif }}</h2>
+
+        <form id="revenuForm" style="display:flex; gap:0.75rem; flex-wrap:wrap; margin-bottom:1.5rem;">
+            <input type="text"   id="rev_label"  placeholder="Source (ex: Bill paie)"    required
+                   style="flex:2; min-width:160px; background:#2a2a2a; border:1px solid #444; color:#fff; padding:0.5rem 0.75rem; border-radius:4px;">
+            <input type="number" id="rev_amount" placeholder="Montant"                    required step="0.01"
+                   style="flex:1; min-width:100px; background:#2a2a2a; border:1px solid #444; color:#fff; padding:0.5rem 0.75rem; border-radius:4px;">
+            <input type="date"   id="rev_date"   required
+                   style="flex:1; min-width:130px; background:#2a2a2a; border:1px solid #444; color:#fff; padding:0.5rem 0.75rem; border-radius:4px;">
+            <button type="submit"
+                    style="background:linear-gradient(135deg,#FF0090,#FF6600); color:#fff; border:none; padding:0.5rem 1.25rem; border-radius:4px; cursor:pointer; font-weight:bold;">
+                + Ajouter
+            </button>
+        </form>
+
+        <table class="revenus-table" style="width:100%; border-collapse:collapse;">
+            <thead>
+                <tr style="color:#aaa; font-size:0.85rem; text-transform:uppercase; border-bottom:1px solid #333;">
+                    <th style="padding:0.5rem; text-align:left;">Source</th>
+                    <th style="padding:0.5rem; text-align:right;">Montant</th>
+                    <th style="padding:0.5rem; text-align:left;">Date</th>
+                    <th style="padding:0.5rem;"></th>
+                </tr>
+            </thead>
+            <tbody id="revenusList">
+                {% for r in revenus %}
+                <tr data-id="{{ r['id'] }}" style="border-bottom:1px solid #2a2a2a;">
+                    <td style="padding:0.6rem 0.5rem; color:#eee;">{{ r['label'] }}</td>
+                    <td style="padding:0.6rem 0.5rem; text-align:right; color:#4ade80; font-weight:bold;">${{ "%.2f"|format(r['amount']) }}</td>
+                    <td style="padding:0.6rem 0.5rem; color:#aaa; font-size:0.9rem;">{{ r['date_received'] }}</td>
+                    <td style="padding:0.6rem 0.5rem; text-align:right;">
+                        <button onclick="deleteRevenu({{ r['id'] }})"
+                                style="background:none; border:1px solid #555; color:#aaa; padding:0.2rem 0.6rem; border-radius:4px; cursor:pointer;">✕</button>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <script>
+    document.getElementById('revenuForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        const fd = new FormData();
+        fd.append('label',         document.getElementById('rev_label').value);
+        fd.append('amount',        document.getElementById('rev_amount').value);
+        fd.append('date_received', document.getElementById('rev_date').value);
+        fetch('/api/household-revenues', { method: 'POST', body: fd })
+            .then(r => r.json())
+            .then(data => { if (data.success) location.reload(); else alert(data.error); });
+    });
+
+    function deleteRevenu(id) {
+        if (!confirm('Supprimer ce revenu ?')) return;
+        fetch('/api/household-revenues/' + id, { method: 'DELETE' })
+            .then(r => r.json())
+            .then(data => { if (data.success) location.reload(); else alert(data.error); });
+    }
+    </script>
+
+
     <!--- CATÉGORIES BUDGET --->
     <div class="budget-categories">
         <h2>Catégories de dépenses</h2>
