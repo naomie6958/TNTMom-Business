@@ -23,7 +23,7 @@ class TntmHeader extends HTMLElement {
                         <div class="nav-sub">
                             <a href="https://chopperburger.tntm.ca" target="_blank" class="nav-sub-item">↳ Chopper Burger</a>
                             <a href="/clientportal.html" class="nav-sub-item">↳ ClientPortal</a>
-                            <a href="/familydashboard.html" class="nav-sub-item">↳ Family Dashboard</a>
+                            <a href="https://familydashboard.tntm.ca" class="nav-sub-item">↳ Family Dashboard</a>
                         </div>
                     </div>
                     <a href="/process.html">Comment je travaille</a>
