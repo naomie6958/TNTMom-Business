@@ -621,7 +621,7 @@ def set_client_password(client_id):
     conn.close()
     
     if client_notif and client_notif['email']:
-        lien_portail = 'https://tntmom.pythonanywhere.com/portail/login'
+        lien_portail = 'https://portail.tntm.ca/portail/login'
         send_notification_email(
             '[TNTMom] Ton accès au portail client est prêt ✨',
             f'Bonjour {client_notif["nom"]},\n\nTon portail est prêt. Connecte-toi ici : {lien_portail}',
