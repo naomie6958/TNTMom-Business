@@ -4,6 +4,9 @@
 # Base de données SQLite — données réelles, pas dans le dépôt
 portal.db
 
+# Fichiers uploadés par les clients — données réelles, pas dans le dépôt
+uploads/
+
 # Python
 __pycache__/
 *.pyc

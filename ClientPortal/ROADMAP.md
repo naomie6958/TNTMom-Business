@@ -40,15 +40,16 @@
 > Gérer les cartes de la galerie tntm.ca directement depuis le portail admin.
 > Approche : les cartes sont stockées en DB dans le portail. tntm.ca fetch depuis `portail.tntm.ca/api/projets` au lieu du fichier JSON statique.
 
-### 4.1 Back-end
-- [ ] **Table `portfolio_projets`** — id, nom, tagline, description, tags (JSON), statut, couleur, image_url, link, ordre, actif
-- [ ] **Route API publique** `GET /api/projets` — retourne le JSON des projets actifs (remplace `data/projets.json` sur tntm.ca)
-- [ ] **Routes admin CRUD** — créer / modifier / archiver / réordonner les cartes
-- [ ] **Seed initial** — importer les 4 projets existants au déploiement
+### 4.1 Back-end ✅ 2026-06-28
+- [x] **Table `portfolio_projets`** — id, nom, tagline, description, tags (JSON), statut, couleur, image_url, link, ordre, actif
+- [x] **Route API publique** `GET /api/public/projets` — retourne le JSON des projets actifs (CORS activé)
+- [x] **Routes admin CRUD** — créer / modifier / archiver / réordonner les cartes
+- [x] **Seed initial** — 4 projets seedés au déploiement
 
-### 4.2 Interface admin
-- [ ] **Page `/portfolio`** dans le portail admin — liste des cartes avec statut, ordre drag-and-drop
-- [ ] **Formulaire création/édition** — nom, tagline, description, tags, statut, couleur (picker), lien, image
+### 4.2 Interface admin ✅ 2026-06-28
+- [x] **Page `/portfolio`** dans le portail admin — liste des cartes avec statut, couleur, ordre, visible
+- [x] **Formulaire création/édition** — nom, tagline, description, tags, statut, couleur (9 options), lien, image_url, ordre
+- [x] **Suppression** — modale de confirmation stylée (pas de confirm() natif)
 - [ ] **Prévisualisation live** — aperçu de la carte telle qu'elle apparaît sur tntm.ca
 - [ ] **Upload image** — depuis le portail directement (utilise le système d'upload existant)
 

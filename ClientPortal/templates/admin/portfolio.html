@@ -11,6 +11,7 @@
     <table style="width:100%; border-collapse:collapse;">
         <thead>
             <tr style="color:#aaa; font-size:0.85rem; text-transform:uppercase; border-bottom:1px solid #333;">
+                <th style="padding:0.75rem; width:2rem;"></th>
                 <th style="padding:0.75rem; text-align:left;">Projet</th>
                 <th style="padding:0.75rem; text-align:left;">Statut</th>
                 <th style="padding:0.75rem; text-align:left;">Couleur</th>
@@ -19,9 +20,11 @@
                 <th style="padding:0.75rem;"></th>
             </tr>
         </thead>
-        <tbody>
+
+        <tbody id="sortable-tbody">
             {% for p in projets %}
-            <tr style="border-bottom:1px solid #2a2a2a;">
+            <tr data-id="{{ p['id'] }}" style="border-bottom:1px solid #2a2a2a;">
+                <td class="drag-handle" style="padding:0.75rem; color:#555; cursor:grab; font-size:1.2rem; user-select:none;">⠿</td>
                 <td style="padding:0.75rem;">
                     <div style="font-weight:bold; color:#eee;">{{ p['nom'] }}</div>
                     <div style="font-size:0.85rem; color:#aaa;">{{ p['tagline'] }}</div>
@@ -37,7 +40,7 @@
                 </td>
                 <td style="padding:0.75rem;">
                     <span style="display:inline-block; width:14px; height:14px; border-radius:50%;
-                        background:{{ {'magenta':'#FF0090','bleu':'#00BFFF','orange':'#FF8C00','rouge':'#DC3232','vert':'#4ade80'}.get(p['couleur'], '#888') }};
+                        background:{{ {'magenta':'#FF0090', 'bleu':'#00BFFF', 'orange':'#FF8C00', 'rouge':'#DC3232', 'vert':'#4ade80', 'violet':'#9B59B6', 'turquoise':'#00CED1', 'jaune':'#FFD700', 'rose':'#FF69B4'}.get(p['couleur'], '#888') }};
                         margin-right:0.4rem; vertical-align:middle;"></span>
                     {{ p['couleur'] }}
                 </td>
@@ -55,10 +58,83 @@
                     <a href="/portfolio/{{ p['id'] }}/edit"
                        style="color:#aaa; text-decoration:none; border:1px solid #444;
                               padding:0.2rem 0.75rem; border-radius:4px; font-size:0.85rem;">✏️ Modifier</a>
+                    <button onclick="openDeleteModal(this)"
+                            data-id="{{ p['id'] }}" data-nom="{{ p['nom'] | e }}"
+                            style="background:none; border:1px solid #5a2020; color:#f87171;
+                                   padding:0.2rem 0.75rem; border-radius:4px; cursor:pointer;
+                                   font-size:0.85rem; margin-left:0.5rem;">🗑️</button>
                 </td>
             </tr>
             {% endfor %}
         </tbody>
     </table>
 </div>
+
+<!-- Modal suppression portfolio -->
+<div id="modal-delete-portfolio"
+     style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.65);
+            z-index:1000; align-items:center; justify-content:center; padding:1rem;">
+    <div style="background:var(--surface2); border:1px solid rgba(248,113,113,0.4);
+                border-radius:14px; padding:2rem 2rem 1.5rem; max-width:380px; width:100%;
+                text-align:center; box-shadow:0 8px 32px rgba(0,0,0,0.45);">
+        <div style="font-family:'Bebas Neue',sans-serif; font-size:1.5rem;
+                    letter-spacing:0.06em; color:#f87171; margin-bottom:0.6rem;">
+            Supprimer ce projet ?
+        </div>
+        <p style="font-size:0.85rem; color:var(--muted); margin-bottom:1.6rem; line-height:1.5;">
+            Tu es sur le point de supprimer<br>
+            <strong id="delete-nom-projet" style="color:var(--text);"></strong>.<br>
+            Cette action est irréversible.
+        </p>
+        <div style="display:flex; gap:0.8rem;">
+            <button onclick="closeDeleteModal()" class="btn" style="flex:1; font-size:0.85rem;">
+                Annuler
+            </button>
+            <form id="delete-form-portfolio" method="POST" style="flex:1;">
+                <button type="submit" class="btn"
+                        style="width:100%; font-size:0.85rem; background:#7f1d1d;
+                               color:#fca5a5; border:1px solid #f87171;">
+                    🗑️ Supprimer
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+function openDeleteModal(btn) {
+    const id  = btn.dataset.id;
+    const nom = btn.dataset.nom;
+    document.getElementById('delete-nom-projet').textContent = nom;
+    document.getElementById('delete-form-portfolio').action = '/portfolio/' + id + '/delete';
+    document.getElementById('modal-delete-portfolio').style.display = 'flex';
+}
+function closeDeleteModal() {
+    document.getElementById('modal-delete-portfolio').style.display = 'none';
+}
+</script>
+
+<!-- SortableJS via CDN -->
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js"></script>
+
+<script>
+const tbody = document.getElementById('sortable-tbody');
+
+Sortable.create(tbody, {
+    handle: '.drag-handle',
+    animation: 150,
+    onEnd: function () {
+        const ordre = [...tbody.querySelectorAll('tr')].map(tr => parseInt(tr.dataset.id));
+
+        fetch('/portfolio/reorder', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ ordre })
+        }).then(r => {
+            if (r.ok) location.reload();
+        });
+    }
+});
+</script>
+
 {% endblock %}

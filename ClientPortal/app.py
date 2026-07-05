@@ -19,7 +19,7 @@ try:
     WEASYPRINT_AVAILABLE = True
 except (OSError, ImportError):
     WEASYPRINT_AVAILABLE = False
-    print("⚠️ WeasyPrint (GTK) introuvable. Génération de PDF désactivée en local.")
+    print("[!] WeasyPrint (GTK) introuvable. Generation de PDF desactivee en local.")
 
 from database import init_db, seed_db, migrate_db, get_db
 from email_templates import (

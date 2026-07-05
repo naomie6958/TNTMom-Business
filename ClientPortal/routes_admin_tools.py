@@ -332,3 +332,81 @@ def portfolio_toggle(pid):
     conn.commit()
     conn.close()
     return redirect('/portfolio')
+
+@admin_tools_bp.route('/portfolio/new', methods=['GET', 'POST'])
+@login_required
+def portfolio_new():
+    if request.method == 'POST':
+        conn = get_db()
+        conn.execute('''
+            INSERT INTO portfolio_projets (nom, tagline, description, tags, statut, couleur, image_url, link, ordre)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ''', (
+            request.form.get('nom', '').strip(),
+            request.form.get('tagline', '').strip(),
+            request.form.get('description', '').strip(),
+            request.form.get('tags', '').strip(),
+            request.form.get('statut', '').strip(),
+            request.form.get('couleur', '').strip(),
+            request.form.get('image_url', '').strip(),
+            request.form.get('link', '').strip(),
+            int(request.form.get('ordre') or 99),
+        ))
+        conn.commit()
+        conn.close()
+        flash('Projet ajouté au portfolio ✅', 'success')
+        return redirect('/portfolio')
+
+    return render_template('admin/portfolio_form.html', projet=None, action='/portfolio/new')
+
+@admin_tools_bp.route('/portfolio/<int:pid>/edit', methods=['GET', 'POST'])
+@login_required
+def portfolio_edit(pid):
+    conn = get_db()
+    if request.method == 'POST':
+        conn.execute('''
+            UPDATE portfolio_projets
+            SET nom=?, tagline=?, description=?, tags=?, statut=?, couleur=?, image_url=?, link=?, ordre=?
+            WHERE id=?
+        ''', (
+            request.form.get('nom', '').strip(),
+            request.form.get('tagline', '').strip(),
+            request.form.get('description', '').strip(),
+            request.form.get('tags', '').strip(),
+            request.form.get('statut', 'live'),
+            request.form.get('couleur', 'magenta'),
+            request.form.get('image_url', '').strip(),
+            request.form.get('link', '').strip(),
+            int(request.form.get('ordre') or 99),
+            pid,
+        ))
+        conn.commit()
+        conn.close()
+        flash('Projet mis à jour✅', 'success')
+        return redirect('/portfolio')
+
+    projet = conn.execute('SELECT * FROM portfolio_projets WHERE id = ?', (pid,)).fetchone()
+    conn.close()
+    return render_template('admin/portfolio_form.html', projet=projet, action=f'/portfolio/{pid}/edit')
+
+@admin_tools_bp.route('/portfolio/reorder', methods=['POST'])
+@login_required
+def portfolio_reorder():
+    data  = request.get_json(silent=True) or {}
+    ordre = data.get('ordre', [])
+    conn  = get_db()
+    for i, pid in enumerate(ordre):
+        conn.execute('UPDATE portfolio_projets SET ordre = ? WHERE id = ?', (i, pid))
+    conn.commit()
+    conn.close()
+    return '', 204
+
+@admin_tools_bp.route('/portfolio/<int:pid>/delete', methods=['POST'])
+@login_required
+def portfolio_delete(pid):
+    conn = get_db()
+    conn.execute('DELETE FROM portfolio_projets WHERE id = ?', (pid,))
+    conn.commit()
+    conn.close()
+    flash('Projet supprimé ✅', 'success')
+    return redirect('/portfolio')

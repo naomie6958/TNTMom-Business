@@ -31,8 +31,8 @@
   - Ajouter dans la nav dropdown de `components.js`
   - Créer `undergroundmotorsport.html` (fiche projet) quand le projet est plus avancé
 
-- [ ] **Family Dashboard — lien live dans la nav**
-  - `components.js` nav dropdown : `↳ Family Dashboard` pointe nulle part → ajouter `href="https://familydashboard.tntm.ca"` ou vers la fiche `/familydashboard.html`
+- [x] **Family Dashboard — lien live dans la nav**
+  - `components.js` nav dropdown : lien pointe maintenant vers `https://familydashboard.tntm.ca`
 
 - [ ] **Liens sociaux dans le footer**
   - GitHub (`github.com/naomie6958`) et/ou LinkedIn
@@ -42,9 +42,9 @@
 
 ## 🟡 3. UX & Contenu
 
-- [ ] **Screenshots vieilles (2026-05)**
-  - Les captures de ClientPortal et FD datent de mai 2026 — les apps ont beaucoup évolué
-  - Refaire des captures récentes et remplacer dans `/images/Screenshots/`
+- [x] **Screenshots mises à jour (2026-06-27)**
+  - ClientPortal : 3 nouvelles captures dans `images/Screenshots/2026-06-27/`
+  - Family Dashboard : 2 nouvelles captures dans `images/Screenshots/2026-06-27/`
 
 - [ ] **`nao-scheduler.html` et `sobriety-tracker.html`**
   - Ces pages sont accessibles publiquement (pas dans la nav mais indexables)
