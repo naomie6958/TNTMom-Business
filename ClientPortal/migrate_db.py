@@ -124,6 +124,18 @@ def main():
         """)
         print("   TABLE CREEE : table client_form_submissions")
 
+        # --- Underground Motorsport : domaine final + statut live (lance 2026-07-07) ---
+        print("\n[portfolio_projets]")
+        cursor.execute("""
+            UPDATE portfolio_projets
+            SET statut = 'live',
+                link = 'https://undergroundmotorsport.ca',
+                description = 'Site vitrine statique avec présentation des services, galerie photos et formulaire de diagnostic préliminaire (Formspree) qui remplace la prise de rendez-vous Messenger. Logo animé en filigrane avec effet de profondeur au scroll, phares avant du char animés en LED. Design dark et moderne. Hébergé sur GitHub Pages.',
+                tags = '["HTML","CSS","JavaScript","GitHub Pages","Formspree"]'
+            WHERE nom = 'Underground Motorsport'
+        """)
+        print("   MISE A JOUR : Underground Motorsport -> live, undergroundmotorsport.ca")
+
         conn.commit()
         print("\n=== MIGRATION TERMINEE AVEC SUCCES ===")
     

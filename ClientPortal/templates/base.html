@@ -87,6 +87,11 @@
                  <span class="nav-icon">🖼️</span> <span class="nav-label">Portfolio</span>
             </a>
 
+            <a href="/analytics"
+                {% if request.path.startswith('/analytics') %}class="active"{% endif %}>
+                 <span class="nav-icon">📈</span> <span class="nav-label">Analytics</span>
+            </a>
+
             <div class="sidebar-cat">Stratégie</div>
             <a href="/plan"
                {% if request.path == '/plan' %}class="active"{% endif %}>

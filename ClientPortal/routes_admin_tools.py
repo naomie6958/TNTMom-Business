@@ -3,6 +3,8 @@ import datetime
 from flask import Blueprint, render_template, request, redirect, flash
 from database import get_db
 from utils import login_required
+from analytics_config import ANALYTICS_SITES
+from cloudflare_analytics import get_site_stats
 
 admin_tools_bp = Blueprint('admin_tools', __name__)
 
@@ -410,3 +412,22 @@ def portfolio_delete(pid):
     conn.close()
     flash('Projet supprimé ✅', 'success')
     return redirect('/portfolio')
+
+# ── ANALYTICS (stats de visites via Cloudflare Web Analytics) ────────────────
+
+@admin_tools_bp.route('/analytics')
+@login_required
+def analytics_dashboard():
+    sites = []
+    for slug, cfg in ANALYTICS_SITES.items():
+        entry = {'slug': slug, 'nom': cfg['nom'], 'domain': cfg['domain'], 'error': None, 'stats': None}
+        if not cfg.get('site_tag'):
+            entry['error'] = 'Script Cloudflare pas encore installé sur ce site'
+        else:
+            try:
+                entry['stats'] = get_site_stats(cfg['site_tag'], days=30)
+            except Exception as e:
+                entry['error'] = str(e)
+        sites.append(entry)
+
+    return render_template('admin/analytics.html', sites=sites)
