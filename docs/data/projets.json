@@ -32,11 +32,11 @@
     {
         "nom": "Underground Motorsport",
         "tagline": "Site vitrine pour atelier mécanique spécialisé",
-        "description": "Site vitrine statique avec présentation des services, galerie photos et prise de rendez-vous via Calendly. Design dark et moderne. Hébergé sur GitHub Pages.",
-        "tags": ["HTML", "CSS", "JavaScript", "GitHub Pages", "Calendly"],
-        "statut": "en-cours",
+        "description": "Site vitrine statique avec présentation des services, galerie photos et formulaire de diagnostic préliminaire (Formspree) qui remplace la prise de rendez-vous Messenger. Logo animé en filigrane avec effet de profondeur au scroll, phares avant du char animés en LED. Design dark et moderne. Hébergé sur GitHub Pages.",
+        "tags": ["HTML", "CSS", "JavaScript", "GitHub Pages", "Formspree"],
+        "statut": "live",
         "couleur": "rouge",
         "image": "images/Screenshots/UndergroundMotorsport_Screenshot.png",
-        "link": "https://undergroundmotorsport.tntm.ca"
+        "link": "https://undergroundmotorsport.ca"
     }
 ]
