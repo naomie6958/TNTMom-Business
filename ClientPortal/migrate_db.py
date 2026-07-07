@@ -111,6 +111,19 @@ def main():
         """)
         print("   TABLES CREEES : budget_categories, budget_expenses")
 
+        # --- Gestionnaire de formulaires multi-clients (remplace Formspree) ---
+        print("\n[client_form_submissions]")
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS client_form_submissions (
+                id          INTEGER PRIMARY KEY AUTOINCREMENT,
+                client_site TEXT NOT NULL,
+                data        TEXT NOT NULL,
+                lu          INTEGER DEFAULT 0,
+                created_at  TEXT DEFAULT (datetime('now'))
+            )
+        """)
+        print("   TABLE CREEE : table client_form_submissions")
+
         conn.commit()
         print("\n=== MIGRATION TERMINEE AVEC SUCCES ===")
     

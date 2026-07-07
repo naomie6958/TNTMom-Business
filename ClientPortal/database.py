@@ -582,6 +582,14 @@ def migrate_db():
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 FOREIGN KEY (category_id) REFERENCES budget_categories(id) ON DELETE CASCADE
             );
+
+            CREATE TABLE IF NOT EXISTS client_form_submissions (
+                id          INTEGER PRIMARY KEY AUTOINCREMENT,
+                client_site TEXT NOT NULL,
+                data        TEXT NOT NULL,
+                lu          INTEGER DEFAULT 0,
+                created_at  TEXT DEFAULT (datetime('now'))
+            );
         ''')
         conn.commit()
     except Exception:

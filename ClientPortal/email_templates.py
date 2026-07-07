@@ -277,6 +277,85 @@ def email_message_recu_naomie(nom_client, sujet, message):
     return _base_email_interne(f"💬 Message de {nom_client}", contenu)
 
 
+def email_form_submission_underground_motorsport(champs):
+    """Gabarit brandé Underground Motorsport (rouge/noir) — remplace le gabarit générique TNTMom pour ce client."""
+    lignes = "".join(
+        f"""
+        <tr>
+          <td style="padding:10px 16px;background-color:#1E1E1E;color:#A0A0A0;font-size:12px;text-transform:uppercase;letter-spacing:0.5px;border-bottom:1px solid #2A2A2A;width:35%;">{cle}</td>
+          <td style="padding:10px 16px;background-color:#1E1E1E;color:#F0F0F0;font-size:14px;border-bottom:1px solid #2A2A2A;">{valeur}</td>
+        </tr>"""
+        for cle, valeur in champs.items()
+    )
+    return f"""
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="color-scheme" content="dark light">
+  <meta name="supported-color-schemes" content="dark light">
+</head>
+<body style="margin:0;padding:0;background-color:#000000;font-family:Arial,Helvetica,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#000000;padding:40px 20px;">
+    <tr>
+      <td align="center">
+        <table width="600" cellpadding="0" cellspacing="0" style="background-color:#2A2A2A;border:1px solid #3a3a3a;border-radius:4px;overflow:hidden;max-width:600px;width:100%;">
+
+          <!-- HEADER -->
+          <tr>
+            <td style="background-color:#000000;padding:24px 32px;border-bottom:1px solid #3a3a3a;">
+              <p style="margin:0;font-size:24px;font-weight:900;letter-spacing:-0.5px;font-family:'Arial Narrow',Arial,sans-serif;color:#ffffff;">
+                UNDERGROUND MOTORSPORT
+              </p>
+            </td>
+          </tr>
+
+          <!-- CONTENU -->
+          <tr>
+            <td style="padding:32px;">
+              <p style="margin:0 0 6px;font-size:20px;font-weight:bold;color:#ffffff;">Nouvelle demande de diagnostic 🔧</p>
+              <p style="margin:0 0 24px;color:#A0A0A0;font-size:13px;">Reçue via le formulaire du site web.</p>
+
+              <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;border-radius:4px;overflow:hidden;border:1px solid #3a3a3a;">
+                {lignes}
+              </table>
+            </td>
+          </tr>
+
+          <!-- FOOTER -->
+          <tr>
+            <td style="padding:20px 32px;border-top:1px solid #3a3a3a;text-align:center;">
+              <p style="margin:0;color:#A0A0A0;font-size:11px;">Formulaire de undergroundmotorsport.ca</p>
+              <p style="margin:6px 0 0;font-size:11px;">
+                <a href="https://tntm.ca" style="color:#ffffff;text-decoration:underline;">Site &amp; système par TNTMom</a>
+              </p>
+            </td>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
+"""
+
+
+def email_form_submission_client(nom_site, champs):
+    lignes = "".join(
+        f'<p style="margin:0 0 10px;color:#6e6e9a;font-size:13px;">{cle} : '
+        f'<strong style="color:#f0eeff;">{valeur}</strong></p>'
+        for cle, valeur in champs.items()
+    )
+    contenu = f"""
+      <p style="margin:0 0 8px;font-size:22px;font-weight:bold;color:#d94fbd;">Nouvelle demande — {nom_site} 📬</p>
+      <p style="margin:0 0 24px;color:#6e6e9a;font-size:13px;">Reçue via le formulaire de votre site web.</p>
+      {lignes}
+    """
+    return base_email(contenu)
+
+
 def email_lead_naomie(nom, email_client, message):
     email_ligne = f'<p style="margin:0 0 4px;color:#6e6e9a;font-size:13px;">Courriel : <strong style="color:#f0eeff;">{email_client}</strong></p>' if email_client else ''
     contenu = f"""
