@@ -33,12 +33,43 @@
                         <input type="text" id="nom" name="nom" placeholder="Ton nom" required>
                     </div>
                     <div class="form-group">
+                        <label for="telephone">Téléphone</label>
+                        <input type="tel" id="telephone" name="telephone" placeholder="(123) 456-7890">
+                    </div>
+                    <div class="form-group">
                         <label for="courriel">Courriel</label>
                         <input type="email" id="courriel" name="courriel" placeholder="ton@courriel.com" required>
                     </div>
+                    <fieldset class="form-group">
+                        <legend>Comment préférez-vous être recontacté?</legend>
+                        <div class="radio-group">
+                            <label class="radio-option"><input type="radio" name="recontact" value="Texto" required /> Texto</label>
+                            <label class="radio-option"><input type="radio" name="recontact" value="Téléphone" required /> Téléphone</label>
+                            <label class="radio-option"><input type="radio" name="recontact" value="Courriel" required /> Courriel</label>
+                        </div>
+                    </fieldset>
                     <div class="form-group">
-                        <label for="message">Message</label>
-                        <textarea id="message" name="message" rows="6" placeholder="Ton message..." required></textarea>
+                        <label for="type_projet">Type de projet</label>
+                        <select id="type_projet" name="type_projet" required>
+                            <option value="" disabled selected>Sélectionne un type de projet</option>
+                            <option value="Site web">Site web</option>
+                            <option value="Application web">Application web</option>
+                            <option value="Autre">Autre</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="budget">Budget approximatif (optionnel)</label>
+                        <select id="budget" name="budget">
+                            <option value="" disabled selected>Pas encore d'idée précise</option>
+                            <option value="Moins de 1000$">Moins de 1000$</option>
+                            <option value="1000$ - 2000$">1000$ - 2000$</option>
+                            <option value="2000$ - 4000$">2000$ - 4000$</option>
+                            <option value="4000$+">4000$ et plus</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="projet">Décris moi ton projet</label>
+                        <textarea id="projet" name="projet" rows="6" placeholder="Décris ton projet..." required></textarea>
                     </div>
                     <button type="submit" class="btn-submit" id="contact-submit">Envoyer</button>
                     <div id="contact-feedback" style="display:none; margin-top:1rem; font-size:0.9rem;"></div>
@@ -50,9 +81,13 @@
                     btn.classList.add('loading');
                     btn.disabled = true;
                     const data = {
-                        nom:     document.getElementById('nom').value,
-                        email:   document.getElementById('courriel').value,
-                        message: document.getElementById('message').value
+                        nom:         document.getElementById('nom').value,
+                        telephone:   document.getElementById('telephone').value,
+                        email:       document.getElementById('courriel').value,
+                        recontact:   document.querySelector('input[name="recontact"]:checked').value,
+                        typeProjet:  document.getElementById('type_projet').value,
+                        budget:      document.getElementById('budget').value,
+                        message:     document.getElementById('projet').value
                     };
                     fetch('https://portail.tntm.ca/api/public/contact', {
                         method: 'POST',
