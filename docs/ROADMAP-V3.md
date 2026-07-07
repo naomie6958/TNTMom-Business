@@ -50,6 +50,11 @@
   - Ces pages sont accessibles publiquement (pas dans la nav mais indexables)
   - Décision à prendre : ajouter `noindex` en meta, protéger par login, ou supprimer du repo
 
+- [x] **Formulaire contact — étendu (2026-07-07)**
+  - Ajout téléphone (optionnel), préférence de recontact (radio), type de projet (select), budget approximatif (optionnel)
+  - JS de soumission mis à jour pour envoyer tous les nouveaux champs
+  - [ ] **Reste à faire :** styliser les boutons radio (apparence par défaut du navigateur actuellement, pas le style TNTM — cacher l'input natif + dessiner un cercle custom via `::before`/`::after` sur le label)
+
 - [ ] **Formulaire contact — courriel de fallback**
   - En cas d'erreur API, message dit `naomiemt@tntm.ca` — vérifier que c'est le bon courriel public
 
