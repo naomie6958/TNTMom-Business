@@ -1,11 +1,13 @@
 // Cloudflare Web Analytics — injecté ici plutôt que dupliqué sur chaque page,
 // puisque components.js est déjà chargé partout. Une seule source à maintenir.
+// Note : ce fichier est chargé dans <head> sans defer, donc document.body n'existe
+// pas encore ici — on ajoute au <head> à la place (toujours disponible à ce stade).
 (function () {
     const beacon = document.createElement('script');
     beacon.defer = true;
     beacon.src = 'https://static.cloudflareinsights.com/beacon.min.js';
     beacon.setAttribute('data-cf-beacon', '{"token": "1cb13c5e7f7e4a62bb999e006a42d2dd"}');
-    document.body.appendChild(beacon);
+    document.head.appendChild(beacon);
 })();
 
 class TntmHeader extends HTMLElement {
