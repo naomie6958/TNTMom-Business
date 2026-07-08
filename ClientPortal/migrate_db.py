@@ -126,15 +126,19 @@ def main():
 
         # --- Underground Motorsport : domaine final + statut live (lance 2026-07-07) ---
         print("\n[portfolio_projets]")
-        cursor.execute("""
-            UPDATE portfolio_projets
-            SET statut = 'live',
-                link = 'https://undergroundmotorsport.ca',
-                description = 'Site vitrine statique avec présentation des services, galerie photos et formulaire de diagnostic préliminaire (Formspree) qui remplace la prise de rendez-vous Messenger. Logo animé en filigrane avec effet de profondeur au scroll, phares avant du char animés en LED. Design dark et moderne. Hébergé sur GitHub Pages.',
-                tags = '["HTML","CSS","JavaScript","GitHub Pages","Formspree"]'
-            WHERE nom = 'Underground Motorsport'
-        """)
-        print("   MISE A JOUR : Underground Motorsport -> live, undergroundmotorsport.ca")
+        cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='portfolio_projets'")
+        if cursor.fetchone():
+            cursor.execute("""
+                UPDATE portfolio_projets
+                SET statut = 'live',
+                    link = 'https://undergroundmotorsport.ca',
+                    description = 'Site vitrine statique avec présentation des services, galerie photos et formulaire de diagnostic préliminaire (Formspree) qui remplace la prise de rendez-vous Messenger. Logo animé en filigrane avec effet de profondeur au scroll, phares avant du char animés en LED. Design dark et moderne. Hébergé sur GitHub Pages.',
+                    tags = '["HTML","CSS","JavaScript","GitHub Pages","Formspree"]'
+                WHERE nom = 'Underground Motorsport'
+            """)
+            print("   MISE A JOUR : Underground Motorsport -> live, undergroundmotorsport.ca")
+        else:
+            print("   SKIP      : table 'portfolio_projets' inexistante (sera créée par init_db)")
 
         conn.commit()
         print("\n=== MIGRATION TERMINEE AVEC SUCCES ===")
