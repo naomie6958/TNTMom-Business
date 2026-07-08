@@ -1,40 +1,33 @@
 import os
-import smtplib
+import resend
 import datetime
 import threading
-from email.mime.multipart import MIMEMultipart
-from email.mime.text import MIMEText
 from functools import wraps
 import json
 from flask import session, redirect
 
 def _send_email_thread(subject, body, to, html):
     """Fonction interne exécutée par le thread en arrière-plan."""
-    gmail_user = os.getenv('GMAIL_USER')
-    gmail_pass = os.getenv('GMAIL_APP_PASSWORD')
-    if not gmail_user or not gmail_pass:
+    resend.api_key = os.getenv('RESEND_API_KEY')
+    if not resend.api_key:
         import sys
-        print('[EMAIL ERROR] Identifiants SMTP manquants dans le .env', file=sys.stderr)
+        print('[EMAIL ERROR] RESEND_API_KEY manquant dans le .env', file=sys.stderr)
         return
 
     try:
-        if html:
-            msg = MIMEMultipart('alternative')
-            msg.attach(MIMEText(body, 'plain', 'utf-8'))
-            msg.attach(MIMEText(html, 'html', 'utf-8'))
-        else:
-            msg = MIMEText(body, 'plain', 'utf-8')
-        msg['Subject'] = subject
-        msg['From']    = f'Naomie | TNTMom <{gmail_user}>'
-        msg['To']      = to or 'naomiemt@tntm.ca'
-        msg['Reply-To'] = 'naomiemt@tntm.ca'
-        with smtplib.SMTP('smtp.gmail.com', 587) as server:
-            server.starttls()
-            server.login(gmail_user, gmail_pass)
-            server.send_message(msg)
+        resend.Emails.send({
+            "from": "Naomie | TNTMom <naomiemt@tntm.ca>",
+            "to": [to or 'naomiemt@tntm.ca'],
+            "reply_to": "naomiemt@tntm.ca",
+            "subject": subject,
+            "text": body,
+            # Resend accepte html=None si t'as juste du texte brut à envoyer
+            "html": html or None,
+        })
     except Exception as e:
         import sys
         print(f'[EMAIL ERROR] {subject} → {to}: {e}', file=sys.stderr)
+
 
 def send_notification_email(subject, body, to=None, html=None):
     """Lance l'envoi d'e-mail en arrière-plan sans bloquer l'interface Flask."""

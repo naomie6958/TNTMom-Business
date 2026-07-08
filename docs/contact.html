@@ -28,13 +28,15 @@
             </section>
             <section id="contact-section">
                 <form id="contact-form">
-                    <div class="form-group">
-                        <label for="nom">Nom</label>
-                        <input type="text" id="nom" name="nom" placeholder="Ton nom" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="telephone">Téléphone</label>
-                        <input type="tel" id="telephone" name="telephone" placeholder="(123) 456-7890">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="nom">Nom</label>
+                            <input type="text" id="nom" name="nom" placeholder="Ton nom" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="telephone">Téléphone</label>
+                            <input type="tel" id="telephone" name="telephone" placeholder="(123) 456-7890">
+                        </div>
                     </div>
                     <div class="form-group">
                         <label for="courriel">Courriel</label>
@@ -48,28 +50,30 @@
                             <label class="radio-option"><input type="radio" name="recontact" value="Courriel" required /> Courriel</label>
                         </div>
                     </fieldset>
-                    <div class="form-group">
-                        <label for="type_projet">Type de projet</label>
-                        <select id="type_projet" name="type_projet" required>
-                            <option value="" disabled selected>Sélectionne un type de projet</option>
-                            <option value="Site web">Site web</option>
-                            <option value="Application web">Application web</option>
-                            <option value="Autre">Autre</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label for="budget">Budget approximatif (optionnel)</label>
-                        <select id="budget" name="budget">
-                            <option value="" disabled selected>Pas encore d'idée précise</option>
-                            <option value="Moins de 1000$">Moins de 1000$</option>
-                            <option value="1000$ - 2000$">1000$ - 2000$</option>
-                            <option value="2000$ - 4000$">2000$ - 4000$</option>
-                            <option value="4000$+">4000$ et plus</option>
-                        </select>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="type_projet">Type de projet</label>
+                            <select id="type_projet" name="type_projet" required>
+                                <option value="" disabled selected>Sélectionne un type</option>
+                                <option value="Site web">Site web</option>
+                                <option value="Application web">Application web</option>
+                                <option value="Autre">Autre</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="budget">Budget (optionnel)</label>
+                            <select id="budget" name="budget">
+                                <option value="" disabled selected>Pas encore d'idée</option>
+                                <option value="Moins de 1000$">Moins de 1000$</option>
+                                <option value="1000$ - 2000$">1000$ - 2000$</option>
+                                <option value="2000$ - 4000$">2000$ - 4000$</option>
+                                <option value="4000$+">4000$ et plus</option>
+                            </select>
+                        </div>
                     </div>
                     <div class="form-group">
                         <label for="projet">Décris moi ton projet</label>
-                        <textarea id="projet" name="projet" rows="6" placeholder="Décris ton projet..." required></textarea>
+                        <textarea id="projet" name="projet" rows="4" placeholder="Décris ton projet..." required></textarea>
                     </div>
                     <button type="submit" class="btn-submit" id="contact-submit">Envoyer</button>
                     <div id="contact-feedback" style="display:none; margin-top:1rem; font-size:0.9rem;"></div>

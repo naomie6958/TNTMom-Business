@@ -570,19 +570,25 @@ p {
 
 #contact-section {
     max-width: 600px;
-    margin: 2rem auto;
+    margin: 1.25rem auto;
 }
 
 form {
     display: flex;
     flex-direction: column;
-    gap: 1.5rem;
+    gap: 1rem;
+}
+
+.form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
 }
 
 .form-group {
     display: flex;
     flex-direction: column;
-    gap: 0.5rem;
+    gap: 0.35rem;
 }
 
 .form-group label {
@@ -601,7 +607,7 @@ form {
     color: wheat;
     font-family: 'Open Sans', sans-serif;
     font-size: 1rem;
-    padding: 0.75rem 1rem;
+    padding: 0.55rem 1rem;
     transition: all 0.2s;
     resize: vertical;
 }
@@ -616,6 +622,86 @@ form {
 .form-group input::placeholder,
 .form-group textarea::placeholder {
     color: rgba(245, 222, 179, 0.3);
+}
+
+.form-group select {
+    background: #1a1a2e;
+    border: 1px solid rgba(135, 206, 235, 0.3);
+    border-radius: 8px;
+    color: wheat;
+    font-family: 'Open Sans', sans-serif;
+    font-size: 1rem;
+    padding: 0.55rem 1rem;
+    transition: all 0.2s;
+}
+
+.form-group select:focus {
+    outline: none;
+    border-color: #87CEEB;
+    box-shadow: 0 0 12px rgba(135, 206, 235, 0.3);
+}
+
+/* fieldset hérite du reset navigateur par défaut (bordure grise, padding) — on le neutralise */
+fieldset.form-group {
+    border: 1px solid rgba(135, 206, 235, 0.3);
+    border-radius: 8px;
+    padding: 0.6rem 1.25rem 0.85rem;
+}
+
+fieldset.form-group legend {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 0.75rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: #87CEEB;
+    padding: 0 0.4rem;
+}
+
+.radio-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1.25rem;
+}
+
+.radio-option {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-family: 'Open Sans', sans-serif;
+    color: wheat;
+    cursor: pointer;
+}
+
+.radio-option input[type="radio"] {
+    appearance: none;
+    width: 18px;
+    height: 18px;
+    border: 1px solid rgba(135, 206, 235, 0.5);
+    border-radius: 4px;
+    background: #1a1a2e;
+    cursor: pointer;
+    display: grid;
+    place-content: center;
+    transition: all 0.2s;
+}
+
+.radio-option input[type="radio"]::before {
+    content: '';
+    width: 9px;
+    height: 9px;
+    border-radius: 2px;
+    background: #87CEEB;
+    transform: scale(0);
+    transition: transform 0.15s ease-out;
+}
+
+.radio-option input[type="radio"]:checked {
+    border-color: #87CEEB;
+    box-shadow: 0 0 8px rgba(135, 206, 235, 0.5);
+}
+
+.radio-option input[type="radio"]:checked::before {
+    transform: scale(1);
 }
 
 .btn-submit {

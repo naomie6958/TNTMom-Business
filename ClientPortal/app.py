@@ -2,7 +2,6 @@ import datetime
 import json
 import os
 import secrets
-import smtplib
 import uuid
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
