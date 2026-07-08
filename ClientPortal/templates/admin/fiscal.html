@@ -3,433 +3,177 @@
 {% block title %}Calculateur Fiscal Annuel | Admin{% endblock %}
 
 {% block content %}
-<div class="admin-container">
-    <h1 class="page-title">📊 Calculateur Fiscal Annuel 2026</h1>
+<div class="page-header">
+    <div>
+        <h1 class="page-title">📊 <span>Calculateur Fiscal</span> Annuel 2026</h1>
+    </div>
+</div>
 
-    <!-- CARTES PRINCIPALES -->
-    <div class="fiscal-cards">
-        <div class="fiscal-card brut">
-            <div class="card-label">Brut Business</div>
-            <div class="card-amount">${{ "%.2f"|format(business_brut) }}</div>
-            <div class="card-detail">Jalons payés 2026</div>
+<!-- CARTES PRINCIPALES -->
+<div class="fiscal-cards">
+    <div class="card fiscal-card brut">
+        <div class="metric-label">Brut Business</div>
+        <div class="metric-value lg">${{ "%.2f"|format(business_brut) }}</div>
+        <div class="text-muted-sm mt-xs">Jalons payés 2026</div>
+    </div>
+
+    <div class="card fiscal-card provision">
+        <div class="metric-label">Provision Fiscale (25%)</div>
+        <div class="metric-value lg gold">${{ "%.2f"|format(provision_fiscale) }}</div>
+        <div class="text-muted-sm mt-xs">Réservé pour impôts</div>
+    </div>
+
+    <div class="card fiscal-card net">
+        <div class="metric-label">Revenu Net Business</div>
+        <div class="metric-value lg" style="color: var(--accent2);">${{ "%.2f"|format(business_net) }}</div>
+        <div class="text-muted-sm mt-xs">Après provision 25%</div>
+    </div>
+</div>
+
+<!-- REVENUS MÉNAGE -->
+<div class="card mt-lg">
+    <div class="section-header">
+        <div class="section-title">Autres Revenus du Ménage 2026</div>
+    </div>
+
+    <div class="household-summary">
+        <div class="card" style="background: var(--surface2);">
+            <div class="metric-label">Revenus Imposables</div>
+            <div class="metric-value" style="color: var(--accent2);">${{ "%.2f"|format(revenus_imposables) }}</div>
         </div>
-
-        <div class="fiscal-card provision">
-            <div class="card-label">Provision Fiscale (25%)</div>
-            <div class="card-amount">${{ "%.2f"|format(provision_fiscale) }}</div>
-            <div class="card-detail">Réservé pour impôts</div>
-        </div>
-
-        <div class="fiscal-card net">
-            <div class="card-label">Revenu Net Business</div>
-            <div class="card-amount">${{ "%.2f"|format(business_net) }}</div>
-            <div class="card-detail">Après provision 25%</div>
+        <div class="card" style="background: var(--surface2);">
+            <div class="metric-label">Revenus Non-Imposables</div>
+            <div class="metric-value" style="color: var(--accent2);">${{ "%.2f"|format(revenus_non_imposables) }}</div>
         </div>
     </div>
 
-    <!-- REVENUS MÉNAGE -->
-    <div class="household-section">
-        <h2>Autres Revenus du Ménage 2026</h2>
-
-        <div class="household-summary">
-            <div class="summary-box">
-                <div class="summary-label">Revenus Imposables</div>
-                <div class="summary-amount">${{ "%.2f"|format(revenus_imposables) }}</div>
+    <!-- FORMULAIRE AJAX -->
+    <div class="mt-lg">
+        <h3 class="mt-md" style="color: var(--accent2); font-size: 1.1rem;">Ajouter un Revenu</h3>
+        <form id="revenueForm" class="form-grid mt-sm">
+            <div class="form-group">
+                <label>Description</label>
+                <input type="text" id="label" required>
             </div>
-            <div class="summary-box">
-                <div class="summary-label">Revenus Non-Imposables</div>
-                <div class="summary-amount">${{ "%.2f"|format(revenus_non_imposables) }}</div>
+            <div class="form-group">
+                <label>Montant</label>
+                <input type="number" id="amount" step="0.01" required>
             </div>
-        </div>
-
-        <!-- FORMULAIRE AJAX -->
-        <div class="add-revenue-form">
-            <h3>Ajouter un Revenu</h3>
-            <form id="revenueForm" class="form-inline">
-                <input type="text" id="label" placeholder="Description" required>
-                <input type="number" id="amount" placeholder="Montant" step="0.01" required>
+            <div class="form-group">
+                <label>Date</label>
                 <input type="date" id="date_received" required>
-                <label class="checkbox-label">
-                    <input type="checkbox" id="is_taxable" checked>
+            </div>
+            <div class="form-group" style="justify-content: flex-end;">
+                <label class="flex items-center gap-sm" style="cursor: pointer; font-weight: 400;">
+                    <input type="checkbox" id="is_taxable" checked style="width: auto;">
                     Imposable
                 </label>
+            </div>
+            <div class="form-group span-2" style="justify-content: flex-end;">
                 <button type="submit" class="btn btn-primary">➕ Ajouter</button>
-            </form>
-            <div id="formMessage"></div>
-        </div>
-
-        <!-- LISTE DES REVENUS -->
-        {% if revenus_list %}
-        <table class="revenues-table">
-            <thead>
-                <tr>
-                    <th>Description</th>
-                    <th>Date</th>
-                    <th>Montant</th>
-                    <th>Type</th>
-                    <th>Ajouté par</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for revenu in revenus_list %}
-                <tr>
-                    <td>{{ revenu['label'] }}</td>
-                    <td>{{ revenu['date_received'] }}</td>
-                    <td>${{ "%.2f"|format(revenu['amount']) }}</td>
-                    <td>
-                        {% if revenu['is_taxable'] %}
-                            <span class="badge badge-taxable">Imposable</span>
-                        {% else %}
-                            <span class="badge badge-exempt">Non-Imposable</span>
-                        {% endif %}
-                    </td>
-                    <td>{{ revenu['added_by'] }}</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-        {% else %}
-        <p class="no-data">Aucun revenu enregistré pour 2026.</p>
-        {% endif %}
+            </div>
+        </form>
+        <div id="formMessage"></div>
     </div>
 
-    <!-- REVENU GLOBAL DISPONIBLE (JAUGE) -->
-    <div class="global-revenue-section">
-        <h2>💰 REVENU GLOBAL DISPONIBLE POUR BUDGET BILL</h2>
-        <div class="global-gauge">
-            <div class="gauge-main">
-                <div class="gauge-amount">${{ "%.2f"|format(revenu_global) }}</div>
-                <div class="gauge-breakdown">
-                    <span>Business Net: ${{ "%.2f"|format(business_net) }}</span>
-                    <span>+ Autres Revenus: ${{ "%.2f"|format(revenus_imposables + revenus_non_imposables) }}</span>
-                </div>
-            </div>
+    <!-- LISTE DES REVENUS -->
+    {% if revenus_list %}
+    <table class="client-table mt-lg">
+        <thead>
+            <tr>
+                <th>Description</th>
+                <th>Date</th>
+                <th>Montant</th>
+                <th>Type</th>
+                <th>Ajouté par</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for revenu in revenus_list %}
+            <tr>
+                <td>{{ revenu['label'] }}</td>
+                <td class="text-muted-sm">{{ revenu['date_received'] }}</td>
+                <td>${{ "%.2f"|format(revenu['amount']) }}</td>
+                <td>
+                    {% if revenu['is_taxable'] %}
+                        <span class="badge badge-taxable">Imposable</span>
+                    {% else %}
+                        <span class="badge badge-exempt">Non-Imposable</span>
+                    {% endif %}
+                </td>
+                <td class="text-muted-sm">{{ revenu['added_by'] }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <div class="empty-state mt-md">Aucun revenu enregistré pour 2026.</div>
+    {% endif %}
+</div>
+
+<!-- REVENU GLOBAL DISPONIBLE (JAUGE) -->
+<div class="card mt-lg global-revenue-section">
+    <h2 style="color: var(--accent); font-family: 'Bebas Neue', sans-serif; font-size: 1.5rem; letter-spacing: 0.05em; text-align: center;">
+        💰 Revenu global disponible pour Budget Bill
+    </h2>
+    <div class="global-gauge mt-md">
+        <div class="gauge-amount">${{ "%.2f"|format(revenu_global) }}</div>
+        <div class="gauge-breakdown">
+            <span>Business Net : ${{ "%.2f"|format(business_net) }}</span>
+            <span>+ Autres Revenus : ${{ "%.2f"|format(revenus_imposables + revenus_non_imposables) }}</span>
         </div>
     </div>
 </div>
 
 <style>
-.admin-container {
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 2rem;
-}
-
-.page-title {
-    font-size: 2.5rem;
-    margin-bottom: 2rem;
-    color: #FF0090;
-    text-align: center;
-    font-family: 'Bebas Neue', sans-serif;
-    letter-spacing: 2px;
-}
-
-/* CARTES FISCALES */
+/* Composants propres à cette page — pas de reproduction du système partagé
+   (.btn/.badge/.page-title viennent maintenant du style.css global). */
 .fiscal-cards {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-    gap: 1.5rem;
-    margin-bottom: 3rem;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 1rem;
 }
-
-.fiscal-card {
-    background: linear-gradient(135deg, #1a1a1a 0%, #2a2a2a 100%);
-    border-radius: 12px;
-    padding: 1.5rem;
-    border-left: 4px solid;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
-    transition: transform 0.3s ease;
-}
-
-.fiscal-card:hover {
-    transform: translateY(-5px);
-}
-
-.fiscal-card.brut { border-left-color: #FF6600; }
-.fiscal-card.provision { border-left-color: #FFD700; }
-.fiscal-card.net { border-left-color: #00CED1; }
-
-.card-label {
-    font-size: 0.9rem;
-    color: #aaa;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    margin-bottom: 0.5rem;
-    font-family: 'DM Mono', monospace;
-}
-
-.card-amount {
-    font-size: 2.2rem;
-    font-weight: bold;
-    color: #fff;
-    font-family: 'DM Mono', monospace;
-    margin-bottom: 0.5rem;
-}
-
-.card-detail {
-    font-size: 0.85rem;
-    color: #888;
-}
-
-/* SECTION REVENUS MÉNAGE */
-.household-section {
-    background: #1a1a1a;
-    border-radius: 12px;
-    padding: 2rem;
-    margin-bottom: 2rem;
-    border: 1px solid #333;
-}
-
-.household-section h2 {
-    color: #FF0090;
-    margin-bottom: 1.5rem;
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: 1.5rem;
-    letter-spacing: 1px;
-}
-
-.household-section h3 {
-    color: #00CED1;
-    margin-top: 2rem;
-    margin-bottom: 1rem;
-    font-size: 1.2rem;
-}
+.fiscal-card.brut     { border-left: 3px solid #FF6600; }
+.fiscal-card.provision{ border-left: 3px solid var(--gold); }
+.fiscal-card.net       { border-left: 3px solid var(--accent2); }
 
 .household-summary {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
     gap: 1rem;
-    margin-bottom: 2rem;
 }
 
-.summary-box {
-    background: #2a2a2a;
-    padding: 1rem;
-    border-radius: 8px;
-    border-left: 3px solid #00CED1;
-}
+.badge-taxable { background: rgba(62, 207, 142, 0.15); color: var(--green); }
+.badge-exempt  { background: rgba(135, 206, 235, 0.15); color: var(--accent2); }
 
-.summary-label {
-    font-size: 0.85rem;
-    color: #aaa;
-    text-transform: uppercase;
-    margin-bottom: 0.5rem;
-}
+#formMessage { margin-top: 1rem; padding: 0.6rem 0.9rem; border-radius: var(--radius); display: none; font-size: 0.85rem; }
+#formMessage.success { display: block; background: rgba(62,207,142,0.12); color: var(--green); border: 1px solid rgba(62,207,142,0.35); }
+#formMessage.error   { display: block; background: rgba(234,103,103,0.12); color: var(--red); border: 1px solid rgba(234,103,103,0.35); }
 
-.summary-amount {
-    font-size: 1.8rem;
-    color: #00CED1;
-    font-weight: bold;
-    font-family: 'DM Mono', monospace;
-}
-
-/* FORMULAIRE AJAX */
-.add-revenue-form {
-    background: #2a2a2a;
-    padding: 1.5rem;
-    border-radius: 8px;
-    margin-bottom: 2rem;
-}
-
-.form-inline {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-    gap: 1rem;
-    align-items: flex-end;
-}
-
-.form-inline input,
-.form-inline button {
-    padding: 0.75rem;
-    border: 1px solid #444;
-    border-radius: 4px;
-    background: #1a1a1a;
-    color: #fff;
-    font-size: 0.9rem;
-}
-
-.form-inline input::placeholder {
-    color: #666;
-}
-
-.form-inline input:focus {
-    outline: none;
-    border-color: #FF0090;
-    box-shadow: 0 0 5px rgba(255, 0, 144, 0.3);
-}
-
-.checkbox-label {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    color: #aaa;
-    cursor: pointer;
-}
-
-.checkbox-label input {
-    width: auto;
-    margin: 0;
-}
-
-.btn {
-    padding: 0.75rem 1.5rem;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    font-weight: bold;
-    transition: all 0.3s ease;
-}
-
-.btn-primary {
-    background: linear-gradient(135deg, #FF0090, #FF6600);
-    color: white;
-}
-
-.btn-primary:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 15px rgba(255, 0, 144, 0.4);
-}
-
-#formMessage {
-    margin-top: 1rem;
-    padding: 0.75rem;
-    border-radius: 4px;
-    display: none;
-}
-
-#formMessage.success {
-    display: block;
-    background: #0a4a2a;
-    color: #4CAF50;
-    border: 1px solid #4CAF50;
-}
-
-#formMessage.error {
-    display: block;
-    background: #4a0a0a;
-    color: #FF6B6B;
-    border: 1px solid #FF6B6B;
-}
-
-/* TABLE REVENUS */
-.revenues-table {
-    width: 100%;
-    border-collapse: collapse;
-    margin-top: 1rem;
-    background: #2a2a2a;
-    border-radius: 8px;
-    overflow: hidden;
-}
-
-.revenues-table th {
-    background: #1a1a1a;
-    color: #FF0090;
-    padding: 1rem;
-    text-align: left;
-    font-weight: bold;
-    border-bottom: 2px solid #333;
-}
-
-.revenues-table td {
-    padding: 0.75rem 1rem;
-    border-bottom: 1px solid #333;
-    color: #ddd;
-}
-
-.revenues-table tr:hover {
-    background: #333;
-}
-
-.badge {
-    display: inline-block;
-    padding: 0.25rem 0.75rem;
-    border-radius: 20px;
-    font-size: 0.8rem;
-    font-weight: bold;
-}
-
-.badge-taxable {
-    background: #4CAF50;
-    color: white;
-}
-
-.badge-exempt {
-    background: #2196F3;
-    color: white;
-}
-
-.no-data {
-    color: #888;
-    padding: 1rem;
-    text-align: center;
-    font-style: italic;
-}
-
-/* JAUGE REVENU GLOBAL */
-.global-revenue-section {
-    background: linear-gradient(135deg, #1a1a1a 0%, #2a2a2a 100%);
-    border-radius: 12px;
-    padding: 2rem;
-    border: 2px solid #FF0090;
-    text-align: center;
-}
-
-.global-revenue-section h2 {
-    color: #FF0090;
-    margin-bottom: 1.5rem;
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: 1.8rem;
-    letter-spacing: 2px;
-}
-
-.global-gauge {
-    background: #1a1a1a;
-    padding: 2rem;
-    border-radius: 8px;
-    border: 2px solid #00CED1;
-}
-
-.gauge-main {
-    background: linear-gradient(135deg, #00CED1, #FF0090);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-}
-
+/* Jauge — seul endroit de l'app avec ce dégradé texte, gardé comme flourish volontaire */
+.global-revenue-section { border-color: var(--accent); }
+.global-gauge { text-align: center; }
 .gauge-amount {
-    font-size: 3.5rem;
-    font-weight: bold;
     font-family: 'DM Mono', monospace;
-    margin-bottom: 1rem;
-    color: #fff;
-    background: linear-gradient(135deg, #00CED1, #FF0090);
+    font-size: 3rem;
+    font-weight: bold;
+    background: linear-gradient(135deg, var(--accent2), var(--accent));
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
 }
-
 .gauge-breakdown {
     display: flex;
     justify-content: center;
     gap: 2rem;
     flex-wrap: wrap;
-    color: #aaa;
-    font-size: 0.95rem;
+    color: var(--muted);
+    font-size: 0.88rem;
+    margin-top: 0.6rem;
 }
 
-@media (max-width: 768px) {
-    .fiscal-cards {
-        grid-template-columns: 1fr;
-    }
-
-    .form-inline {
-        grid-template-columns: 1fr;
-    }
-
-    .gauge-breakdown {
-        flex-direction: column;
-        gap: 0.5rem;
-    }
+@media (max-width: 640px) {
+    .gauge-breakdown { flex-direction: column; gap: 0.4rem; }
 }
 </style>
 

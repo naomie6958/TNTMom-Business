@@ -2,94 +2,93 @@
 {% block title %}{{ 'Modifier' if projet else 'Nouveau' }} projet | Portfolio{% endblock %}
 
 {% block content %}
-<div class="admin-container">
-    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:2rem;">
-        <h1 class="page-title">{{ '✏️ Modifier' if projet else '➕ Nouveau' }} projet portfolio</h1>
-        <a href="/portfolio" style="color:#aaa; text-decoration:none;">← Retour</a>
+<div class="page-header">
+    <div>
+        <h1 class="page-title">{{ '✏️ Modifier' if projet else '➕ Nouveau' }} <span>projet portfolio</span></h1>
     </div>
+    <a href="/portfolio" class="btn btn-secondary">← Retour</a>
+</div>
 
-    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; align-items: start;">
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; align-items: start;">
+    <div class="card">
         <form method="POST" action="{{ action }}">
-            <div style="display:grid; gap:1rem;">
+            <div class="form-grid">
 
-                <div>
-                    <label class="form-label">Nom du projet *</label>
-                    <input type="text" name="nom" class="form-input" required
+                <div class="form-group span-2">
+                    <label>Nom du projet *</label>
+                    <input type="text" name="nom" required
                         value="{{ projet['nom'] if projet else '' }}">
                 </div>
 
-                <div>
-                    <label class="form-label">Tagline</label>
-                    <input type="text" name="tagline" class="form-input"
+                <div class="form-group span-2">
+                    <label>Tagline</label>
+                    <input type="text" name="tagline"
                         value="{{ projet['tagline'] if projet else '' }}">
                 </div>
 
-                <div>
-                    <label class="form-label">Description</label>
-                    <textarea name="description" class="form-input" rows="3">{{ projet['description'] if projet else '' }}</textarea>
+                <div class="form-group span-2">
+                    <label>Description</label>
+                    <textarea name="description" rows="3">{{ projet['description'] if projet else '' }}</textarea>
                 </div>
 
-                <div>
-                    <label class="form-label">Tags (séparés par des virgules)</label>
-                    <input type="text" name="tags" class="form-input" placeholder="Flask, SQLite, Railway"
+                <div class="form-group span-2">
+                    <label>Tags (séparés par des virgules)</label>
+                    <input type="text" name="tags" placeholder="Flask, SQLite, Railway"
                         value="{{ projet['tags'] if projet else '' }}">
                 </div>
 
-                <div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem;">
-                    <div>
-                        <label class="form-label">Statut</label>
-                        <select name="statut" class="form-input">
-                            {% for s in ['live', 'en-cours', 'archive'] %}
-                            <option value="{{ s }}" {{ 'selected' if projet and projet['statut'] == s }}>
-                                {{ {'live':'✅ Live', 'en-cours':'🔄 En cours', 'archive':'📦 Archivé'}[s] }}
-                            </option>
-                            {% endfor %}
-                        </select>
-                    </div>
-                    <div>
-                        <label class="form-label">Couleur</label>
-                        <select name="couleur" class="form-input">
-                            {% for c in ['magenta', 'bleu', 'orange', 'rouge', 'vert', 'violet', 'turquoise', 'jaune', 'rose'] %}
-                            <option value="{{ c }}" {{ 'selected' if projet and projet['couleur'] == c }}>
-                                {{ c|capitalize }}
-                            </option>
-                            {% endfor %}
-                        </select>
-                    </div>
+                <div class="form-group">
+                    <label>Statut</label>
+                    <select name="statut">
+                        {% for s in ['live', 'en-cours', 'archive'] %}
+                        <option value="{{ s }}" {{ 'selected' if projet and projet['statut'] == s }}>
+                            {{ {'live':'✅ Live', 'en-cours':'🔄 En cours', 'archive':'📦 Archivé'}[s] }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Couleur</label>
+                    <select name="couleur">
+                        {% for c in ['magenta', 'bleu', 'orange', 'rouge', 'vert', 'violet', 'turquoise', 'jaune', 'rose'] %}
+                        <option value="{{ c }}" {{ 'selected' if projet and projet['couleur'] == c }}>
+                            {{ c|capitalize }}
+                        </option>
+                        {% endfor %}
+                    </select>
                 </div>
 
-                <div>
-                    <label class="form-label">URL image</label>
-                    <input type="text" name="image_url" class="form-input"
+                <div class="form-group span-2">
+                    <label>URL image</label>
+                    <input type="text" name="image_url"
                         value="{{ projet['image_url'] if projet else '' }}">
                 </div>
 
-                <div>
-                    <label class="form-label">Lien du projet</label>
-                    <input type="text" name="link" class="form-input"
+                <div class="form-group span-2">
+                    <label>Lien du projet</label>
+                    <input type="text" name="link"
                         value="{{ projet['link'] if projet else '' }}">
                 </div>
 
-                <div>
-                    <label class="form-label">Ordre d'affichage</label>
-                    <input type="number" name="ordre" class="form-input" style="width:8rem;"
+                <div class="form-group">
+                    <label>Ordre d'affichage</label>
+                    <input type="number" name="ordre"
                         value="{{ projet['ordre'] if projet else '99' }}">
                 </div>
 
-                <div style="margin-top:1rem;">
-                    <button type="submit" class="btn btn-primary">
-                        {{ '💾 Sauvegarder' if projet else '➕ Ajouter' }}
-                    </button>
-                </div>
-
+            </div>
+            <div style="margin-top: 1.2rem;">
+                <button type="submit" class="btn btn-primary">
+                    {{ '💾 Sauvegarder' if projet else '➕ Ajouter' }}
+                </button>
             </div>
         </form>
+    </div>
 
-        <!-- COLONNE DROITE - aperçu -->
-        <div>
-            <p style="font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.1rem; color: #888; margin-bottom: 1rem;">Aperçu de la carte</p>
-            <p style="color: #666;">⬅ à venir</p>
-        </div>
+    <!-- COLONNE DROITE - aperçu -->
+    <div class="card">
+        <div class="text-muted-sm" style="text-transform: uppercase; letter-spacing: 0.1rem;">Aperçu de la carte</div>
+        <div class="text-muted mt-sm">⬅ à venir</div>
     </div>
 </div>
 {% endblock %}

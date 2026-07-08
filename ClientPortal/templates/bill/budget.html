@@ -3,627 +3,310 @@
 {% block title %}💰 Budget | Bill{% endblock %}
 
 {% block content %}
-<div class="bill-container">
-    <h1 class="page-title">💰 BUDGET MENSUEL BILL</h1>
+<div class="page-header">
+    <div>
+        <h1 class="page-title">💰 <span>Budget mensuel</span> Bill</h1>
+    </div>
+</div>
 
-    <!-- SÉLECTEUR DE MOIS -->
-    <div style="text-align:center; margin-bottom: 2rem;">
-        <form method="GET" action="/bill/budget" style="display:inline-flex; gap:0.75rem; align-items:center;">
-            <label style="color:#aaa; font-size:0.9rem; text-transform:uppercase; letter-spacing:1px;">Mois :</label>
-            <input type="month" name="mois" value="{{ mois_actif }}"
-                style="background:#2a2a2a; border:1px solid #444; color:#fff;
-                        padding:0.5rem 1rem; border-radius:4px; font-size:1rem; cursor:pointer;">
-            <button type="submit"
-                    style="background:linear-gradient(135deg,#FF0090,#FF6600); color:#fff;
-                        border:none; padding:0.5rem 1.25rem; border-radius:4px;
-                        cursor:pointer; font-weight:bold;">Voir</button>
-        </form>
+<!-- SÉLECTEUR DE MOIS -->
+<form method="GET" action="/bill/budget" class="flex items-center gap-sm mt-md" style="justify-content: center;">
+    <label class="text-muted-sm" style="text-transform: uppercase; letter-spacing: 0.05em;">Mois :</label>
+    <input type="month" name="mois" value="{{ mois_actif }}" style="width: auto;">
+    <button type="submit" class="btn btn-primary">Voir</button>
+</form>
+
+<!-- GESTION DES CATÉGORIES -->
+<div class="card mt-lg" style="border-color: var(--accent);">
+    <div class="section-header">
+        <div class="section-title">⚙️ Gestion des Catégories</div>
     </div>
 
-    <!-- GESTION DES CATÉGORIES -->
-    <div class="categories-management">
-        <h2>⚙️ Gestion des Catégories</h2>
-        
-        <div class="management-form">
-            <h3>Ajouter/Modifier une Catégorie</h3>
-            <form id="categoryForm" class="form-inline">
-                <input type="hidden" id="cat_id">
+    <div class="card" style="background: var(--surface2);">
+        <h3 style="color: var(--accent2); font-size: 1.05rem; margin-bottom: 0.9rem;">Ajouter/Modifier une Catégorie</h3>
+        <form id="categoryForm" class="form-grid">
+            <input type="hidden" id="cat_id">
+            <div class="form-group">
+                <label>Nom</label>
                 <input type="text" id="cat_nom" placeholder="Nom de la catégorie" required>
+            </div>
+            <div class="form-group">
+                <label>Type</label>
                 <select id="cat_type" required>
                     <option value="">Type</option>
                     <option value="fixe">Fixe</option>
                     <option value="variable">Variable</option>
                 </select>
+            </div>
+            <div class="form-group">
+                <label>Budget mensuel</label>
                 <input type="number" id="cat_budget" placeholder="Budget mensuel" step="0.01" required>
-                <input type="color" id="cat_couleur" value="#FF6600" required>
+            </div>
+            <div class="form-group">
+                <label>Couleur</label>
+                <input type="color" id="cat_couleur" value="#FF6600" required style="width: auto; padding: 0.2rem;">
+            </div>
+            <div class="form-group span-2 flex gap-sm" style="flex-direction: row;">
                 <button type="submit" class="btn btn-primary">💾 Sauvegarder</button>
                 <button type="button" id="resetBtn" class="btn btn-secondary" style="display:none;">Annuler</button>
-            </form>
-            <div id="categoryMessage"></div>
-        </div>
-
-        <table class="categories-table">
-            <thead>
-                <tr>
-                    <th>Nom</th>
-                    <th>Type</th>
-                    <th>Budget Mensuel</th>
-                    <th>Couleur</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
-            <tbody id="categoriesTableBody">
-                {% for cat in categories %}
-                <tr data-id="{{ cat['id'] }}">
-                    <td>{{ cat['nom'] }}</td>
-                    <td>{{ cat['type'] }}</td>
-                    <td>${{ "%.2f"|format(cat['budget_mensuel']) }}</td>
-                    <td><div class="color-box" style="background-color: {{ cat['couleur'] }};"></div></td>
-                    <td>
-                        <button class="btn-edit" onclick="openEditModal({{ cat['id'] }}, '{{ cat['nom'] }}', '{{ cat['type'] }}', {{ cat['budget_mensuel'] }}, '{{ cat['couleur'] }}')">✏️</button>
-                        <button class="btn-delete" onclick="openDeleteModal({{ cat['id'] }})">🗑️</button>
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
-
-
-    <!--- REVENU GLOBAL DISPONIBLE --->
-    <div class="revenu-global-box">
-        <div class="revenu-label">Revenu Global Disponible (2026)</div>
-        <div class="revenu-amount">${{ "%.2f"|format(revenu_global) }}</div>
-        <div class="revenu-breakdown">
-            <span>Business Net: ${{ "%.2f"|format(business_net) }}</span>
-            <span>+ Autres Revenus: ${{ "%.2f"|format(autres_revenus) }}</span>
-        </div>
-    </div>
-    
-    <!--- REVENUS DU MÉNAGE --->
-    <div class="revenus-menage-section">
-        <h2>💵 Revenus du ménage — {{ mois_actif }}</h2>
-
-        <form id="revenuForm" style="display:flex; gap:0.75rem; flex-wrap:wrap; margin-bottom:1.5rem;">
-            <input type="text"   id="rev_label"  placeholder="Source (ex: Bill paie)"    required
-                   style="flex:2; min-width:160px; background:#2a2a2a; border:1px solid #444; color:#fff; padding:0.5rem 0.75rem; border-radius:4px;">
-            <input type="number" id="rev_amount" placeholder="Montant"                    required step="0.01"
-                   style="flex:1; min-width:100px; background:#2a2a2a; border:1px solid #444; color:#fff; padding:0.5rem 0.75rem; border-radius:4px;">
-            <input type="date"   id="rev_date"   required
-                   style="flex:1; min-width:130px; background:#2a2a2a; border:1px solid #444; color:#fff; padding:0.5rem 0.75rem; border-radius:4px;">
-            <button type="submit"
-                    style="background:linear-gradient(135deg,#FF0090,#FF6600); color:#fff; border:none; padding:0.5rem 1.25rem; border-radius:4px; cursor:pointer; font-weight:bold;">
-                + Ajouter
-            </button>
-        </form>
-
-        <table class="revenus-table" style="width:100%; border-collapse:collapse;">
-            <thead>
-                <tr style="color:#aaa; font-size:0.85rem; text-transform:uppercase; border-bottom:1px solid #333;">
-                    <th style="padding:0.5rem; text-align:left;">Source</th>
-                    <th style="padding:0.5rem; text-align:right;">Montant</th>
-                    <th style="padding:0.5rem; text-align:left;">Date</th>
-                    <th style="padding:0.5rem;"></th>
-                </tr>
-            </thead>
-            <tbody id="revenusList">
-                {% for r in revenus %}
-                <tr data-id="{{ r['id'] }}" style="border-bottom:1px solid #2a2a2a;">
-                    <td style="padding:0.6rem 0.5rem; color:#eee;">{{ r['label'] }}</td>
-                    <td style="padding:0.6rem 0.5rem; text-align:right; color:#4ade80; font-weight:bold;">${{ "%.2f"|format(r['amount']) }}</td>
-                    <td style="padding:0.6rem 0.5rem; color:#aaa; font-size:0.9rem;">{{ r['date_received'] }}</td>
-                    <td style="padding:0.6rem 0.5rem; text-align:right;">
-                        <button onclick="deleteRevenu({{ r['id'] }})"
-                                style="background:none; border:1px solid #555; color:#aaa; padding:0.2rem 0.6rem; border-radius:4px; cursor:pointer;">✕</button>
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
-
-    <script>
-    document.getElementById('revenuForm').addEventListener('submit', function(e) {
-        e.preventDefault();
-        const fd = new FormData();
-        fd.append('label',         document.getElementById('rev_label').value);
-        fd.append('amount',        document.getElementById('rev_amount').value);
-        fd.append('date_received', document.getElementById('rev_date').value);
-        fetch('/api/household-revenues', { method: 'POST', body: fd })
-            .then(r => r.json())
-            .then(data => { if (data.success) location.reload(); else alert(data.error); });
-    });
-
-    function deleteRevenu(id) {
-        if (!confirm('Supprimer ce revenu ?')) return;
-        fetch('/api/household-revenues/' + id, { method: 'DELETE' })
-            .then(r => r.json())
-            .then(data => { if (data.success) location.reload(); else alert(data.error); });
-    }
-    </script>
-
-
-    <!--- CATÉGORIES BUDGET --->
-    <div class="budget-categories">
-        <h2>Catégories de dépenses</h2>
-        <div class="categories-grid">
-            {% for cat in categories %}
-            <div class="category-card">
-                <div class="category-header" style="border-left-color: {{ cat['couleur'] }}">
-                    <div class="category-name">{{ cat['nom'] }}</div>
-                    <div class="category-type">{{ cat['type'] }}</div>
-                </div>
-                <div class="category-budget">${{ "%.2f"|format(cat['budget_mensuel']) }}</div>
-                <div class="category-spent">${{ "%.2f"|format(cat['spent'] or 0) }}</div>
-                <div class="progress-bar">
-                    <div class="progress-fill" style="width: {{ [cat['spent'] / cat['budget_mensuel'] * 100, 100]|min }}%; background-color: {{ cat['couleur'] }};"></div>
-                </div>
             </div>
-            {% endfor %}
-        </div>
+        </form>
+        <div id="categoryMessage"></div>
     </div>
 
-    <!--- FORMULAIRE AJOUTER DÉPENSE --->
-    <div class="add-expense-form">
-        <h2>Ajouter une Dépense</h2>
-        <form id="expenseForm" class="form-inline">
+    <table class="client-table mt-md">
+        <thead>
+            <tr>
+                <th>Nom</th>
+                <th>Type</th>
+                <th>Budget Mensuel</th>
+                <th>Couleur</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody id="categoriesTableBody">
+            {% for cat in categories %}
+            <tr data-id="{{ cat['id'] }}">
+                <td>{{ cat['nom'] }}</td>
+                <td class="text-muted-sm">{{ cat['type'] }}</td>
+                <td>${{ "%.2f"|format(cat['budget_mensuel']) }}</td>
+                <td><div class="color-box" style="background-color: {{ cat['couleur'] }};"></div></td>
+                <td>
+                    <button type="button" class="btn btn-ghost btn-icon" onclick="openEditModal({{ cat['id'] }}, '{{ cat['nom'] }}', '{{ cat['type'] }}', {{ cat['budget_mensuel'] }}, '{{ cat['couleur'] }}')">✏️</button>
+                    <button type="button" class="btn btn-ghost btn-icon" onclick="openDeleteModal({{ cat['id'] }})">🗑️</button>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<!--- REVENU GLOBAL DISPONIBLE --->
+<div class="card mt-lg" style="text-align: center; background: linear-gradient(135deg, var(--accent2), var(--accent)); color: #0f0f14;">
+    <div style="font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.06em; opacity: 0.85;">Revenu Global Disponible ({{ mois_actif[:4] }})</div>
+    <div style="font-family: 'DM Mono', monospace; font-size: 3rem; font-weight: 700; margin: 0.4rem 0;">${{ "%.2f"|format(revenu_global) }}</div>
+    <div class="flex gap-md" style="justify-content: center; flex-wrap: wrap; font-size: 0.9rem;">
+        <span>Business Net : ${{ "%.2f"|format(business_net) }}</span>
+        <span>+ Autres Revenus : ${{ "%.2f"|format(autres_revenus) }}</span>
+    </div>
+</div>
+
+<!--- REVENUS DU MÉNAGE --->
+<div class="card mt-lg">
+    <div class="section-header">
+        <div class="section-title">💵 Revenus du ménage — {{ mois_actif }}</div>
+    </div>
+
+    <form id="revenuForm" class="flex gap-sm flex-wrap mt-sm" style="align-items: flex-end;">
+        <div class="form-group" style="flex: 2; min-width: 160px;">
+            <label>Source</label>
+            <input type="text" id="rev_label" placeholder="ex: Bill paie" required>
+        </div>
+        <div class="form-group" style="flex: 1; min-width: 100px;">
+            <label>Montant</label>
+            <input type="number" id="rev_amount" required step="0.01">
+        </div>
+        <div class="form-group" style="flex: 1; min-width: 130px;">
+            <label>Date</label>
+            <input type="date" id="rev_date" required>
+        </div>
+        <button type="submit" class="btn btn-primary">+ Ajouter</button>
+    </form>
+
+    <table class="client-table mt-md">
+        <thead>
+            <tr>
+                <th>Source</th>
+                <th style="text-align: right;">Montant</th>
+                <th>Date</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody id="revenusList">
+            {% for r in revenus %}
+            <tr data-id="{{ r['id'] }}">
+                <td>{{ r['label'] }}</td>
+                <td class="text-green" style="text-align: right; font-weight: 600;">${{ "%.2f"|format(r['amount']) }}</td>
+                <td class="text-muted-sm">{{ r['date_received'] }}</td>
+                <td style="text-align: right;">
+                    <button type="button" class="btn btn-ghost btn-icon" onclick="deleteRevenu({{ r['id'] }})">✕</button>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<!--- CATÉGORIES BUDGET --->
+<div class="card mt-lg">
+    <div class="section-header">
+        <div class="section-title">Catégories de dépenses</div>
+    </div>
+    <div class="categories-grid">
+        {% for cat in categories %}
+        <div class="card" style="background: var(--surface2); border-left: 3px solid {{ cat['couleur'] }};">
+            <div class="mt-xs">
+                <div style="font-size: 1.05rem; font-weight: 600;">{{ cat['nom'] }}</div>
+                <div class="text-muted-sm" style="text-transform: uppercase;">{{ cat['type'] }}</div>
+            </div>
+            <div class="metric-value sm" style="color: var(--accent2); margin-top: 0.6rem;">${{ "%.2f"|format(cat['budget_mensuel']) }}</div>
+            <div class="text-muted-sm mt-xs">Dépensé : ${{ "%.2f"|format(cat['spent'] or 0) }}</div>
+            <div class="progress-bar mt-sm">
+                <div class="progress-fill" style="width: {{ [cat['spent'] / cat['budget_mensuel'] * 100, 100]|min }}%; background-color: {{ cat['couleur'] }};"></div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<!--- FORMULAIRE AJOUTER DÉPENSE --->
+<div class="card mt-lg">
+    <div class="section-header">
+        <div class="section-title">Ajouter une Dépense</div>
+    </div>
+    <form id="expenseForm" class="form-grid">
+        <div class="form-group">
+            <label>Catégorie</label>
             <select id="category_id" required>
                 <option value="">Sélectionnez une catégorie</option>
                 {% for cat in categories %}
                 <option value="{{ cat['id'] }}">{{ cat['nom'] }}</option>
                 {% endfor %}
             </select>
-            <input type="number" id="montant" placeholder="Montant ($)" step="0.01" required>
+        </div>
+        <div class="form-group">
+            <label>Montant ($)</label>
+            <input type="number" id="montant" step="0.01" required>
+        </div>
+        <div class="form-group">
+            <label>Date</label>
             <input type="date" id="date" required>
-            <input type="text" id="description" placeholder="Description (optionnel)">
+        </div>
+        <div class="form-group">
+            <label>Description (optionnel)</label>
+            <input type="text" id="description">
+        </div>
+        <div class="form-group span-2">
             <button type="submit" class="btn btn-primary">➕ Ajouter une Dépense</button>
-        </form>
-        <div id="formMessage"></div>
-    </div>
-
-    <!--- HISTORIQUE DES DÉPENSES --->
-    {% if expenses %}
-    <div class="expenses-list">
-        <h2>Dépenses Récentes</h2>
-        <table class="expenses-table">
-            <thead>
-                <tr>
-                    <th>Catégorie</th>
-                    <th>Montant</th>
-                    <th>Date</th>
-                    <th>Description</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for exp in expenses %}
-                <tr>
-                    <td>{{ exp['category_nom'] }}</td>
-                    <td>${{ "%.2f"|format(exp['montant']) }}</td>
-                    <td>{{ exp['date'] }}</td>
-                    <td>{{ exp['description'] or '-' }}</td>
-                    <td>
-                        <button class="btn-delete" onclick="openDeleteExpenseModal({{ exp['id'] }})">🗑️</button>
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
-    {% endif %}
+        </div>
+    </form>
+    <div id="formMessage"></div>
 </div>
 
-<!-- MODAL CONFIRMATION SUPPRESSION -->
-<div id="confirmDeleteModal"
-    style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);
-            z-index:1000;align-items:center;justify-content:center;backdrop-filter:blur(3px);">
-    <div style="background:#1a1a1a;border:1px solid rgba(217,79,189,0.3);
-                border-radius:12px;padding:2rem;width:90%;max-width:400px;
-                box-shadow:0 24px 60px rgba(0,0,0,0.5);">
-        <h3 style="color:#FF0090;margin-bottom:1rem;font-family:'Bebas Neue',sans-serif;">Supprimer la catégorie?</h3>
-        <p style="color:#ccc;margin-bottom:1.5rem;">Cette action ne peut pas être annulée.</p>
-        <div style="display:flex;gap:1rem;justify-content:flex-end;">
-            <button onclick="closeDeleteModal()" style="padding:0.75rem 1.5rem;background:#444;color:#fff;border:none;border-radius:4px;cursor:pointer;">Annuler</button>
-            <button onclick="confirmDelete()" style="padding:0.75rem 1.5rem;background:linear-gradient(135deg,#FF0090,#FF6600);color:#fff;border:none;border-radius:4px;cursor:pointer;font-weight:bold;">Supprimer</button>
+<!--- HISTORIQUE DES DÉPENSES --->
+{% if expenses %}
+<div class="card mt-lg">
+    <div class="section-header">
+        <div class="section-title">Dépenses Récentes</div>
+    </div>
+    <table class="client-table">
+        <thead>
+            <tr>
+                <th>Catégorie</th>
+                <th>Montant</th>
+                <th>Date</th>
+                <th>Description</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for exp in expenses %}
+            <tr>
+                <td>{{ exp['category_nom'] }}</td>
+                <td>${{ "%.2f"|format(exp['montant']) }}</td>
+                <td class="text-muted-sm">{{ exp['date'] }}</td>
+                <td class="text-muted-sm">{{ exp['description'] or '-' }}</td>
+                <td>
+                    <button type="button" class="btn btn-ghost btn-icon" onclick="openDeleteExpenseModal({{ exp['id'] }})">🗑️</button>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endif %}
+
+<!-- MODAL CONFIRMATION SUPPRESSION CATÉGORIE -->
+<div id="confirmDeleteModal" class="bill-modal-backdrop">
+    <div class="bill-modal">
+        <h3>Supprimer la catégorie ?</h3>
+        <p>Cette action ne peut pas être annulée.</p>
+        <div class="flex gap-sm" style="justify-content: flex-end;">
+            <button type="button" class="btn btn-secondary" onclick="closeDeleteModal()">Annuler</button>
+            <button type="button" class="btn btn-primary" onclick="confirmDelete()">Supprimer</button>
         </div>
     </div>
 </div>
 
 <!-- MODAL CONFIRMATION ÉDITION -->
-<div id="confirmEditModal"
-     style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);
-            z-index:1000;align-items:center;justify-content:center;backdrop-filter:blur(3px);">
-    <div style="background:#1a1a1a;border:1px solid rgba(217,79,189,0.3);
-                border-radius:12px;padding:2rem;width:90%;max-width:400px;
-                box-shadow:0 24px 60px rgba(0,0,0,0.5);">
-        <h3 style="color:#FF0090;margin-bottom:1rem;font-family:'Bebas Neue',sans-serif;">Modifier la catégorie?</h3>
-        <p style="color:#ccc;margin-bottom:1.5rem;">Confirmer les modifications.</p>
-        <div style="display:flex;gap:1rem;justify-content:flex-end;">
-            <button onclick="closeEditModal()" style="padding:0.75rem 1.5rem;background:#444;color:#fff;border:none;border-radius:4px;cursor:pointer;">Annuler</button>
-            <button onclick="confirmEdit()" style="padding:0.75rem 1.5rem;background:linear-gradient(135deg,#FF0090,#FF6600);color:#fff;border:none;border-radius:4px;cursor:pointer;font-weight:bold;">Confirmer</button>
+<div id="confirmEditModal" class="bill-modal-backdrop">
+    <div class="bill-modal">
+        <h3>Modifier la catégorie ?</h3>
+        <p>Confirmer les modifications.</p>
+        <div class="flex gap-sm" style="justify-content: flex-end;">
+            <button type="button" class="btn btn-secondary" onclick="closeEditModal()">Annuler</button>
+            <button type="button" class="btn btn-primary" onclick="confirmEdit()">Confirmer</button>
         </div>
     </div>
 </div>
 
-<!-- MODEL SUPPRESSION DÉPENSE -->
-<div id="confirmDeleteExpenseModal"
-    style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);
-            z-index:1000;align-items:center;justify-content:center;backdrop-filter:blur(3px);">
-    <div style="background:#1a1a1a;border:1px solid rgba(217,79,189,0.3);
-                border-radius:12px;padding:2rem;width:90%;max-width:400px;
-                box-shadow:0 24px 60px rgba(0,0,0,0.5);">
-        <h3 style="color:#FF0090;margin-bottom:1rem;font-family:'Bebas Neue',sans-serif;">Supprimer la dépense?</h3>
-        <p style="color:#ccc;margin-bottom:1.5rem;">Cette action ne peut pas être annulée.</p>
-        <div style="display:flex;gap:1rem;justify-content:flex-end;">
-            <button onclick="closeDeleteExpenseModal()" style="padding:0.75rem 1.5rem;background:#444;color:#fff;border:none;border-radius:4px;cursor:pointer;">Annuler</button>
-            <button onclick="confirmDeleteExpense()" style="padding:0.75rem 1.5rem;background:linear-gradient(135deg,#FF0090,#FF6600);color:#fff;border:none;border-radius:4px;cursor:pointer;font-weight:bold;">Supprimer</button>
+<!-- MODAL SUPPRESSION DÉPENSE -->
+<div id="confirmDeleteExpenseModal" class="bill-modal-backdrop">
+    <div class="bill-modal">
+        <h3>Supprimer la dépense ?</h3>
+        <p>Cette action ne peut pas être annulée.</p>
+        <div class="flex gap-sm" style="justify-content: flex-end;">
+            <button type="button" class="btn btn-secondary" onclick="closeDeleteExpenseModal()">Annuler</button>
+            <button type="button" class="btn btn-primary" onclick="confirmDeleteExpense()">Supprimer</button>
         </div>
     </div>
 </div>
+
 <style>
-.bill-container {
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 2rem;
+/* Composants propres à cette page — les 3 modales gardent une logique JS
+   différente de la modale globale (confirmation d'édition en plus de la
+   suppression), donc conservées séparément mais restylées avec les tokens
+   partagés au lieu de couleurs fixes. */
+.bill-modal-backdrop {
+    display: none;
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.65);
+    z-index: 1000;
+    align-items: center; justify-content: center;
+    backdrop-filter: blur(3px);
+    padding: 1rem;
 }
-
-.page-title {
-    font-size: 2.5rem;
-    margin-bottom: 2rem;
-    color: #FF0090;
-    text-align: center;
+.bill-modal {
+    background: var(--surface2);
+    border: 1px solid rgba(217,79,189,0.3);
+    border-radius: var(--radius-lg);
+    padding: 1.8rem;
+    width: 100%; max-width: 400px;
+    box-shadow: 0 24px 60px rgba(0,0,0,0.5);
+}
+.bill-modal h3 {
+    color: var(--accent);
     font-family: 'Bebas Neue', sans-serif;
-    letter-spacing: 2px;
+    letter-spacing: 0.04em;
+    margin-bottom: 0.6rem;
+    font-size: 1.3rem;
 }
-
-/* REVENU GLOBAL */
-.revenu-global-box {
-    background: linear-gradient(135deg, #00CED1, #FF0090);
-    padding: 2rem;
-    border-radius: 12px;
-    margin-bottom: 3rem;
-    text-align: center;
-    color: white;
-}
-
-.revenu-label {
-    font-size: 0.9rem;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    margin-bottom: 0.5rem;
-    opacity: 0.9;
-}
-
-.revenu-amount {
-    font-size: 3.5rem;
-    font-weight: bold;
-    font-family: 'DM Mono', monospace;
-    margin-bottom: 1rem;
-}
-
-.revenu-breakdown {
-    display: flex;
-    justify-content: center;
-    gap: 2rem;
-    flex-wrap: wrap;
-    font-size: 0.95rem;
-}
-
-/* CATÉGORIES BUDGET */
-.budget-categories {
-    background: #1a1a1a;
-    border-radius: 12px;
-    padding: 2rem;
-    margin-bottom: 3rem;
-    border: 1px solid #333;
-}
-
-.budget-categories h2 {
-    color: #FF0090;
-    margin-bottom: 1.5rem;
-    font-family: 'Bebas Neue', sans-serif;
-}
+.bill-modal p { color: var(--muted); margin-bottom: 1.4rem; font-size: 0.9rem; }
 
 .categories-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-    gap: 1.5rem;
-}
-
-.category-card {
-    background: #2a2a2a;
-    border-radius: 8px;
-    padding: 1.5rem;
-    border-left: 4px solid #FF6600;
-}
-
-.category-header {
-    margin-bottom: 1rem;
-}
-
-.category-name {
-    font-size: 1.1rem;
-    color: #fff;
-    font-weight: bold;
-}
-
-.category-type {
-    font-size: 0.8rem;
-    color: #aaa;
-    text-transform: uppercase;
-    margin-top: 0.25rem;
-}
-
-.category-budget {
-    color: #00CED1;
-    font-size: 1.5rem;
-    font-weight: bold;
-    font-family: 'DM Mono', monospace;
-    margin-bottom: 0.5rem;
-}
-
-.category-spent {
-    color: #FF6600;
-    font-size: 0.95rem;
-    margin-bottom: 0.75rem;
-}
-
-.progress-bar {
-    background: #1a1a1a;
-    height: 8px;
-    border-radius: 4px;
-    overflow: hidden;
-}
-
-.progress-fill {
-    height: 100%;
-    transition: width 0.3s ease;
-}
-
-/* FORMULAIRE */
-.add-expense-form {
-    background: #1a1a1a;
-    border-radius: 12px;
-    padding: 2rem;
-    margin-bottom: 3rem;
-    border: 1px solid #333;
-}
-
-.add-expense-form h2 {
-    color: #FF0090;
-    margin-bottom: 1.5rem;
-    font-family: 'Bebas Neue', sans-serif;
-}
-
-.form-inline {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
     gap: 1rem;
-    align-items: flex-end;
 }
 
-.form-inline input,
-.form-inline select,
-.form-inline button {
-    padding: 1.2rem 0.75rem;
-    border: 1px solid #444;
-    border-radius: 4px;
-    background: #2a2a2a;
-    color: #fff;
-    font-size: 1rem;
-    line-height: 1.5;
-}
+.color-box { width: 28px; height: 28px; border-radius: var(--radius); display: inline-block; }
 
-.form-inline input::placeholder {
-    color: #666;
-}
+.progress-bar { background: var(--bg); height: 8px; border-radius: 4px; overflow: hidden; }
+.progress-fill { height: 100%; transition: width 0.3s ease; }
 
-.form-inline input:focus,
-.form-inline select:focus {
-    outline: none;
-    border-color: #FF0090;
-    box-shadow: 0 0 5px rgba(255, 0, 144, 0.3);
-}
-
-.btn {
-    padding: 1.2rem 0.75rem;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    font-weight: bold;
-    transition: all 0.3s ease;
-    font-size: 1rem;
-}
-
-.btn-primary {
-    background: linear-gradient(135deg, #FF0090, #FF6600);
-    color: white;
-}
-
-.btn-primary:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 15px rgba(255, 0, 144, 0.4);
-}
-
-
-
-#formMessage {
-    margin-top: 1rem;
-    padding: 0.75rem;
-    border-radius: 4px;
-    display: none;
-}
-
-#formMessage.success {
-    display: block;
-    background: #0a4a2a;
-    color: #4CAF50;
-    border: 1px solid #4CAF50;
-}
-
-#formMessage.error {
-    display: block;
-    background: #4a0a0a;
-    color: #FF6B6B;
-    border: 1px solid #FF6B6B;
-}
-
-/* TABLE DÉPENSES */
-.expenses-list {
-    background: #1a1a1a;
-    border-radius: 12px;
-    padding: 2rem;
-    border: 1px solid #333;
-}
-
-.expenses-list h2 {
-    color: #FF0090;
-    margin-bottom: 1.5rem;
-    font-family: 'Bebas Neue', sans-serif;
-}
-
-.expenses-table {
-    width: 100%;
-    border-collapse: collapse;
-    background: #2a2a2a;
-    border-radius: 8px;
-    overflow: hidden;
-}
-
-.expenses-table th {
-    background: #1a1a1a;
-    color: #FF0090;
-    padding: 1rem;
-    text-align: left;
-    font-weight: bold;
-    border-bottom: 2px solid #333;
-}
-
-.expenses-table td {
-    padding: 0.75rem 1rem;
-    border-bottom: 1px solid #333;
-    color: #ddd;
-}
-
-.expenses-table tr:hover {
-    background: #333;
-}
-
-@media (max-width: 768px) {
-    .form-inline {
-        grid-template-columns: 1fr;
-    }
-    .categories-grid {
-        grid-template-columns: 1fr;
-    }
-}
-/* GESTION CATÉGORIES */
-.categories-management {
-    background: #1a1a1a;
-    border-radius: 12px;
-    padding: 2rem;
-    margin-bottom: 3rem;
-    border: 1px solid #FF0090;
-}
-
-.categories-management h2 {
-    color: #FF0090;
-    margin-bottom: 1.5rem;
-    font-family: 'Bebas Neue', sans-serif;
-}
-
-.management-form {
-    background: #2a2a2a;
-    padding: 1.5rem;
-    border-radius: 8px;
-    margin-bottom: 2rem;
-}
-
-.management-form h3 {
-    color: #00CED1;
-    margin-bottom: 1rem;
-    font-size: 1.1rem;
-}
-
-.categories-table {
-    width: 100%;
-    border-collapse: collapse;
-    background: #2a2a2a;
-    border-radius: 8px;
-    overflow: hidden;
-}
-
-.categories-table th {
-    background: #1a1a1a;
-    color: #FF0090;
-    padding: 1rem;
-    text-align: left;
-    font-weight: bold;
-    border-bottom: 2px solid #333;
-}
-
-.categories-table td {
-    padding: 0.75rem 1rem;
-    border-bottom: 1px solid #333;
-    color: #ddd;
-}
-
-.categories-table tr:hover {
-    background: #333;
-}
-
-.color-box {
-    width: 30px;
-    height: 30px;
-    border-radius: 4px;
-    display: inline-block;
-}
-
-.btn-edit,
-.btn-delete {
-    background: none;
-    border: none;
-    cursor: pointer;
-    font-size: 1.1rem;
-    padding: 0.25rem 0.5rem;
-    transition: transform 0.2s;
-}
-
-.btn-edit:hover,
-.btn-delete:hover {
-    transform: scale(1.2);
-}
-
-.btn-secondary {
-    background: #666;
-    color: white;
-    padding: 0.75rem 1.5rem;
-}
-
-.btn-secondary:hover {
-    background: #777;
-}
-
-#categoryMessage {
-    margin-top: 1rem;
-    padding: 0.75rem;
-    border-radius: 4px;
-    display: none;
-}
-
-#categoryMessage.success {
-    display: block;
-    background: #0a4a2a;
-    color: #4CAF50;
-    border: 1px solid #4CAF50;
-}
-
-#categoryMessage.error {
-    display: block;
-    background: #4a0a0a;
-    color: #FF6B6B;
-    border: 1px solid #FF6B6B;
-}
+#formMessage, #categoryMessage { margin-top: 1rem; padding: 0.6rem 0.9rem; border-radius: var(--radius); display: none; font-size: 0.85rem; }
+#formMessage.success, #categoryMessage.success { display: block; background: rgba(62,207,142,0.12); color: var(--green); border: 1px solid rgba(62,207,142,0.35); }
+#formMessage.error, #categoryMessage.error     { display: block; background: rgba(234,103,103,0.12); color: var(--red); border: 1px solid rgba(234,103,103,0.35); }
 </style>
 
 <script>
@@ -653,7 +336,7 @@ function closeDeleteModal() {
 
 function confirmDelete() {
     if (!categoryIdToDelete) return;
-    
+
     fetch(`/api/budget-categories/${categoryIdToDelete}`, { method: 'DELETE' })
         .then(r => r.json())
         .then(data => {
@@ -699,7 +382,7 @@ document.getElementById('confirmEditModal').addEventListener('click', function(e
 
 function deleteCategory(id) {
     if (!confirm('Supprimer cette catégorie ?')) return;
-    
+
     fetch(`/api/budget-categories/${id}`, { method: 'DELETE' })
         .then(r => r.json())
         .then(data => {
@@ -719,21 +402,21 @@ function showCategoryMessage(msg, type) {
 
 document.getElementById('categoryForm').addEventListener('submit', async (e) => {
     e.preventDefault();
-    
+
     const id = document.getElementById('cat_id').value;
     const formData = new FormData();
     formData.append('nom', document.getElementById('cat_nom').value);
     formData.append('type', document.getElementById('cat_type').value);
     formData.append('budget_mensuel', document.getElementById('cat_budget').value);
     formData.append('couleur', document.getElementById('cat_couleur').value);
-    
+
     const method = id ? 'PUT' : 'POST';
     const url = id ? `/api/budget-categories/${id}` : '/api/budget-categories';
-    
+
     try {
         const response = await fetch(url, { method, body: formData });
         const data = await response.json();
-        
+
         if (data.success) {
             showCategoryMessage(id ? '✓ Catégorie modifiée !' : '✓ Catégorie ajoutée !', 'success');
             document.getElementById('categoryForm').reset();
@@ -757,23 +440,23 @@ document.getElementById('resetBtn').addEventListener('click', () => {
 // Gestion des dépenses (code existant)
 document.getElementById('expenseForm').addEventListener('submit', async (e) => {
     e.preventDefault();
-    
+
     const formData = new FormData();
     formData.append('category_id', document.getElementById('category_id').value);
     formData.append('montant', document.getElementById('montant').value);
     formData.append('date', document.getElementById('date').value);
     formData.append('description', document.getElementById('description').value);
-    
+
     const messageEl = document.getElementById('formMessage');
-    
+
     try {
         const response = await fetch('/api/budget-expense', {
             method: 'POST',
             body: formData
         });
-        
+
         const data = await response.json();
-        
+
         if (data.success) {
             messageEl.textContent = '✓ Dépense ajoutée !';
             messageEl.className = 'success';

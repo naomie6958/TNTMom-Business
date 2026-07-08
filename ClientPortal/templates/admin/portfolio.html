@@ -2,117 +2,70 @@
 {% block title %}Portfolio | Admin{% endblock %}
 
 {% block content %}
-<div class="admin-container">
-    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:2rem;">
-        <h1 class="page-title">🖼️ Portfolio tntm.ca</h1>
-        <a href="/portfolio/new" class="btn btn-primary">+ Nouveau projet</a>
+<div class="page-header">
+    <div>
+        <h1 class="page-title">🖼️ <span>Portfolio</span> tntm.ca</h1>
     </div>
+    <a href="/portfolio/new" class="btn btn-primary">+ Nouveau projet</a>
+</div>
 
-    <table style="width:100%; border-collapse:collapse;">
+<div class="card" style="padding: 0; overflow: hidden;">
+    <table class="client-table">
         <thead>
-            <tr style="color:#aaa; font-size:0.85rem; text-transform:uppercase; border-bottom:1px solid #333;">
-                <th style="padding:0.75rem; width:2rem;"></th>
-                <th style="padding:0.75rem; text-align:left;">Projet</th>
-                <th style="padding:0.75rem; text-align:left;">Statut</th>
-                <th style="padding:0.75rem; text-align:left;">Couleur</th>
-                <th style="padding:0.75rem; text-align:left;">Ordre</th>
-                <th style="padding:0.75rem; text-align:left;">Visible</th>
-                <th style="padding:0.75rem;"></th>
+            <tr>
+                <th style="width: 2rem;"></th>
+                <th>Projet</th>
+                <th>Statut</th>
+                <th>Couleur</th>
+                <th>Ordre</th>
+                <th>Visible</th>
+                <th></th>
             </tr>
         </thead>
 
         <tbody id="sortable-tbody">
             {% for p in projets %}
-            <tr data-id="{{ p['id'] }}" style="border-bottom:1px solid #2a2a2a;">
-                <td class="drag-handle" style="padding:0.75rem; color:#555; cursor:grab; font-size:1.2rem; user-select:none;">⠿</td>
-                <td style="padding:0.75rem;">
-                    <div style="font-weight:bold; color:#eee;">{{ p['nom'] }}</div>
-                    <div style="font-size:0.85rem; color:#aaa;">{{ p['tagline'] }}</div>
+            <tr data-id="{{ p['id'] }}">
+                <td class="drag-handle" style="color: var(--muted); cursor: grab; font-size: 1.2rem; user-select: none;">⠿</td>
+                <td>
+                    <div style="font-weight: 600;">{{ p['nom'] }}</div>
+                    <div class="text-muted-sm">{{ p['tagline'] }}</div>
                 </td>
-                <td style="padding:0.75rem;">
+                <td>
                     {% if p['statut'] == 'live' %}
-                        <span style="color:#4ade80;">● Live</span>
+                        <span class="text-green">● Live</span>
                     {% elif p['statut'] == 'en-cours' %}
-                        <span style="color:#fb923c;">◐ En cours</span>
+                        <span style="color: var(--gold);">◐ En cours</span>
                     {% else %}
-                        <span style="color:#888;">○ Archivé</span>
+                        <span class="text-muted-sm">○ Archivé</span>
                     {% endif %}
                 </td>
-                <td style="padding:0.75rem;">
+                <td>
                     <span style="display:inline-block; width:14px; height:14px; border-radius:50%;
                         background:{{ {'magenta':'#FF0090', 'bleu':'#00BFFF', 'orange':'#FF8C00', 'rouge':'#DC3232', 'vert':'#4ade80', 'violet':'#9B59B6', 'turquoise':'#00CED1', 'jaune':'#FFD700', 'rose':'#FF69B4'}.get(p['couleur'], '#888') }};
                         margin-right:0.4rem; vertical-align:middle;"></span>
                     {{ p['couleur'] }}
                 </td>
-                <td style="padding:0.75rem; color:#aaa;">{{ p['ordre'] }}</td>
-                <td style="padding:0.75rem;">
+                <td class="text-muted-sm">{{ p['ordre'] }}</td>
+                <td>
                     <form method="POST" action="/portfolio/{{ p['id'] }}/toggle">
-                        <button type="submit"
-                                style="background:none; border:1px solid #444; color:{% if p['actif'] %}#4ade80{% else %}#888{% endif %};
-                                       padding:0.2rem 0.75rem; border-radius:4px; cursor:pointer; font-size:0.85rem;">
+                        <button type="submit" class="btn btn-secondary btn-sm"
+                                style="{% if p['actif'] %}color: var(--green); border-color: rgba(62,207,142,0.3);{% endif %}">
                             {% if p['actif'] %}Actif{% else %}Masqué{% endif %}
                         </button>
                     </form>
                 </td>
-                <td style="padding:0.75rem; text-align:right;">
-                    <a href="/portfolio/{{ p['id'] }}/edit"
-                       style="color:#aaa; text-decoration:none; border:1px solid #444;
-                              padding:0.2rem 0.75rem; border-radius:4px; font-size:0.85rem;">✏️ Modifier</a>
-                    <button onclick="openDeleteModal(this)"
-                            data-id="{{ p['id'] }}" data-nom="{{ p['nom'] | e }}"
-                            style="background:none; border:1px solid #5a2020; color:#f87171;
-                                   padding:0.2rem 0.75rem; border-radius:4px; cursor:pointer;
-                                   font-size:0.85rem; margin-left:0.5rem;">🗑️</button>
+                <td style="text-align: right;">
+                    <a href="/portfolio/{{ p['id'] }}/edit" class="btn btn-secondary btn-sm">✏️ Modifier</a>
+                    <form id="delete-portfolio-{{ p['id'] }}" method="POST" action="/portfolio/{{ p['id'] }}/delete" style="display:inline;"></form>
+                    <button type="button" class="btn btn-danger btn-sm" style="margin-left: 0.4rem;"
+                            onclick="openDeleteModal('delete-portfolio-{{ p['id'] }}', 'Supprimer « {{ p['nom'] }} » ?')">🗑️</button>
                 </td>
             </tr>
             {% endfor %}
         </tbody>
     </table>
 </div>
-
-<!-- Modal suppression portfolio -->
-<div id="modal-delete-portfolio"
-     style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.65);
-            z-index:1000; align-items:center; justify-content:center; padding:1rem;">
-    <div style="background:var(--surface2); border:1px solid rgba(248,113,113,0.4);
-                border-radius:14px; padding:2rem 2rem 1.5rem; max-width:380px; width:100%;
-                text-align:center; box-shadow:0 8px 32px rgba(0,0,0,0.45);">
-        <div style="font-family:'Bebas Neue',sans-serif; font-size:1.5rem;
-                    letter-spacing:0.06em; color:#f87171; margin-bottom:0.6rem;">
-            Supprimer ce projet ?
-        </div>
-        <p style="font-size:0.85rem; color:var(--muted); margin-bottom:1.6rem; line-height:1.5;">
-            Tu es sur le point de supprimer<br>
-            <strong id="delete-nom-projet" style="color:var(--text);"></strong>.<br>
-            Cette action est irréversible.
-        </p>
-        <div style="display:flex; gap:0.8rem;">
-            <button onclick="closeDeleteModal()" class="btn" style="flex:1; font-size:0.85rem;">
-                Annuler
-            </button>
-            <form id="delete-form-portfolio" method="POST" style="flex:1;">
-                <button type="submit" class="btn"
-                        style="width:100%; font-size:0.85rem; background:#7f1d1d;
-                               color:#fca5a5; border:1px solid #f87171;">
-                    🗑️ Supprimer
-                </button>
-            </form>
-        </div>
-    </div>
-</div>
-
-<script>
-function openDeleteModal(btn) {
-    const id  = btn.dataset.id;
-    const nom = btn.dataset.nom;
-    document.getElementById('delete-nom-projet').textContent = nom;
-    document.getElementById('delete-form-portfolio').action = '/portfolio/' + id + '/delete';
-    document.getElementById('modal-delete-portfolio').style.display = 'flex';
-}
-function closeDeleteModal() {
-    document.getElementById('modal-delete-portfolio').style.display = 'none';
-}
-</script>
 
 <!-- SortableJS via CDN -->
 <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js"></script>
