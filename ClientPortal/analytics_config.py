@@ -9,16 +9,16 @@ ANALYTICS_SITES = {
     'underground-motorsport': {
         'nom': 'Underground Motorsport',
         'domain': 'undergroundmotorsport.ca',
-        'site_tag': None,  # à remplir une fois le script Cloudflare généré
+        'site_tag': '61dcf932fa5e4be59825d5ab50457d07',
     },
     'chopper-burger': {
         'nom': 'Chopper Burger',
         'domain': 'chopperburger.tntm.ca',
-        'site_tag': None,
+        'site_tag': 'f580d45db19743f5b8547d767a8e52c6',
     },
     'tntm': {
         'nom': 'TNTM',
         'domain': 'tntm.ca',
-        'site_tag': None,
+        'site_tag': '1cb13c5e7f7e4a62bb999e006a42d2dd',
     },
 }

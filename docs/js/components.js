@@ -1,3 +1,13 @@
+// Cloudflare Web Analytics — injecté ici plutôt que dupliqué sur chaque page,
+// puisque components.js est déjà chargé partout. Une seule source à maintenir.
+(function () {
+    const beacon = document.createElement('script');
+    beacon.defer = true;
+    beacon.src = 'https://static.cloudflareinsights.com/beacon.min.js';
+    beacon.setAttribute('data-cf-beacon', '{"token": "1cb13c5e7f7e4a62bb999e006a42d2dd"}');
+    document.body.appendChild(beacon);
+})();
+
 class TntmHeader extends HTMLElement {
     connectedCallback() {
         this.innerHTML = `
