@@ -348,105 +348,6 @@ def api_dashboard_active_projects():
 def command_center():
     return redirect('/dashboard')
 
-@app.route('/command-center-legacy')
-@login_required
-def command_center_legacy():
-    conn = get_db()
-    clients_all = conn.execute(
-        "SELECT * FROM clients WHERE statut IN ('actif', 'prospect', 'complété') AND demo = 0 AND deleted = 0 ORDER BY statut, nom ASC"
-    ).fetchall()
-
-    rows = []
-    for c in clients_all:
-        contrats = conn.execute(
-            'SELECT * FROM contrats WHERE client_id = ? ORDER BY created_at DESC',
-            (c['id'],)
-        ).fetchall()
-
-        for contrat in contrats:
-            ms = safe_json_loads(contrat['milestones'], default=[])
-            ms = _compute_deadlines(ms)
-
-            # Milestone en cours + prochaine action
-            action = None
-            for i, m in enumerate(ms):
-                s = m.get('statut', 'en attente')
-                if s == 'livré':
-                    action = {'type': 'attente_appro', 'label': f'Client doit approuver : {m["titre"]}', 'urgent': True}
-                    break
-                if s == 'approuvé':
-                    action = {'type': 'a_payer', 'label': f'À marquer payé : {m["titre"]}', 'urgent': True}
-                    break
-                if s == 'en cours':
-                    action = {'type': 'en_cours', 'label': f'En cours : {m["titre"]}', 'urgent': False}
-                    break
-            if not action:
-                for m in ms:
-                    if m.get('statut') == 'en attente':
-                        action = {'type': 'a_demarrer', 'label': f'À démarrer : {m["titre"]}', 'urgent': False}
-                        break
-            if not action and ms:
-                action = {'type': 'termine', 'label': 'Tous les milestones complétés', 'urgent': False}
-
-            faits = sum(1 for m in ms if m.get('statut') in ('payé', 'approuvé', 'livré'))
-            factures_att = conn.execute(
-                "SELECT COUNT(*) as n FROM factures WHERE contrat_id = ? AND statut != 'payée'",
-                (contrat['id'],)
-            ).fetchone()['n']
-
-            rows.append({
-                'client':         dict(c),
-                'contrat':        dict(contrat),
-                'ms_total':       len(ms),
-                'ms_faits':       faits,
-                'action':         action,
-                'factures_att':   factures_att,
-            })
-
-    week_start  = (datetime.date.today() - datetime.timedelta(days=datetime.date.today().weekday())).isoformat()
-    month_start = datetime.date.today().replace(day=1).isoformat()
-
-    heures_semaine = conn.execute('''
-        SELECT COALESCE(SUM(duree_minutes), 0) as total_min,
-               COALESCE(SUM(CASE WHEN type_facturation='horaire' AND taux_applique IS NOT NULL
-                    THEN (duree_minutes / 60.0) * taux_applique ELSE 0 END), 0) as montant
-        FROM entrees_temps
-        WHERE date >= ? AND (heure_fin IS NOT NULL OR mode = 'manuel')
-    ''', (week_start,)).fetchone()
-
-    heures_mois = conn.execute('''
-        SELECT COALESCE(SUM(duree_minutes), 0) as total_min,
-               COALESCE(SUM(CASE WHEN type_facturation='horaire' AND taux_applique IS NOT NULL
-                    THEN (duree_minutes / 60.0) * taux_applique ELSE 0 END), 0) as montant
-        FROM entrees_temps
-        WHERE date >= ? AND (heure_fin IS NOT NULL OR mode = 'manuel')
-    ''', (month_start,)).fetchone()
-
-    ratio_data = conn.execute('''
-        SELECT
-            COALESCE(SUM(CASE WHEN e.client_id IS NOT NULL AND COALESCE(c.rnd, 0) = 0 THEN e.duree_minutes ELSE 0 END), 0) as min_client,
-            COALESCE(SUM(CASE WHEN e.client_id IS NULL OR COALESCE(c.rnd, 0) = 1 THEN e.duree_minutes ELSE 0 END), 0) as min_interne,
-            COALESCE(SUM(e.duree_minutes), 0) as min_total
-        FROM entrees_temps e
-        LEFT JOIN clients c ON c.id = e.client_id
-        WHERE e.date >= ? AND (e.heure_fin IS NOT NULL OR e.mode = 'manuel')
-    ''', (month_start,)).fetchone()
-
-    banques_actives = conn.execute('''
-        SELECT b.*, c.nom as client_nom,
-               (b.minutes_total - b.minutes_utilisees) as minutes_restantes
-        FROM banque_heures b
-        JOIN clients c ON c.id = b.client_id
-        WHERE b.statut = 'actif'
-        ORDER BY minutes_restantes ASC
-    ''').fetchall()
-
-    conn.close()
-    return render_template('command_center.html', rows=rows,
-                           heures_semaine=heures_semaine, heures_mois=heures_mois,
-                           ratio_data=ratio_data, banques_actives=banques_actives)
-
-
 @app.route('/plan')
 @login_required
 def plan():
@@ -463,11 +364,6 @@ def plan():
     return render_template('plan.html', stats=plan_stats)
 
 
-
-@app.route('/roadmap')
-@login_required
-def roadmap():
-    return redirect('/plan')
 
 
 # ─── FACTURES ADMIN ──────────────────────────────────────────────────────────
