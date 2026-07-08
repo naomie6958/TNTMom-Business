@@ -5,8 +5,41 @@ from database import get_db
 from utils import login_required
 from analytics_config import ANALYTICS_SITES
 from cloudflare_analytics import get_site_stats
+from client_form_config import CLIENT_SITES
 
 admin_tools_bp = Blueprint('admin_tools', __name__)
+
+# ── SOUMISSIONS (formulaires des sites clients statiques, via /api/public/form-submit) ──
+
+@admin_tools_bp.route('/soumissions')
+@login_required
+def soumissions_list():
+    conn = get_db()
+    rows = conn.execute('SELECT * FROM client_form_submissions ORDER BY created_at DESC').fetchall()
+    conn.execute('UPDATE client_form_submissions SET lu = 1 WHERE lu = 0')
+    conn.commit()
+    conn.close()
+
+    soumissions = []
+    for row in rows:
+        soumissions.append({
+            'id': row['id'],
+            'client_nom': CLIENT_SITES.get(row['client_site'], {}).get('nom', row['client_site']),
+            'champs': json.loads(row['data']),
+            'lu': row['lu'],
+            'created_at': row['created_at'],
+        })
+
+    return render_template('soumissions.html', soumissions=soumissions)
+
+@admin_tools_bp.route('/soumissions/<int:sid>/delete', methods=['POST'])
+@login_required
+def soumission_delete(sid):
+    conn = get_db()
+    conn.execute('DELETE FROM client_form_submissions WHERE id = ?', (sid,))
+    conn.commit()
+    conn.close()
+    return redirect('/soumissions')
 
 # ── LEADS (formulaire de contact public tntm.ca) ──────────────────────────────
 

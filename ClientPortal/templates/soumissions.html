@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+
+{% block title %}Soumissions{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1 class="page-title">📄 <span class="client-nom" style="font-size:inherit; display:inline-block;">Soumissions</span></h1>
+        <div class="page-sub">Formulaires reçus depuis les sites clients (Underground Motorsport, etc.)</div>
+    </div>
+</div>
+
+{% if soumissions %}
+<div class="card" style="padding: 0; overflow: hidden;">
+    {% for s in soumissions %}
+    <div style="padding: 1rem 1.25rem; border-bottom: 1px solid var(--border);
+                {% if not s.lu %}background: rgba(217,79,189,0.04);{% endif %}">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem; flex-wrap: wrap;">
+            <div>
+                <div style="font-weight: 600; font-size: 0.9rem;">
+                    {{ s.client_nom }}
+                    {% if not s.lu %}<span class="nav-badge" style="margin-left: 0.4rem;">Nouveau</span>{% endif %}
+                </div>
+                <div style="font-size: 0.75rem; color: var(--muted); margin-top: 0.1rem;">{{ s.created_at[:16] }}</div>
+            </div>
+            <form id="del-sub-{{ s.id }}" method="POST" action="/soumissions/{{ s.id }}/delete" style="display:none;"></form>
+            <button type="button" class="btn btn-danger" style="font-size: 0.72rem; padding: 0.2rem 0.6rem;"
+                    onclick="openDeleteModal('del-sub-{{ s.id }}', 'Supprimer cette soumission de {{ s.client_nom }} ?')">✕</button>
+        </div>
+
+        <div style="margin-top: 0.75rem; display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 0.6rem;">
+            {% for cle, valeur in s.champs.items() %}
+            <div>
+                <div style="font-size: 0.7rem; color: var(--muted); text-transform: capitalize;">{{ cle.replace('_', ' ') }}</div>
+                <div style="font-size: 0.85rem; color: rgba(240,238,255,0.85); white-space: pre-wrap;">{{ valeur }}</div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<div class="card">
+    <div class="empty-state">Aucune soumission pour le moment. Les formulaires des sites clients apparaîtront ici.</div>
+</div>
+{% endif %}
+{% endblock %}

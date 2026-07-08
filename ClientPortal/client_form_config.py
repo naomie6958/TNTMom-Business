@@ -5,8 +5,6 @@
 CLIENT_SITES = {
     'underground-motorsport': {
         'nom': 'Underground Motorsport',
-        # Temporaire : naomiemcmahont@gmail.com en attendant que Luc confirme
-        # lucbill1991@icloud.com sur le système (voir _notes-client.md du dossier client)
-        'email': 'naomiemcmahont@gmail.com',
+        'email': 'admin@undergroundmotorsport.ca',
     },
 }
