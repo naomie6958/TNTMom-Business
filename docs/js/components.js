@@ -27,8 +27,12 @@ class TntmHeader extends HTMLElement {
                         </div>
                     </a>
                 </div>
-                <nav>
+                <div class="nav-primary">
                     <a href="/index.html">Accueil</a>
+                    <a href="/about.html">À propos</a>
+                    <a href="/contact.html">Contact</a>
+                </div>
+                <nav>
                     <div class="nav-group">
                         <a href="/index.html#galerie" class="nav-group-link">Mes projets</a>
                         <button class="nav-chevron-btn" aria-expanded="false">▾</button>
@@ -40,8 +44,6 @@ class TntmHeader extends HTMLElement {
                     </div>
                     <a href="/process.html">Comment je travaille</a>
                     <a href="/tarifs.html">Tarifs</a>
-                    <a href="/about.html">À propos</a>
-                    <a href="/contact.html">Contact</a>
                     <a href="https://portail.tntm.ca/portail/login" target="_blank" class="nav-portail">Portail client →</a>
                 </nav>
                 <button id="menu-toggle" aria-label="Ouvrir le menu">☰</button>
@@ -78,10 +80,19 @@ class TntmHeader extends HTMLElement {
 
         // Surligner la page active dynamiquement
         const currentPage = window.location.pathname.split('/').pop() || 'index.html';
-        this.querySelectorAll('nav a').forEach(link => {
+        this.querySelectorAll('.nav-primary a, nav a').forEach(link => {
             const href = link.getAttribute('href').split('/').pop();
-            if (href === currentPage && !link.classList.contains('nav-portail')) link.classList.add('active');
+            if (href === currentPage && !link.classList.contains('nav-portail') && !link.classList.contains('nav-cta')) link.classList.add('active');
         });
+
+        // Hauteur réelle du header (var CSS), pour les sections qui doivent
+        // remplir l'écran restant (ex: calc(100vh - var(--header-h))) sans
+        // dépendre d'un chiffre en dur qui se périme dès que le header change.
+        const setHeaderHeight = () => {
+            document.documentElement.style.setProperty('--header-h', `${this.offsetHeight}px`);
+        };
+        setHeaderHeight();
+        window.addEventListener('resize', setHeaderHeight);
     }
 }
 customElements.define('tntm-header', TntmHeader);

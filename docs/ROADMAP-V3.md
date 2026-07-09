@@ -6,15 +6,15 @@
 
 ## 🔴 1. Contenu périmé (à corriger en priorité)
 
-- [ ] **`data/projets.json` — 3 erreurs**
+- [x] **`data/projets.json` — 3 erreurs** *(déjà résolu, confirmé lors de l'audit du 2026-07-08)*
   - Chopper Burger : tag `"Render"` → `"Railway"` ; description dit "domaine custom à venir" → retirer (jamais acheté)
   - ClientPortal : tag `"PythonAnywhere"` → `"Railway"`
   - Family Dashboard : `"statut": "en-cours"` → `"live"` (déployé familydashboard.tntm.ca depuis 2026-06-23)
 
-- [ ] **`clientportal.html` — stack périmée**
+- [x] **`clientportal.html` — stack périmée** *(déjà résolu, confirmé 2026-07-08)*
   - Stack affiche `"PythonAnywhere"` → corriger pour `"Railway"`
 
-- [ ] **`familydashboard.html` — statut périmé**
+- [x] **`familydashboard.html` — statut périmé** *(déjà résolu, confirmé 2026-07-08)*
   - Badge `"◐ En cours — développement actif"` → `"● Live — Usage privé"` (pas de lien public — app familiale avec données enfants)
 
 - [x] **`about.html` — skills périmées**
@@ -34,7 +34,7 @@
 - [x] **Family Dashboard — lien live dans la nav**
   - `components.js` nav dropdown : lien pointe maintenant vers `https://familydashboard.tntm.ca`
 
-- [ ] **Liens sociaux dans le footer**
+- [x] **Liens sociaux dans le footer** *(déjà résolu, confirmé 2026-07-08 — Facebook + GitHub + LinkedIn présents dans components.js)*
   - GitHub (`github.com/naomie6958`) et/ou LinkedIn
   - Actuellement footer = seulement Buy me a coffee + copyright
 
@@ -46,30 +46,30 @@
   - ClientPortal : 3 nouvelles captures dans `images/Screenshots/2026-06-27/`
   - Family Dashboard : 2 nouvelles captures dans `images/Screenshots/2026-06-27/`
 
-- [ ] **`nao-scheduler.html` et `sobriety-tracker.html`**
+- [x] **`nao-scheduler.html` et `sobriety-tracker.html`** *(résolu par suppression, confirmé 2026-07-08 — les fichiers n'existent plus dans docs/)*
   - Ces pages sont accessibles publiquement (pas dans la nav mais indexables)
   - Décision à prendre : ajouter `noindex` en meta, protéger par login, ou supprimer du repo
 
 - [x] **Formulaire contact — étendu (2026-07-07)**
   - Ajout téléphone (optionnel), préférence de recontact (radio), type de projet (select), budget approximatif (optionnel)
   - JS de soumission mis à jour pour envoyer tous les nouveaux champs
-  - [ ] **Reste à faire :** styliser les boutons radio (apparence par défaut du navigateur actuellement, pas le style TNTM — cacher l'input natif + dessiner un cercle custom via `::before`/`::after` sur le label)
+  - [x] **Reste à faire :** styliser les boutons radio *(déjà fait, confirmé 2026-07-08 — retravaillé encore cette session : cases 14px, plus de padding hérité qui les faisait déborder, empilées verticalement)*
 
-- [ ] **Formulaire contact — courriel de fallback**
+- [x] **Formulaire contact — courriel de fallback** *(vérifié 2026-07-08 — `naomiemt@tntm.ca` est la vraie adresse, testée fonctionnelle via ImprovMX, voir ROADMAP-MASTER.md)*
   - En cas d'erreur API, message dit `naomiemt@tntm.ca` — vérifier que c'est le bon courriel public
 
-- [ ] **Page d'accueil — badge "Disponible"**
+- [ ] **Page d'accueil — badge "Disponible"** *(décision 2026-07-09 : géré depuis ClientPortal, pas depuis tntm.ca directement — voir backlog ClientPortal dans ROADMAP-MASTER.md)*
   - `<span class="disponible-badge">● Disponible pour de nouveaux projets</span>` est hardcodé
-  - Quand tu seras à pleine capacité, penser à le rendre dynamique ou facile à changer
+  - Plan : petit champ statut côté admin ClientPortal + route publique (ex: `/api/public/statut`), tntm.ca va chercher la valeur au chargement — même pattern que la galerie de projets (`/api/public/projets`)
 
 ---
 
 ## 🔵 4. Technique
 
-- [ ] **URL portail dans `clientportal.html`**
+- [x] **URL portail dans `clientportal.html`** *(vérifié 2026-07-08 — `/portail/login` utilisé de façon cohérente à 3 endroits, semble volontaire)*
   - Lien CTA : `https://portail.tntm.ca/portail/login` → vérifier si l'URL est correcte (devrait peut-être être `/login` directement)
 
-- [ ] **`components.js` — chemin absolu `/js/components.js`**
+- [x] **`components.js` — chemin absolu `/js/components.js`** *(pas de changement nécessaire — utiliser Live Server en local)*
   - Fonctionne parfaitement sur GitHub Pages mais casse si tu testes en local (file://)
   - Solution : utiliser Live Server en local, pas de changement de code nécessaire
 

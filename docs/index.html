@@ -1,5 +1,5 @@
 ﻿<!DOCTYPE html>
-<html lang="fr">
+<html lang="fr" class="snap-scroll">
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -46,13 +46,18 @@
                     <span class="disponible-badge">● Disponible pour de nouveaux projets</span>
                     <p id="hero-tagline">Gestionnaire du <span class="hero-line1">chaos,</span><br>par le <strong>chaos</strong></p>
                 </div>
-                <a href="#galerie" id="hero-cta">Voir mes projets ↓</a>
+                <div class="hero-ctas">
+                    <a href="/contact.html" id="hero-consult-cta">Obtenir une consultation gratuite</a>
+                    <a href="#galerie" id="hero-cta">Voir mes projets ↓</a>
+                </div>
             </section>
-            <div id="projets-header">
-                <h2>Mes projets</h2>
-                <span id="projets-sub">Web · App · Outil</span>
-            </div>
-            <section id="galerie"></section>
+            <section class="projets-section">
+                <div id="projets-header">
+                    <h2>Mes projets</h2>
+                    <span id="projets-sub">Web · App · Outil</span>
+                </div>
+                <div id="galerie"></div>
+            </section>
         </main>
         <tntm-footer></tntm-footer>
     <script src="js/script.js"></script>

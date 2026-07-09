@@ -4,6 +4,16 @@
     padding: 0;
 }
 
+:root {
+    --radius-tight: 3px;
+    --radius-panel: 6px;
+}
+
+html.snap-scroll {
+    scroll-snap-type: y proximity;
+    scroll-padding-top: var(--header-h, 57px);
+}
+
 tntm-header, tntm-footer {
     display: block;
 }
@@ -296,12 +306,24 @@ header h1 {
 
 /* ── NAV (hamburger universel) ───────────────────────────────── */
 #menu-toggle {
-    display: block;
-    background: transparent;
-    border: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(26, 26, 46, 0.6);
+    border: 1px solid rgba(135, 206, 235, 0.25);
+    border-radius: var(--radius-tight);
     color: wheat;
-    font-size: 1.5rem;
+    font-size: 1.3rem;
+    line-height: 1;
+    padding: 0.4rem 0.65rem;
     cursor: pointer;
+    transition: all 0.2s;
+}
+
+#menu-toggle:hover {
+    border-color: #87CEEB;
+    color: #87CEEB;
+    box-shadow: 0 0 10px rgba(135, 206, 235, 0.35);
 }
 
 header { flex-wrap: wrap; }
@@ -332,7 +354,7 @@ nav a {
     padding: 0.75rem 1.5rem;
     background: rgba(26, 26, 46, 0.6);
     border: 1px solid rgba(135, 206, 235, 0.25);
-    border-radius: 20px;
+    border-radius: var(--radius-tight);
     color: rgba(245, 222, 179, 0.8);
     text-decoration: none;
     font-size: 0.78rem;
@@ -347,6 +369,35 @@ nav a.active {
     border-color: #87CEEB;
     color: #87CEEB;
 }
+
+/* ── NAV PRIMAIRE (toujours visible : Accueil / À propos / CTA) ──────── */
+.nav-primary {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-basis: 100%;
+    justify-content: flex-end;
+    order: 2;
+    margin-top: 0.5rem;
+}
+
+#menu-toggle { order: 1; }
+
+.nav-primary a {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 0.68rem;
+    letter-spacing: 0.05em;
+    text-decoration: none;
+    color: rgba(245, 222, 179, 0.8);
+    padding: 0.4rem 0.5rem;
+    transition: color 0.2s;
+}
+
+.nav-primary a:hover,
+.nav-primary a.active {
+    color: #87CEEB;
+}
+
 
 nav a.nav-portail {
     background: rgba(217, 79, 189, 0.08);
@@ -369,7 +420,7 @@ nav a.nav-portail:hover {
     flex-shrink: 0;
     background: rgba(26, 26, 46, 0.6);
     border: 1px solid rgba(135, 206, 235, 0.25);
-    border-radius: 20px;
+    border-radius: var(--radius-tight);
     color: rgba(245, 222, 179, 0.8);
     font-size: 0.85rem;
     padding: 0 0.9rem;
@@ -388,7 +439,7 @@ nav a.nav-portail:hover {
     padding: 0.55rem 1.5rem 0.55rem 2.2rem !important;
     font-size: 0.68rem !important;
     opacity: 0.8;
-    border-radius: 15px !important;
+    border-radius: var(--radius-tight) !important;
 }
 
 body {
@@ -433,18 +484,32 @@ main {
     align-items: center;
     justify-content: center;
     text-align: center;
-    min-height: calc(100vh - 57px);
-    padding: 3vh 2rem 6rem;
+    min-height: calc(100vh - var(--header-h, 57px));
+    padding: 8vh 1vh;
+    gap: 12vh;
     margin-bottom: 0;
     border-bottom: none;
     animation: fadeIn 0.8s ease-in;
+}
+
+.snap-scroll #hero,
+.snap-scroll .projets-section {
+    scroll-snap-align: start;
+    scroll-snap-stop: always;
+}
+
+.projets-section {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    min-height: calc(100vh - var(--header-h, 57px));
 }
 
 .hero-top {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 1.2rem;
+    gap: 1vh;
 }
 
 #hero-tagline {
@@ -476,11 +541,16 @@ main {
     animation: gold-shimmer 5s linear infinite;
 }
 
+.hero-ctas {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 7vh;
+    padding: 0 1rem;
+}
+
 #hero-cta {
-    position: absolute;
-    bottom: 2.2rem;
-    left: 50%;
-    transform: translateX(-50%);
     font-family: 'Orbitron', sans-serif;
     font-size: 0.72rem;
     letter-spacing: 0.15em;
@@ -498,6 +568,27 @@ main {
     border-color: #d94fbd;
     color: #d94fbd;
     box-shadow: 0 0 16px rgba(217, 79, 189, 0.4);
+}
+
+#hero-consult-cta {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: #0f0f14;
+    text-decoration: none;
+    padding: 0.65rem 1.8rem;
+    background: linear-gradient(90deg, #d94fbd, #f07cd8);
+    border: 1px solid rgba(217, 79, 189, 0.6);
+    border-radius: var(--radius-panel);
+    transition: all 0.2s;
+    white-space: nowrap;
+}
+
+#hero-consult-cta:hover {
+    box-shadow: 0 0 20px rgba(217, 79, 189, 0.55);
+    transform: translateY(-2px);
 }
 
 p {
@@ -548,12 +639,16 @@ p {
 .projet-card {
     font-family: 'Orbitron', sans-serif;
     transition: all 0.3s;
-    padding: 1rem;
-    text-align: center;
-    border-radius: 8px;
+    text-align: left;
+    border-radius: var(--radius-panel);
     background-color: #1a1a2e;
     border: 1px solid rgba(217, 79,189, 0.3);
     box-shadow: 0 0 12px rgba(217, 79, 189, 0.3);
+    padding: 0;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    position: relative;
 }
 
 .projet-card:hover {
@@ -569,21 +664,47 @@ p {
 }
 
 #contact-section {
-    max-width: 600px;
-    margin: 1.25rem auto;
+    max-width: 1100px;
+    width: 100%;
+    margin: 1.1rem auto;
 }
 
 form {
     display: flex;
     flex-direction: column;
+    gap: 0.75rem;
+}
+
+.form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    grid-template-areas:
+        "nom    type     recontact"
+        "tel    budget   recontact"
+        "email  .        recontact";
     gap: 1rem;
 }
 
-.form-row {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 1rem;
+.field-nom       { grid-area: nom; }
+.field-tel       { grid-area: tel; }
+.field-email     { grid-area: email; }
+.field-recontact { grid-area: recontact; }
+.field-type      { grid-area: type; }
+.field-budget    { grid-area: budget; }
+
+@media (max-width: 760px) {
+    .form-grid {
+        grid-template-columns: 1fr;
+        grid-template-areas:
+            "nom"
+            "tel"
+            "email"
+            "type"
+            "budget"
+            "recontact";
+    }
 }
+
 
 .form-group {
     display: flex;
@@ -603,7 +724,7 @@ form {
 .form-group textarea {
     background: #1a1a2e;
     border: 1px solid rgba(135, 206, 235, 0.3);
-    border-radius: 8px;
+    border-radius: var(--radius-panel);
     color: wheat;
     font-family: 'Open Sans', sans-serif;
     font-size: 1rem;
@@ -627,7 +748,7 @@ form {
 .form-group select {
     background: #1a1a2e;
     border: 1px solid rgba(135, 206, 235, 0.3);
-    border-radius: 8px;
+    border-radius: var(--radius-panel);
     color: wheat;
     font-family: 'Open Sans', sans-serif;
     font-size: 1rem;
@@ -644,7 +765,7 @@ form {
 /* fieldset hérite du reset navigateur par défaut (bordure grise, padding) — on le neutralise */
 fieldset.form-group {
     border: 1px solid rgba(135, 206, 235, 0.3);
-    border-radius: 8px;
+    border-radius: var(--radius-panel);
     padding: 0.6rem 1.25rem 0.85rem;
 }
 
@@ -659,8 +780,8 @@ fieldset.form-group legend {
 
 .radio-group {
     display: flex;
-    flex-wrap: wrap;
-    gap: 1.25rem;
+    flex-direction: column;
+    gap: 0.75rem;
 }
 
 .radio-option {
@@ -674,22 +795,26 @@ fieldset.form-group legend {
 
 .radio-option input[type="radio"] {
     appearance: none;
-    width: 18px;
-    height: 18px;
+    box-sizing: border-box;
+    width: 14px;
+    height: 14px;
+    padding: 0;
+    margin: 0;
     border: 1px solid rgba(135, 206, 235, 0.5);
-    border-radius: 4px;
+    border-radius: 3px;
     background: #1a1a2e;
     cursor: pointer;
     display: grid;
     place-content: center;
     transition: all 0.2s;
+    flex-shrink: 0;
 }
 
 .radio-option input[type="radio"]::before {
     content: '';
-    width: 9px;
-    height: 9px;
-    border-radius: 2px;
+    width: 6px;
+    height: 6px;
+    border-radius: 1px;
     background: #87CEEB;
     transform: scale(0);
     transition: transform 0.15s ease-out;
@@ -704,17 +829,29 @@ fieldset.form-group legend {
     transform: scale(1);
 }
 
+/* ── Boutons contour partagés (.hero-cta / .projet-cta / .btn-submit) ──
+   Même langage visuel (contour + glow au survol) répété 3 fois avec des
+   nuances de taille/couleur selon le contexte — la base commune vit ici,
+   chaque variante garde juste ce qui lui est propre. */
+.hero-cta,
+.projet-cta,
 .btn-submit {
+    display: inline-block;
     font-family: 'Orbitron', sans-serif;
+    text-transform: uppercase;
+    color: wheat;
+    text-decoration: none;
+    background: transparent;
+    border-radius: var(--radius-panel);
+    transition: all 0.2s;
+    cursor: pointer;
+}
+
+.btn-submit {
     font-size: 0.85rem;
     letter-spacing: 0.1em;
     padding: 0.75rem 2rem;
-    background: transparent;
     border: 1px solid rgba(135, 206, 235, 0.7);
-    border-radius: 8px;
-    color: wheat;
-    cursor: pointer;
-    transition: all 0.2s;
     align-self: flex-start;
 }
 
@@ -746,6 +883,23 @@ fieldset.form-group legend {
 }
 
 @keyframes spinner-spin { to { transform: rotate(360deg); } }
+
+/* Bouton Envoyer de contact.html — même traitement que le CTA du hero
+   (magenta plein), scopé par ID pour ne pas changer .btn-submit ailleurs
+   (process.html/tarifs.html/404.html gardent leur style actuel). */
+#contact-submit {
+    font-weight: 700;
+    color: #0f0f14;
+    background: linear-gradient(90deg, #d94fbd, #f07cd8);
+    border: 1px solid rgba(217, 79, 189, 0.6);
+}
+
+#contact-submit:hover {
+    box-shadow: 0 0 20px rgba(217, 79, 189, 0.55);
+    border-color: rgba(217, 79, 189, 0.6);
+    color: #0f0f14;
+    transform: translateY(-2px);
+}
 
 .projet-card.vert {
     border-color: rgba(62, 207, 142, 0.3);
@@ -791,17 +945,6 @@ fieldset.form-group legend {
     border: 1px solid rgba(217, 79, 189, 0.35);
     color: rgba(217, 79, 189, 0.8);
     background: rgba(217, 79, 189, 0.06);
-}
-
-
-/* ── Nouvelles cartes projets ──────────────────────────────────────────── */
-.projet-card {
-    padding: 0;
-    overflow: hidden;
-    display: flex;
-    flex-direction: column;
-    text-align: left;
-    position: relative;
 }
 
 /* Header visuel — simule une preview avec les initiales */
@@ -1010,7 +1153,9 @@ footer {
 }
 
 #hero.contact-hero {
-    min-height: 30vh;
+    min-height: 10vh;
+    padding-top: 2vh;
+    padding-bottom: 1vh;
     justify-content: center;
     gap: 0.75rem;
 }
@@ -1039,7 +1184,7 @@ footer {
     height: 65vh;
     overflow: hidden;
     margin: 2.5rem 0 3rem;
-    border-radius: 12px;
+    border-radius: var(--radius-panel);
 }
 
 #about-hero-img {
@@ -1131,7 +1276,7 @@ footer {
     letter-spacing: 0.1em;
     padding: 0.4rem 1rem;
     border: 1px solid rgba(217, 79, 189, 0.4);
-    border-radius: 6px;
+    border-radius: var(--radius-panel);
     color: rgba(245, 222, 179, 0.8);
 }
 
@@ -1185,7 +1330,7 @@ footer {
     color: #3ecf8e;
     border: 1px solid rgba(62, 207, 142, 0.35);
     padding: 5px 14px;
-    border-radius: 20px;
+    border-radius: var(--radius-panel);
     font-size: 0.78rem;
     font-family: 'Open Sans', sans-serif;
     letter-spacing: 0.03em;
@@ -1203,7 +1348,7 @@ footer {
 .service-card {
     background: #1a1a2e;
     border: 1px solid rgba(135, 206, 235, 0.15);
-    border-radius: 8px;
+    border-radius: var(--radius-panel);
     padding: 1.2rem;
     transition: border-color 0.2s, box-shadow 0.2s;
 }
@@ -1213,7 +1358,9 @@ footer {
     box-shadow: 0 0 14px rgba(135, 206, 235, 0.1);
 }
 
-.service-icon {
+/* Dégradé magenta partagé — même effet texte que .feature-icon plus bas */
+.service-icon,
+.feature-icon {
     font-size: 1rem;
     margin-bottom: 0.5rem;
     background: linear-gradient(90deg, rgba(217,79,189,0.9) 0%, #f07cd8 40%, #fdd9f5 50%, #d94fbd 60%, rgba(217,79,189,0.9) 100%);
@@ -1224,18 +1371,23 @@ footer {
     animation: gold-shimmer 4s linear infinite;
 }
 
-.service-name {
-    font-family: 'Orbitron', sans-serif;
-    font-size: 0.78rem;
-    letter-spacing: 0.1em;
-    margin-bottom: 0.5rem;
-    text-transform: uppercase;
+/* Dégradé texte bleu partagé — même effet que .feature-card--bleu .feature-icon plus bas */
+.service-name,
+.feature-card--bleu .feature-icon {
     background: linear-gradient(90deg, #6bbcd8 0%, #b8dff0 40%, #e8f6fb 50%, #87CEEB 60%, #6bbcd8 100%);
     background-size: 200% auto;
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
     animation: gold-shimmer 5s linear infinite;
+}
+
+.service-name {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 0.78rem;
+    letter-spacing: 0.1em;
+    margin-bottom: 0.5rem;
+    text-transform: uppercase;
 }
 
 .service-desc {
@@ -1288,17 +1440,10 @@ footer {
 }
 
 .hero-cta {
-    display: inline-block;
-    font-family: 'Orbitron', sans-serif;
     font-size: 0.75rem;
     letter-spacing: 0.15em;
-    text-transform: uppercase;
-    color: wheat;
-    text-decoration: none;
     padding: 0.6rem 1.8rem;
     border: 1px solid rgba(217, 79, 189, 0.5);
-    border-radius: 8px;
-    transition: all 0.2s;
 }
 .hero-cta:hover {
     border-color: #d94fbd;
@@ -1339,7 +1484,7 @@ footer {
     text-transform: uppercase;
     color: rgba(245, 222, 179, 0.4);
     border: 1px solid rgba(245, 222, 179, 0.15);
-    border-radius: 4px;
+    border-radius: var(--radius-tight);
     padding: 0.15rem 0.6rem;
 }
 
@@ -1348,7 +1493,7 @@ footer {
     font-size: 0.65rem;
     letter-spacing: 0.08em;
     padding: 0.2rem 0.8rem;
-    border-radius: 20px;
+    border-radius: var(--radius-panel);
 }
 
 h2.projet-hero-titre {
@@ -1411,17 +1556,10 @@ h2.projet-hero-titre {
 }
 
 .projet-cta {
-    display: inline-block;
-    font-family: 'Orbitron', sans-serif;
     font-size: 0.75rem;
     letter-spacing: 0.12em;
-    text-transform: uppercase;
-    color: wheat;
-    text-decoration: none;
     padding: 0.65rem 1.6rem;
     border: 1px solid rgba(217, 79, 189, 0.6);
-    border-radius: 8px;
-    transition: all 0.2s;
     align-self: flex-start;
 }
 
@@ -1590,7 +1728,7 @@ h3.projet-section-titre {
 .feature-card {
     background: #1a1a2e;
     border: 1px solid rgba(217, 79, 189, 0.12);
-    border-radius: 8px;
+    border-radius: var(--radius-panel);
     padding: 1rem 1.1rem;
     transition: border-color 0.2s, box-shadow 0.2s;
 }
@@ -1601,14 +1739,7 @@ h3.projet-section-titre {
 }
 
 .feature-icon {
-    font-size: 1rem;
     margin-bottom: 0.4rem;
-    background: linear-gradient(90deg, rgba(217,79,189,0.9) 0%, #f07cd8 40%, #fdd9f5 50%, #d94fbd 60%, rgba(217,79,189,0.9) 100%);
-    background-size: 200% auto;
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-    animation: gold-shimmer 4s linear infinite;
 }
 
 .feature-nom {
@@ -1634,14 +1765,6 @@ h3.projet-section-titre {
 .feature-card--bleu:hover {
     border-color: rgba(135, 206, 235, 0.35);
     box-shadow: 0 0 14px rgba(135, 206, 235, 0.08);
-}
-.feature-card--bleu .feature-icon {
-    background: linear-gradient(90deg, #6bbcd8 0%, #b8dff0 40%, #e8f6fb 50%, #87CEEB 60%, #6bbcd8 100%);
-    background-size: 200% auto;
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-    animation: gold-shimmer 5s linear infinite;
 }
 
 /* ── Démo iframe ─────────────────────────────────────────────────────────── */
@@ -1912,7 +2035,6 @@ h3.projet-section-titre {
     .process-steps { padding: 2rem 1rem; }
     .temoignages-section { padding: 2rem 1rem; }
 }
-}
 
 /* ── PAGE TARIFS ─────────────────────────────────────────────────────────────── */
 #hero.tarifs-hero {
@@ -2102,7 +2224,19 @@ h3.projet-section-titre {
     header {
         position: relative;
         flex-wrap: nowrap;
+        justify-content: flex-start;
+        gap: 1.5rem;
     }
+
+    .nav-primary {
+        flex-basis: auto;
+        margin-top: 0;
+        margin-left: auto;
+        order: 1;
+        gap: 1.2rem;
+    }
+
+    #menu-toggle { order: 2; }
 
     nav {
         /* panel dropdown ancré sous le hamburger, côté droit */
@@ -2126,7 +2260,7 @@ h3.projet-section-titre {
 
         background: rgba(10,10,18,0.96);
         border: 1px solid rgba(135,206,235,0.18);
-        border-radius: 14px;
+        border-radius: var(--radius-panel);
         box-shadow: 0 16px 48px rgba(0,0,0,0.7);
         backdrop-filter: blur(18px);
 
@@ -2146,7 +2280,7 @@ h3.projet-section-titre {
         padding: 0.55rem 1rem;
         font-size: 0.65rem;
         white-space: nowrap;
-        border-radius: 10px;
+        border-radius: var(--radius-tight);
     }
 
     .nav-group {
@@ -2155,8 +2289,8 @@ h3.projet-section-titre {
         gap: 0.35rem;
     }
 
-    .nav-group-link { flex: 1; border-radius: 10px !important; }
-    .nav-chevron-btn { padding: 0 0.7rem; border-radius: 10px !important; border-left: 1px solid rgba(135,206,235,0.12) !important; height: auto; }
+    .nav-group-link { flex: 1; border-radius: var(--radius-tight) !important; }
+    .nav-chevron-btn { padding: 0 0.7rem; border-radius: var(--radius-tight) !important; border-left: 1px solid rgba(135,206,235,0.12) !important; height: auto; }
 
     /* sous-menu inline dans le panel (plus de floating absolu) */
     .nav-sub {
