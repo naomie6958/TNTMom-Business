@@ -1,7 +1,7 @@
 // ── Lightbox ──────────────────────────────────────────────────────────────
 const lightbox = document.createElement('div');
 lightbox.className = 'lightbox';
-lightbox.innerHTML = '<button class="lightbox-close" aria-label="Fermer">✕</button><img class="lightbox-img" src="" alt="">';
+lightbox.innerHTML = '<button class="lightbox-close" aria-label="Fermer" title="Fermer">✕</button><img class="lightbox-img" src="" alt="">';
 document.body.appendChild(lightbox);
 
 const lbImg   = lightbox.querySelector('.lightbox-img');

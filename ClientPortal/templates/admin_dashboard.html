@@ -29,7 +29,10 @@
 @keyframes shine { to { background-position-x: -200%; } }
 
 /* ── KPI grid ────────────────────────────────────────────────────────────── */
-.dash-kpi-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 1rem; }
+.dash-kpi-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 1rem; align-items: stretch; }
+/* .card + .card (style.css) met un margin-top pensé pour des cartes empilées
+   en colonne — annulé ici puisque ces cartes sont côte à côte dans la grille. */
+.dash-kpi-grid .card { margin-top: 0; }
 
 
 

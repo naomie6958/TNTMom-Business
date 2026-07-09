@@ -529,13 +529,34 @@ def migrate_db():
     # Permet de calculer le revenu net et la provision fiscale réelle.
     try:
         conn.execute('''CREATE TABLE IF NOT EXISTS depenses (
-            id          INTEGER PRIMARY KEY AUTOINCREMENT,
-            date        TEXT NOT NULL,
-            description TEXT NOT NULL,
-            montant     REAL NOT NULL DEFAULT 0,
-            categorie   TEXT DEFAULT 'Autre',
-            created_at  TEXT DEFAULT (datetime('now'))
+            id                   INTEGER PRIMARY KEY AUTOINCREMENT,
+            date                 TEXT NOT NULL,
+            description          TEXT NOT NULL,
+            montant              REAL NOT NULL DEFAULT 0,
+            categorie            TEXT DEFAULT 'Autre',
+            fichier_nom_original TEXT,
+            fichier_nom_stocke   TEXT,
+            fichier_taille       INTEGER,
+            created_at           TEXT DEFAULT (datetime('now'))
         )''')
+        conn.commit()
+    except Exception:
+        pass
+
+    # Colonnes fichier ajoutées après coup sur une table depenses déjà existante
+    # (ALTER TABLE lève une erreur si la colonne existe déjà — on l'ignore).
+    try:
+        conn.execute('ALTER TABLE depenses ADD COLUMN fichier_nom_original TEXT')
+        conn.commit()
+    except Exception:
+        pass
+    try:
+        conn.execute('ALTER TABLE depenses ADD COLUMN fichier_nom_stocke TEXT')
+        conn.commit()
+    except Exception:
+        pass
+    try:
+        conn.execute('ALTER TABLE depenses ADD COLUMN fichier_taille INTEGER')
         conn.commit()
     except Exception:
         pass

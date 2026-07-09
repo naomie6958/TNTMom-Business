@@ -3,8 +3,11 @@ from collections import OrderedDict
 import json
 import io
 import csv
+import os
+import uuid
 from zoneinfo import ZoneInfo
-from flask import Blueprint, render_template, request, redirect, session, flash, jsonify, url_for, Response
+from flask import Blueprint, render_template, request, redirect, session, flash, jsonify, url_for, Response, send_from_directory
+from werkzeug.utils import secure_filename
 from database import get_db
 from utils import login_required, safe_json_loads
 from compta_logic import verifier_et_mettre_retards, calculer_tax_tracker, calculer_provision_fiscale
@@ -12,6 +15,16 @@ from compta_logic import verifier_et_mettre_retards, calculer_tax_tracker, calcu
 admin_compta_bp = Blueprint('admin_compta', __name__)
 
 _EASTERN = ZoneInfo('America/Montreal')
+
+if os.getenv('RAILWAY_VOLUME_MOUNT_PATH'):
+    UPLOAD_ROOT = os.path.join(os.getenv('RAILWAY_VOLUME_MOUNT_PATH'), 'uploads')
+else:
+    UPLOAD_ROOT = os.path.join(os.path.dirname(__file__), 'uploads')
+
+ALLOWED_EXTENSIONS = {
+    '.pdf', '.png', '.jpg', '.jpeg', '.gif', '.webp', '.svg',
+    '.zip', '.doc', '.docx', '.xls', '.xlsx', '.mp4', '.mov', '.txt', '.fig',
+}
 
 # ── COMPTABILITÉ & DÉPENSES ───────────────────────────────────────────────────
 
@@ -96,29 +109,76 @@ def fiscal_summary():
 @admin_compta_bp.route('/depenses/new', methods=['POST'])
 @login_required
 def depense_new():
-    date_dep, description, montant_str = request.form.get('date', '').strip(), request.form.get('description', '').strip(), request.form.get('montant', '0').strip()
-    if not date_dep or not description or not montant_str:
-        flash('Tous les champs sont requis.', 'error')
-        return redirect('/comptabilite')
-    try: montant = float(montant_str)
-    except ValueError:
-        flash('Montant invalide.', 'error')
+    is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
+
+    def erreur(msg):
+        if is_ajax:
+            return jsonify({'success': False, 'error': msg})
+        flash(msg, 'error')
         return redirect('/comptabilite')
 
+    date_dep, description, montant_str = request.form.get('date', '').strip(), request.form.get('description', '').strip(), request.form.get('montant', '0').strip()
+    if not date_dep or not description or not montant_str:
+        return erreur('Tous les champs sont requis.')
+    try: montant = float(montant_str)
+    except ValueError:
+        return erreur('Montant invalide.')
+
+    # Fichier joint optionnel (facture, reçu...)
+    fichier_nom_original = fichier_nom_stocke = None
+    fichier_taille = None
+    fichier = request.files.get('fichier')
+    if fichier and fichier.filename:
+        nom_secure = secure_filename(fichier.filename)
+        ext = os.path.splitext(nom_secure)[1].lower()
+        if not nom_secure or ext not in ALLOWED_EXTENSIONS:
+            return erreur(f'Type de fichier non autorisé ({ext or "sans extension"}).')
+        fichier_nom_original = fichier.filename
+        fichier_nom_stocke = f"{uuid.uuid4().hex}_{nom_secure}"
+        dossier = os.path.join(UPLOAD_ROOT, 'depenses')
+        os.makedirs(dossier, exist_ok=True)
+        chemin = os.path.join(dossier, fichier_nom_stocke)
+        fichier.save(chemin)
+        fichier_taille = os.path.getsize(chemin)
+
     conn = get_db()
-    conn.execute('INSERT INTO depenses (date, description, montant, categorie) VALUES (?,?,?,?)', (date_dep, description, montant, request.form.get('categorie', 'Autre')))
+    conn.execute(
+        '''INSERT INTO depenses (date, description, montant, categorie, fichier_nom_original, fichier_nom_stocke, fichier_taille)
+           VALUES (?,?,?,?,?,?,?)''',
+        (date_dep, description, montant, request.form.get('categorie', 'Autre'),
+         fichier_nom_original, fichier_nom_stocke, fichier_taille)
+    )
     conn.commit()
     conn.close()
+
+    if is_ajax:
+        return jsonify({'success': True})
     flash('Dépense ajoutée.', 'success')
     return redirect('/comptabilite')
+
+@admin_compta_bp.route('/depenses/<int:dep_id>/fichier')
+@login_required
+def depense_fichier(dep_id):
+    conn = get_db()
+    d = conn.execute('SELECT * FROM depenses WHERE id = ?', (dep_id,)).fetchone()
+    conn.close()
+    if not d or not d['fichier_nom_stocke']:
+        return redirect('/comptabilite')
+    dossier = os.path.join(UPLOAD_ROOT, 'depenses')
+    return send_from_directory(dossier, d['fichier_nom_stocke'], as_attachment=True, download_name=d['fichier_nom_original'])
 
 @admin_compta_bp.route('/depenses/<int:dep_id>/delete', methods=['POST'])
 @login_required
 def depense_delete(dep_id):
     conn = get_db()
+    d = conn.execute('SELECT fichier_nom_stocke FROM depenses WHERE id = ?', (dep_id,)).fetchone()
     conn.execute('DELETE FROM depenses WHERE id = ?', (dep_id,))
     conn.commit()
     conn.close()
+    if d and d['fichier_nom_stocke']:
+        chemin = os.path.join(UPLOAD_ROOT, 'depenses', d['fichier_nom_stocke'])
+        try: os.remove(chemin)
+        except OSError: pass
     flash('Dépense supprimée.', 'success')
     return redirect('/comptabilite')
 

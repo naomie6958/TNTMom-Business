@@ -290,9 +290,9 @@ select.ci { cursor: pointer; padding-right: 2rem; text-overflow: ellipsis; } /* 
         <div style="display: flex; align-items: center; gap: 0.8rem;">
             <span class="mono" style="font-size: 0.75rem; color: var(--muted);">{{ e.heure_debut or '—' }} à {{ e.heure_fin or '—' }}</span>
             <div style="display: flex; gap: 0.3rem;">
-                <button class="btn btn-secondary" style="padding: 0.25rem 0.6rem; font-size: 0.75rem;"
+                <button class="btn btn-secondary btn-sm" title="Modifier l'entrée"
                     onclick="ouvrirEditEntree({{ e.id }},'{{ e.date }}','{{ e.heure_debut or '' }}','{{ e.heure_fin or '' }}',{{ e.duree_minutes or 0 }},'{{ (e.description or '')|replace("'","\\'") }}','{{ e.type_facturation }}',{{ e.taux_applique or 0 }},{{ e.categorie_id }})">✎</button>
-                <button class="btn btn-ghost" style="padding: 0.25rem 0.6rem; font-size: 0.75rem; color: var(--red);"
+                <button class="btn btn-ghost btn-sm" style="color: var(--red);" title="Supprimer l'entrée"
                     onclick="openModal('Supprimer cette entrée','Cette action est irréversible.','Supprimer','btn-danger',()=>deleteEntree({{ e.id }}))">✕</button>
             </div>
         </div>
@@ -343,7 +343,7 @@ select.ci { cursor: pointer; padding-right: 2rem; text-overflow: ellipsis; } /* 
                 box-shadow:0 24px 60px rgba(0,0,0,0.5);max-height:90vh;overflow-y:auto;">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.1rem;">
             <h3 style="font-size:0.95rem;">Modifier l'entrée</h3>
-            <button onclick="fermerEditEntree()" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:1.1rem;padding:0.2rem 0.5rem;">✕</button>
+            <button onclick="fermerEditEntree()" title="Fermer" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:1.1rem;padding:0.2rem 0.5rem;">✕</button>
         </div>
         <form id="edit-entree-form" method="POST" action="">
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.65rem;margin-bottom:0.65rem;">

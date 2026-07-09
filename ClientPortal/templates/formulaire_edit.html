@@ -96,7 +96,7 @@
         <button class="btn btn-secondary" style="font-size: 0.78rem;"
                 onclick="toggleInfoSection('edit-formulaire')">✎ Modifier le titre</button>
         <form id="del-formulaire-{{ formulaire.id }}" method="POST" action="/formulaires/{{ formulaire.id }}/delete">
-            <button type="button" class="btn btn-danger" style="font-size: 0.78rem;"
+            <button type="button" class="btn btn-danger" style="font-size: 0.78rem;" title="Supprimer le formulaire"
                     onclick="openDeleteModal('del-formulaire-{{ formulaire.id }}', 'Supprimer ce formulaire et toutes ses questions ?')">✕</button>
         </form>
     </div>
@@ -226,10 +226,10 @@
                     </div>
                 </div>
                 <div class="q-actions">
-                    <button class="btn btn-ghost" style="font-size: 0.78rem;"
+                    <button class="btn btn-ghost" style="font-size: 0.78rem;" title="Modifier la question"
                             onclick="toggleQEdit('{{ q.id }}')">✎</button>
                     <form id="del-question-{{ q.id }}" method="POST" action="/formulaires/{{ formulaire.id }}/questions/{{ q.id }}/delete">
-                        <button type="button" class="btn btn-ghost" style="font-size: 0.75rem; color: var(--red);"
+                        <button type="button" class="btn btn-ghost" style="font-size: 0.75rem; color: var(--red);" title="Supprimer la question"
                                 onclick="openDeleteModal('del-question-{{ q.id }}', 'Supprimer cette question ?')">✕</button>
                     </form>
                 </div>

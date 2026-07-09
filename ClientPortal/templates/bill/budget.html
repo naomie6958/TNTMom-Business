@@ -129,7 +129,7 @@
                 <td class="text-green" style="text-align: right; font-weight: 600;">${{ "%.2f"|format(r['amount']) }}</td>
                 <td class="text-muted-sm">{{ r['date_received'] }}</td>
                 <td style="text-align: right;">
-                    <button type="button" class="btn btn-ghost btn-icon" onclick="deleteRevenu({{ r['id'] }})">✕</button>
+                    <button type="button" class="btn btn-ghost btn-icon" title="Supprimer" onclick="deleteRevenu({{ r['id'] }})">✕</button>
                 </td>
             </tr>
             {% endfor %}

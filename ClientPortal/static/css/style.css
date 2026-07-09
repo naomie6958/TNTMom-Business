@@ -18,8 +18,8 @@
     --border:    #2a2a3a;   /* bordures discrètes */
     --text:      #f0eeff;   /* texte principal */
     --muted:     #6e6e9a;   /* texte secondaire */
-    --radius:    8px;
-    --radius-lg: 14px;
+    --radius:    3px;   /* aligné sur --radius-tight de tntm.ca */
+    --radius-lg: 6px;   /* aligné sur --radius-panel de tntm.ca */
 }
 
 /* ── GOLD THEME — touches dorées subtiles ─────────────────────────────── */

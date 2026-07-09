@@ -29,7 +29,7 @@
             </select>
         </form>
         <div style="display: flex; gap: 0.4rem; align-items: center;">
-            <button class="btn btn-ghost" style="font-size: 0.75rem; padding: 3px 8px;"
+            <button class="btn btn-ghost btn-icon"
                     onclick="toggleInfoSection('portail-section')">
                 {% if client.password %}
                     <span class="badge badge-actif" style="font-size: 0.7rem; pointer-events: none;">🔑 Portail actif</span>
@@ -37,30 +37,30 @@
                     <span class="badge" style="font-size: 0.7rem; background: var(--surface2); color: var(--muted); pointer-events: none;">🔑 Accès portail</span>
                 {% endif %}
             </button>
-            <button class="btn btn-secondary" style="font-size: 0.78rem;"
+            <button class="btn btn-secondary btn-sm"
                     onclick="toggleInfoSection('modifier-section')">✎ Modifier</button>
             <form method="POST" action="/clients/{{ client.id }}/toggle-demo">
-                <button type="submit" class="btn btn-secondary" style="font-size: 0.78rem; {% if client.demo %}color: var(--gold);{% endif %}"
+                <button type="submit" class="btn btn-secondary btn-sm" style="{% if client.demo %}color: var(--gold);{% endif %}"
                         title="{% if client.demo %}Retirer le flag démo{% else %}Marquer comme démo (exclut des stats et de la comptabilité){% endif %}">
                     {{ '⚠ Démo' if client.demo else '⚐ Marquer démo' }}
                 </button>
             </form>
             <form method="POST" action="/clients/{{ client.id }}/toggle-rnd">
-                <button type="submit" class="btn btn-secondary" style="font-size: 0.78rem; {% if client.rnd %}color: #87CEEB;{% endif %}"
+                <button type="submit" class="btn btn-secondary btn-sm" style="{% if client.rnd %}color: #87CEEB;{% endif %}"
                         title="{% if client.rnd %}Retirer le flag R&D{% else %}Marquer comme R&D (heures comptées comme temps interne dans les indicateurs){% endif %}">
                     {{ '⚗ R&D' if client.rnd else '⚗ Marquer R&D' }}
                 </button>
             </form>
             {% if client.password %}
             <form method="POST" action="/admin/switch-client/{{ client.id }}">
-                <button type="submit" class="btn btn-secondary" style="font-size: 0.78rem; color: var(--accent);"
+                <button type="submit" class="btn btn-secondary btn-sm" style="color: var(--accent);"
                         title="Basculer en vue portail client (retour admin en 1 clic)">
                     ⊕ Vue client
                 </button>
             </form>
             {% endif %}
             <form id="delete-client-form" method="POST" action="/clients/{{ client.id }}/delete">
-                <button type="button" class="btn btn-danger" style="font-size: 0.78rem;"
+                <button type="button" class="btn btn-danger btn-icon" title="Supprimer le client"
                         onclick="openDeleteModal('delete-client-form', 'Supprimer {{ client.nom }} et toutes ses données ?')">✕</button>
             </form>
         </div>
@@ -102,8 +102,8 @@
         {# Statut caché — géré via le sélecteur dans l'en-tête #}
         <input type="hidden" name="statut" value="{{ client.statut }}">
         <div style="display: flex; gap: 0.5rem;">
-            <button type="submit" class="btn btn-primary" style="font-size: 0.82rem;">Sauvegarder</button>
-            <button type="button" class="btn btn-secondary" style="font-size: 0.82rem;"
+            <button type="submit" class="btn btn-primary">Sauvegarder</button>
+            <button type="button" class="btn btn-secondary"
                     onclick="toggleInfoSection('modifier-section')">Annuler</button>
         </div>
     </form>
@@ -126,10 +126,10 @@
                        autocomplete="new-password" placeholder="Minimum 6 caractères">
             </div>
             <div style="display: flex; gap: 0.5rem; padding-bottom: 0.05rem;">
-                <button type="submit" class="btn btn-primary" style="font-size: 0.82rem;">
+                <button type="submit" class="btn btn-primary">
                     {{ 'Changer' if client.password else 'Créer le compte' }}
                 </button>
-                <button type="button" class="btn btn-secondary" style="font-size: 0.82rem;"
+                <button type="button" class="btn btn-secondary"
                         onclick="toggleInfoSection('portail-section')">Annuler</button>
             </div>
         </div>
@@ -208,8 +208,8 @@
                         <span>Consultation du {{ c.date }}</span>
                         <form id="delete-consult-{{ c.id }}" method="POST"
                               action="/consultations/{{ c.id }}/delete" style="display:inline;">
-                            <button type="button" class="btn btn-ghost"
-                                    style="font-size: 0.75rem; color: var(--red);"
+                            <button type="button" class="btn btn-ghost btn-sm" title="Supprimer la consultation"
+                                    style="color: var(--red);"
                                     onclick="event.stopPropagation();
                                              openDeleteModal('delete-consult-{{ c.id }}', 'Supprimer cette consultation ?')">
                                 ✕
@@ -338,20 +338,19 @@
                             <form method="POST"
                                   action="/clients/{{ client.id }}/contrat/{{ c.id }}/envoyer-email"
                                   onclick="event.stopPropagation()">
-                                <button type="submit" class="btn btn-secondary"
-                                        style="font-size: 0.75rem; padding: 3px 8px;"
+                                <button type="submit" class="btn btn-secondary btn-icon"
                                         title="Envoyer le lien de signature par email">✉</button>
                             </form>
                             {% endif %}
                             <a href="/clients/{{ client.id }}/contrat/{{ c.id }}/print"
-                               target="_blank" class="btn btn-ghost" style="font-size: 0.75rem;"
+                               target="_blank" class="btn btn-ghost btn-sm" title="Imprimer le contrat"
                                onclick="event.stopPropagation()">⎙</a>
                             <a href="/clients/{{ client.id }}/contrat/{{ c.id }}"
-                               class="btn btn-secondary" style="font-size: 0.78rem;"
+                               class="btn btn-secondary btn-sm"
                                onclick="event.stopPropagation()">Modifier</a>
                             <form id="delete-projet-{{ c.id }}" method="POST"
                                   action="/clients/{{ client.id }}/contrat/{{ c.id }}/delete">
-                                <button type="button" class="btn btn-danger" style="font-size: 0.75rem; padding: 3px 8px;"
+                                <button type="button" class="btn btn-danger btn-icon" title="Supprimer le projet"
                                         onclick="event.stopPropagation(); openDeleteModal('delete-projet-{{ c.id }}', 'Supprimer le projet « {{ c.nom or "Projet sans titre" }} » ? Ses factures associées seront aussi supprimées.')">
                                     ✕
                                 </button>
@@ -441,7 +440,7 @@
                        style="flex: 1; min-width: 180px; font-size: 0.85rem;
                               background: var(--surface2); border: 1px solid var(--border);
                               border-radius: var(--radius); padding: 0.45rem 0.7rem; color: var(--text);">
-                <button type="submit" class="btn btn-primary" style="font-size: 0.85rem; white-space: nowrap;">
+                <button type="submit" class="btn btn-primary" style="white-space: nowrap;">
                     + Nouveau projet
                 </button>
             </form>
@@ -452,7 +451,7 @@
             <div class="section-header">
                 <div class="section-title">Banque d'heures maintenance</div>
                 <form method="POST" action="/clients/{{ client.id }}/banque-heures/new">
-                    <button type="submit" class="btn btn-primary" style="font-size: 0.78rem; padding: 0.3rem 0.8rem;">
+                    <button type="submit" class="btn btn-primary btn-sm">
                         + Ajouter 5h (325$)
                     </button>
                 </form>
@@ -523,7 +522,7 @@
                             <form method="POST" action="/clients/{{ client.id }}/messages/{{ msg.id }}/reponse/delete"
                                   style="position: absolute; top: 0.4rem; right: 0.4rem;"
                                   onsubmit="return confirm('Supprimer cette réponse ?')">
-                                <button type="submit" class="btn btn-ghost"
+                                <button type="submit" class="btn btn-ghost" title="Supprimer la réponse"
                                         style="font-size: 0.6rem; color: var(--red); padding: 0.1rem 0.35rem; line-height: 1;">✕</button>
                             </form>
                         </div>
@@ -540,8 +539,7 @@
                                 <textarea name="reponse" rows="3"
                                           placeholder="Ta réponse au client…"
                                           style="width: 100%; margin-bottom: 0.5rem; font-size: 0.85rem;"></textarea>
-                                <button type="submit" class="btn btn-primary"
-                                        style="font-size: 0.8rem;">Envoyer</button>
+                                <button type="submit" class="btn btn-primary btn-sm">Envoyer</button>
                             </form>
                         </div>
                     </details>
@@ -570,7 +568,7 @@
                     <textarea name="message" rows="3" placeholder="Ton message au client…" required
                               style="width: 100%; font-size: 0.85rem;"></textarea>
                 </div>
-                <button type="submit" class="btn btn-primary" style="font-size: 0.8rem;">
+                <button type="submit" class="btn btn-primary btn-sm">
                     Envoyer au client →
                 </button>
             </form>
@@ -585,10 +583,12 @@
             <form method="POST" action="/clients/{{ client.id }}/fichiers/upload"
                   enctype="multipart/form-data" style="margin-bottom: 0.8rem;">
                 <div class="fiche-upload-form" style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
-                    <input type="file" name="fichier" required
-                           style="font-size: 0.82rem; flex: 1; min-width: 0;
-                                  background: var(--surface2); border: 1px solid var(--border);
-                                  border-radius: var(--radius); padding: 0.4rem 0.6rem; color: var(--text);">
+                    <label for="fiche-upload-input" class="btn btn-secondary" id="fiche-upload-label"
+                           style="cursor: pointer; flex: 1; min-width: 0; justify-content: flex-start; overflow: hidden; text-overflow: ellipsis;">
+                        📎 Choisir un fichier
+                    </label>
+                    <input type="file" id="fiche-upload-input" name="fichier" required style="display:none;"
+                           onchange="document.getElementById('fiche-upload-label').textContent = this.files[0] ? this.files[0].name : '📎 Choisir un fichier'">
                     <button type="submit" class="btn btn-primary" style="white-space: nowrap;">
                         ↑ Uploader
                     </button>
@@ -610,11 +610,11 @@
                     </div>
                     <div style="display: flex; gap: 0.4rem; align-items: center;">
                         <a href="/clients/{{ client.id }}/fichiers/{{ f.id }}/download"
-                           class="btn btn-secondary" style="font-size: 0.78rem;">↓</a>
+                           class="btn btn-secondary btn-sm" title="Télécharger {{ f.nom_original }}">↓</a>
                         <form id="delete-fichier-{{ f.id }}" method="POST"
                               action="/clients/{{ client.id }}/fichiers/{{ f.id }}/delete">
-                            <button type="button" class="btn btn-ghost"
-                                    style="font-size: 0.75rem; color: var(--red);"
+                            <button type="button" class="btn btn-ghost btn-sm" title="Supprimer le fichier"
+                                    style="color: var(--red);"
                                     onclick="openDeleteModal('delete-fichier-{{ f.id }}',
                                              'Supprimer &quot;{{ f.nom_original }}&quot; ?')">
                                 ✕
@@ -633,7 +633,7 @@
                     {% endfor %}
                     <form method="POST" action="/clients/{{ client.id }}/fichiers/{{ f.id }}/commenter" style="display: flex; gap: 0.4rem; margin-top: 0.6rem;">
                         <input type="text" name="commentaire" placeholder="Ajouter un commentaire..." required style="flex: 1; font-size: 0.8rem; padding: 0.3rem 0.5rem; border-radius: var(--radius); border: 1px solid var(--border); background: var(--surface2); color: var(--text);">
-                        <button type="submit" class="btn btn-secondary" style="font-size: 0.75rem;">Envoyer</button>
+                        <button type="submit" class="btn btn-secondary btn-sm">Envoyer</button>
                     </form>
                 </div>
                 </div>
@@ -689,18 +689,18 @@
                     <td style="padding:0.5rem 0; border-bottom:1px solid var(--border); text-align:right;">
                         <div style="display:flex; gap:0.4rem; justify-content:flex-end;">
                             <a href="/clients/{{ client.id }}/factures/{{ f.id }}/print"
-                               target="_blank" class="btn btn-secondary" style="font-size:0.72rem; padding:2px 8px;">
+                               target="_blank" class="btn btn-secondary btn-icon">
                                 🖨 Imprimer
                             </a>
                             {% if client.email %}
                             <button onclick="envoyerFacture({{ client.id }}, {{ f.id }}, '{{ client.email }}')"
-                                    class="btn btn-secondary" style="font-size:0.72rem; padding:2px 8px;">
+                                    class="btn btn-secondary btn-icon">
                                 ✉ Envoyer
                             </button>
                             {% endif %}
                             {% if f.statut != 'payée' %}
                             <form method="POST" action="/clients/{{ client.id }}/factures/{{ f.id }}/marquer-payee">
-                                <button type="submit" class="btn btn-primary" style="font-size:0.72rem; padding:2px 8px;">
+                                <button type="submit" class="btn btn-primary btn-icon">
                                     ✓ Payée
                                 </button>
                             </form>
@@ -709,8 +709,7 @@
                             {% endif %}
                             <form id="delete-facture-{{ f.id }}" method="POST"
                                   action="/clients/{{ client.id }}/factures/{{ f.id }}/delete">
-                                <button type="button" class="btn btn-danger"
-                                        style="font-size:0.72rem; padding:2px 8px;"
+                                <button type="button" class="btn btn-danger btn-icon" title="Supprimer la facture"
                                         onclick="openDeleteModal('delete-facture-{{ f.id }}', 'Supprimer la facture {{ f.numero }} — {{ f.milestone_titre or f.description or "sans titre" }} ({{ f.montant | int }}$) ?')">
                                     ✕
                                 </button>
@@ -756,7 +755,7 @@
                             <label>Description (optionnel)</label>
                             <textarea name="description" rows="2" placeholder="Détails supplémentaires…"></textarea>
                         </div>
-                        <button type="submit" class="btn btn-primary" style="font-size:0.82rem;">Créer</button>
+                        <button type="submit" class="btn btn-primary">Créer</button>
                     </form>
                 </div>
             </details>
@@ -781,8 +780,8 @@
                             padding: 0.45rem 0; border-bottom: 1px solid var(--border); gap: 0.5rem;">
                     <span style="font-size: 0.85rem;">{{ f.titre }}</span>
                     <form method="POST" action="/clients/{{ client.id }}/formulaires/{{ f.id }}/remove">
-                        <button type="submit" class="btn btn-ghost"
-                                style="font-size: 0.72rem; color: var(--red); padding: 2px 7px;">✕</button>
+                        <button type="submit" class="btn btn-ghost btn-icon"
+                                style="color: var(--red);">✕</button>
                     </form>
                 </div>
                 {% endfor %}
@@ -804,7 +803,7 @@
                     {% endfor %}
                 </select>
                 <button type="submit" class="btn btn-primary"
-                        style="font-size: 0.82rem; white-space: nowrap;">+ Assigner</button>
+                        style="white-space: nowrap;">+ Assigner</button>
             </form>
             {% elif not formulaires_assignes %}
                 <div class="text-muted" style="font-size: 0.78rem; margin-top: 0.5rem;">
@@ -922,7 +921,7 @@
         if (!el) {
             el = document.createElement('div');
             el.id = 'fiche-toast';
-            el.style.cssText = 'position:fixed;bottom:1.5rem;right:1.5rem;padding:.75rem 1.25rem;border-radius:10px;font-size:.85rem;font-weight:600;z-index:9999;transition:opacity .3s;';
+            el.style.cssText = 'position:fixed;bottom:1.5rem;right:1.5rem;padding:.75rem 1.25rem;border-radius:var(--radius-lg);font-size:.85rem;font-weight:600;z-index:9999;transition:opacity .3s;';
             document.body.appendChild(el);
         }
         el.textContent = msg;

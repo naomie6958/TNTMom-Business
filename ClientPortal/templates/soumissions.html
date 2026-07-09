@@ -24,7 +24,7 @@
                 <div style="font-size: 0.75rem; color: var(--muted); margin-top: 0.1rem;">{{ s.created_at[:16] }}</div>
             </div>
             <form id="del-sub-{{ s.id }}" method="POST" action="/soumissions/{{ s.id }}/delete" style="display:none;"></form>
-            <button type="button" class="btn btn-danger" style="font-size: 0.72rem; padding: 0.2rem 0.6rem;"
+            <button type="button" class="btn btn-danger" style="font-size: 0.72rem; padding: 0.2rem 0.6rem;" title="Supprimer"
                     onclick="openDeleteModal('del-sub-{{ s.id }}', 'Supprimer cette soumission de {{ s.client_nom }} ?')">✕</button>
         </div>
 

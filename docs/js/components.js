@@ -44,7 +44,7 @@ class TntmHeader extends HTMLElement {
                 <nav>
                     <div class="nav-group">
                         <a href="/index.html#galerie" class="nav-group-link">Mes projets</a>
-                        <button class="nav-chevron-btn" aria-expanded="false">▾</button>
+                        <button class="nav-chevron-btn" aria-expanded="false" title="Voir les projets" aria-label="Voir les projets">▾</button>
                         <div class="nav-sub">
                             <a href="https://chopperburger.tntm.ca" target="_blank" class="nav-sub-item">↳ Chopper Burger</a>
                             <a href="/clientportal.html" class="nav-sub-item">↳ ClientPortal</a>
@@ -55,7 +55,7 @@ class TntmHeader extends HTMLElement {
                     <a href="/tarifs.html">Tarifs</a>
                     <a href="https://portail.tntm.ca/portail/login" target="_blank" class="nav-portail">Portail client →</a>
                 </nav>
-                <button id="menu-toggle" aria-label="Ouvrir le menu">☰</button>
+                <button id="menu-toggle" aria-label="Ouvrir le menu" title="Menu">☰</button>
             </header>
             </div>
         `;

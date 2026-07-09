@@ -195,7 +195,7 @@ function render() {
                 <option value="livré"      ${m.statut === 'livré'      ? 'selected' : ''}>Livré</option>
                 <option value="payé"       ${m.statut === 'payé'       ? 'selected' : ''}>Payé ✓</option>
             </select>
-            <button type="button" class="btn btn-ghost"
+            <button type="button" class="btn btn-ghost" title="Retirer ce jalon"
                     style="color: var(--red); padding: 0.3rem 0.5rem;"
                     onclick="removeMilestone(${i})">✕</button>
             <div style="grid-column: 1 / -1; display: flex; gap: 0.6rem; align-items: center;

@@ -4,10 +4,24 @@
 {% block head %}
 <style>
 /* ── Responsive comptabilité ───────────────────────────── */
-.compta-stats-3    { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-bottom: 1rem; }
-.compta-panels-2   { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 2rem; }
+.compta-stats-3    { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-bottom: 1rem; align-items: stretch; }
+.compta-panels-2   { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 2rem; align-items: stretch; }
+/* .card + .card met un margin-top pensé pour des cartes empilées en colonne —
+   ça s'applique aussi par erreur ici puisque les cartes restent des "frères"
+   en HTML même côte à côte dans la grille. On l'annule pour ces 2 grilles. */
+.compta-stats-3 .card,
+.compta-panels-2 .card { margin-top: 0; }
 .compta-prov-inner { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; }
-.compta-dep-form   { display: grid; grid-template-columns: 1fr 2fr 1fr 1fr auto; gap: 0.5rem; align-items: end; margin-bottom: 1.2rem; }
+.compta-dep-form   { display: grid; grid-template-columns: 1fr 2fr 1fr 1fr auto auto; gap: 0.5rem; align-items: end; margin-bottom: 1.2rem; }
+.compta-dep-form input,
+.compta-dep-form select,
+.compta-dep-form button,
+.compta-dep-form label.btn { min-height: 44px; box-sizing: border-box; }
+.dep-form-fichier { display: flex; align-items: center; }
+.dep-form-fichier .btn {
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; white-space: nowrap;
+}
 .compta-table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
 .cc-alert-row      { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.4rem; }
 
@@ -18,8 +32,9 @@
 @media (max-width: 500px) {
     .compta-stats-3  { grid-template-columns: 1fr; }
     .compta-dep-form { grid-template-columns: 1fr 1fr; }
-    .compta-dep-form .dep-form-desc { grid-column: 1 / -1; }
-    .compta-dep-form .dep-form-btn  { grid-column: 1 / -1; }
+    .compta-dep-form .dep-form-desc     { grid-column: 1 / -1; }
+    .compta-dep-form .dep-form-fichier  { grid-column: 1 / -1; }
+    .compta-dep-form .dep-form-btn      { grid-column: 1 / -1; }
     .cc-alert-row    { flex-direction: column; align-items: flex-start; }
 }
 </style>
@@ -32,12 +47,12 @@
         <div class="page-sub">Vue globale des finances de ton entreprise.</div>
     </div>
     <div style="display: flex; gap: 0.5rem; align-items: center;">
-        <a href="/admin/export/csv" class="btn btn-primary" style="font-size: 0.75rem;">⬇ Exporter CSV</a>
-        
+        <a href="/admin/export/csv" class="btn btn-primary btn-sm">⬇ Exporter CSV</a>
+
         {# Bouton toggle démo #}
         <a href="?demo={{ '0' if inclure_demo else '1' }}"
-           class="btn {{ 'btn-danger' if inclure_demo else 'btn-secondary' }}"
-           style="font-size: 0.75rem; white-space: nowrap;"
+           class="btn btn-sm {{ 'btn-danger' if inclure_demo else 'btn-secondary' }}"
+           style="white-space: nowrap;"
            title="{{ 'Retour aux vrais chiffres' if inclure_demo else 'Afficher avec le client démo' }}">
             {% if inclure_demo %}🎭 Démo ON{% else %}🎭 Démo{% endif %}
         </a>
@@ -47,7 +62,7 @@
 {# ── BANNIÈRE MODE DÉMO ──────────────────────────────────────── #}
 {% if inclure_demo %}
 <div style="background: rgba(217,79,189,0.12); border: 1px solid var(--accent);
-            border-radius: 8px; padding: 0.6rem 1rem; margin-bottom: 1.25rem;
+            border-radius: var(--radius); padding: 0.6rem 1rem; margin-bottom: 1.25rem;
             font-size: 0.8rem; color: var(--accent); display: flex;
             align-items: center; gap: 0.6rem;">
     <span style="font-size: 1rem;">🎭</span>
@@ -160,7 +175,7 @@
 <div class="card" style="margin-bottom: 2rem;">
     <div class="section-title" style="margin-bottom: 1rem;">Dépenses d'entreprise</div>
 
-    <form id="formAjoutDepense" method="POST" action="/depenses/new" class="compta-dep-form">
+    <form id="formAjoutDepense" method="POST" action="/depenses/new" class="compta-dep-form" enctype="multipart/form-data">
         <div>
             <label style="font-size: 0.7rem; color: var(--muted); display: block; margin-bottom: 0.25rem;">Date</label>
             <input type="date" name="date" required class="form-control"
@@ -192,6 +207,14 @@
                 <option value="Autre" selected>Autre</option>
             </select>
         </div>
+        <div class="dep-form-fichier">
+            <label for="dep-fichier-input" class="btn btn-secondary" id="dep-fichier-label" title="Joindre une facture"
+                   style="padding: 0.45rem 0.7rem; font-size: 0.78rem;">
+                📎
+            </label>
+            <input type="file" id="dep-fichier-input" name="fichier" style="display:none;"
+                   onchange="document.getElementById('dep-fichier-label').textContent = this.files[0] ? '📎 ' + this.files[0].name : '📎'">
+        </div>
         <div class="dep-form-btn" style="align-self: end;">
             <button type="submit" class="btn btn-primary" style="white-space: nowrap; min-height: 44px; padding: 0.45rem 1rem;">
                 + Ajouter
@@ -219,7 +242,12 @@
                     <td style="padding: 0.5rem 0.5rem;">{{ d.description }}</td>
                     <td style="padding: 0.5rem 0.5rem; color: var(--muted);">{{ d.categorie }}</td>
                     <td style="padding: 0.5rem 0.5rem; text-align: right; color: var(--red, #e05252); font-weight: 600; white-space: nowrap;">-{{ d.montant | int }}$</td>
-                    <td style="padding: 0.5rem 0.5rem; text-align: center;">
+                    <td style="padding: 0.5rem 0.5rem; text-align: center; white-space: nowrap;">
+                        {% if d.fichier_nom_original %}
+                        <a href="/depenses/{{ d.id }}/fichier"
+                           style="color: var(--muted); text-decoration: none; font-size: 0.85rem; padding: 0.3rem 0.5rem;"
+                           title="Télécharger {{ d.fichier_nom_original }}">📎</a>
+                        {% endif %}
                         <form method="POST" action="/depenses/{{ d.id }}/delete"
                               onsubmit="return confirm('Supprimer cette dépense?')" style="display: inline;">
                             <button type="submit"
