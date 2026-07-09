@@ -3,6 +3,15 @@
 // Note : ce fichier est chargé dans <head> sans defer, donc document.body n'existe
 // pas encore ici — on ajoute au <head> à la place (toujours disponible à ce stade).
 (function () {
+    // Auto-exclusion : visiter n'importe quelle page une fois avec ?noanalytics
+    // dans l'URL enregistre le choix dans localStorage pour de bon (jusqu'à
+    // vidage des données du site) — le beacon ne se charge alors plus jamais
+    // sur cet appareil/navigateur, sans affecter les autres visiteurs.
+    if (new URLSearchParams(window.location.search).has('noanalytics')) {
+        localStorage.setItem('tntm_exclude_analytics', 'true');
+    }
+    if (localStorage.getItem('tntm_exclude_analytics') === 'true') return;
+
     const beacon = document.createElement('script');
     beacon.defer = true;
     beacon.src = 'https://static.cloudflareinsights.com/beacon.min.js';
