@@ -9,6 +9,6 @@ CLIENT_SITES = {
     },
     'nadia-ta-doula': {
         'nom': 'Nadia ta Doula',
-        'email': 'naomiemcmahont@gmail.com',  # TEST TEMPORAIRE 2026-07-09 — remettre nadiatadoula@outlook.com avant de laisser Nadia tester
+        'email': 'nadiatadoula@outlook.com',
     },
 }
