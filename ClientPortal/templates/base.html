@@ -98,11 +98,6 @@
                  <span class="nav-icon">📈</span> <span class="nav-label">Analytics</span>
             </a>
 
-            <div class="sidebar-cat">Stratégie</div>
-            <a href="/plan" title="Vision &amp; Projets"
-               {% if request.path == '/plan' %}class="active"{% endif %}>
-                <span class="nav-icon">🗺️</span> <span class="nav-label">Vision &amp; Projets</span>
-            </a>
             {% endif %}
 
         </nav>
@@ -172,7 +167,7 @@
 
 {# ── Variables pour l'état actif du drawer ──────────────────────────────── #}
 {# On vérifie si la page courante est une page "Plus" (pas dans les onglets directs) #}
-{% set _plus_active = request.path in ['/formulaires','/tarifs','/packages','/plan','/heures/rapports','/admin/fiscal-summary','/soumissions','/portfolio','/analytics']
+{% set _plus_active = request.path in ['/formulaires','/tarifs','/packages','/heures/rapports','/admin/fiscal-summary','/soumissions','/portfolio','/analytics']
                       or request.path.startswith('/formulaires')
                       or request.path.startswith('/tarifs')
                       or request.path.startswith('/packages')
@@ -267,14 +262,6 @@
         <a href="/heures/rapports"
            class="pbn-drawer-item {% if request.path == '/heures/rapports' %}active{% endif %}">
             <span class="pbn-drawer-icon">🧾</span> Rapports d'heures
-        </a>
-    </div>
-
-    <div class="pbn-drawer-cat">Stratégie</div>
-    <div class="pbn-drawer-grid pbn-drawer-grid-1">
-        <a href="/plan"
-           class="pbn-drawer-item {% if request.path == '/plan' %}active{% endif %}">
-            <span class="pbn-drawer-icon">🗺️</span> Vision &amp; Projets
         </a>
     </div>
 

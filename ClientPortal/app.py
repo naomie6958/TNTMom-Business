@@ -348,22 +348,6 @@ def api_dashboard_active_projects():
 def command_center():
     return redirect('/dashboard')
 
-@app.route('/plan')
-@login_required
-def plan():
-    conn = get_db()
-    plan_stats = conn.execute('''
-        SELECT
-            COUNT(*) as total_clients,
-            COUNT(CASE WHEN statut = 'actif' THEN 1 END) as clients_actifs,
-            (SELECT COALESCE(SUM(montant), 0) FROM factures WHERE statut = 'payée') as revenus_realises
-        FROM clients
-        WHERE deleted = 0
-    ''').fetchone()
-    conn.close()
-    return render_template('plan.html', stats=plan_stats)
-
-
 
 
 # ─── FACTURES ADMIN ──────────────────────────────────────────────────────────

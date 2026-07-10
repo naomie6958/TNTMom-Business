@@ -498,6 +498,24 @@ body.sidebar-collapsed #nav-toggle { left: 0.6rem; }
 .badge-approuvé   { background: rgba(62, 207, 142, 0.15); color: var(--green); border-color: rgba(62,207,142,0.3); }
 .badge-erreur     { background: rgba(239, 68, 68, 0.15);   color: var(--red);  }
 
+/* ── SÉLECTEUR DE COULEUR ────────────────────────────────────────────────── */
+input[type="color"] {
+    appearance: none;
+    -webkit-appearance: none;
+    width: 42px;
+    height: 42px;
+    border: none;
+    border-radius: 8px;
+    padding: 0;
+    cursor: pointer;
+    background: none;
+}
+input[type="color"]::-webkit-color-swatch-wrapper { padding: 0; border-radius: 8px; }
+input[type="color"]::-webkit-color-swatch { border: 2px solid var(--border); border-radius: 8px; transition: border-color 0.2s; }
+input[type="color"]::-moz-color-swatch { border: 2px solid var(--border); border-radius: 8px; transition: border-color 0.2s; }
+input[type="color"]:hover::-webkit-color-swatch { border-color: var(--accent); }
+input[type="color"]:hover::-moz-color-swatch { border-color: var(--accent); }
+
 /* ── BOUTONS ─────────────────────────────────────────────────────────────── */
 .btn {
     display: inline-flex;

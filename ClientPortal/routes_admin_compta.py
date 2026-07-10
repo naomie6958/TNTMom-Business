@@ -226,6 +226,8 @@ def export_csv():
 @admin_compta_bp.route('/api/household-revenues', methods=['POST'])
 @login_required
 def add_household_revenue():
+    if session.get('user_role') != 'staff':
+        return jsonify({'success': False, 'error': 'Accès refusé'}), 403
     try:
         label, amount_str, date_received = (request.form.get('label') or '').strip(), (request.form.get('amount') or '').strip(), (request.form.get('date_received') or '').strip()
         if not label or not amount_str or not date_received: return jsonify({'success': False, 'error': 'Champs obligatoires'}), 400
