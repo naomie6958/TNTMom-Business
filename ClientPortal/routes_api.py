@@ -1,13 +1,14 @@
 import datetime
 import secrets
 import json
-from flask import Blueprint, request, jsonify, current_app
+from flask import Blueprint, request, jsonify, current_app, render_template
 from database import get_db
 from utils import send_notification_email
 from email_templates import (
     email_lead_naomie, email_lead_confirmation,
     email_form_submission_client, email_form_submission_underground_motorsport,
-    email_form_submission_nadia_ta_doula
+    email_form_submission_nadia_ta_doula,
+    email_confirmation_underground_motorsport, email_confirmation_nadia_ta_doula
 )
 from client_form_config import CLIENT_SITES
 
@@ -15,6 +16,14 @@ from client_form_config import CLIENT_SITES
 CUSTOM_EMAIL_TEMPLATES = {
     'underground-motorsport': lambda nom_site, champs: email_form_submission_underground_motorsport(champs),
     'nadia-ta-doula': lambda nom_site, champs: email_form_submission_nadia_ta_doula(champs),
+}
+
+# Confirmation envoyée au client qui a rempli le formulaire (pas au propriétaire du site)
+# — seulement pour les sites où un gabarit brandé existe. Pas de fallback générique ici :
+# mieux vaut ne pas confirmer que d'envoyer un courriel TNTMom générique au nom d'un client.
+CUSTOM_CONFIRMATION_TEMPLATES = {
+    'underground-motorsport': lambda champs: email_confirmation_underground_motorsport(champs.get('nom', '')),
+    'nadia-ta-doula': lambda champs: email_confirmation_nadia_ta_doula(champs.get('prenom', '')),
 }
 
 # Création du Blueprint avec le préfixe /api
@@ -81,19 +90,30 @@ def api_public_form_submit():
 
     data = request.get_json(silent=True) or request.form
     client_slug = (data.get('client') or request.args.get('client') or '').strip()
+    veut_json = request.is_json
+
+    def erreur(message, code):
+        if veut_json:
+            resp = jsonify({'error': message})
+            resp.headers['Access-Control-Allow-Origin'] = '*'
+            return resp, code
+        return render_template('erreur_formulaire.html', erreur=message), code
+
+    def succes(nom_site=None):
+        if veut_json:
+            resp = jsonify({'ok': True})
+            resp.headers['Access-Control-Allow-Origin'] = '*'
+            return resp
+        return render_template('merci_formulaire.html', nom_site=nom_site)
 
     site = CLIENT_SITES.get(client_slug)
     if not site:
-        resp = jsonify({'error': 'Site client inconnu.'})
-        resp.headers['Access-Control-Allow-Origin'] = '*'
-        return resp, 400
+        return erreur('Site client inconnu.', 400)
 
     # Honeypot anti-spam : champ caché "_honeypot" — un humain ne le remplit jamais.
     # On répond succès sans rien envoyer ni stocker, pour ne pas alerter le bot.
     if (data.get('_honeypot') or '').strip():
-        resp = jsonify({'ok': True})
-        resp.headers['Access-Control-Allow-Origin'] = '*'
-        return resp
+        return succes(site['nom'])
 
     champs = {
         k: v for k, v in data.items()
@@ -101,9 +121,7 @@ def api_public_form_submit():
     }
 
     if not champs:
-        resp = jsonify({'error': 'Formulaire vide.'})
-        resp.headers['Access-Control-Allow-Origin'] = '*'
-        return resp, 400
+        return erreur('Formulaire vide.', 400)
 
     conn = get_db()
     conn.execute(
@@ -121,9 +139,18 @@ def api_public_form_submit():
         html=render_html(site['nom'], champs)
     )
 
-    resp = jsonify({'ok': True})
-    resp.headers['Access-Control-Allow-Origin'] = '*'
-    return resp
+    # Confirmation au client qui a soumis le formulaire, si on a son courriel et un gabarit brandé
+    email_client = (champs.get('email') or champs.get('courriel') or '').strip()
+    confirmation = CUSTOM_CONFIRMATION_TEMPLATES.get(client_slug)
+    if email_client and confirmation:
+        send_notification_email(
+            f"Merci pour ta demande — {site['nom']}",
+            "Merci pour ta demande, on te répond bientôt !",
+            to=email_client,
+            html=confirmation(champs)
+        )
+
+    return succes(site['nom'])
 
 
 @api_bp.route('/public/tarifs')
