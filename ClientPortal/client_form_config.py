@@ -7,4 +7,8 @@ CLIENT_SITES = {
         'nom': 'Underground Motorsport',
         'email': 'admin@undergroundmotorsport.ca',
     },
+    'nadia-ta-doula': {
+        'nom': 'Nadia ta Doula',
+        'email': 'nadiatadoula@outlook.com',
+    },
 }

@@ -342,6 +342,74 @@ def email_form_submission_underground_motorsport(champs):
 """
 
 
+def email_form_submission_nadia_ta_doula(champs):
+    """Gabarit brandé Nadia ta Doula (crème/taupe, serif) — remplace le gabarit générique TNTMom pour ce client."""
+    lignes = "".join(
+        f"""
+        <tr>
+          <td style="padding:10px 16px;background-color:#FFFFFF;color:#3d3530;font-size:12px;text-transform:uppercase;letter-spacing:0.5px;border-bottom:1px solid #D9C4A8;width:35%;">{cle}</td>
+          <td style="padding:10px 16px;background-color:#FFFFFF;color:#2c2825;font-size:14px;border-bottom:1px solid #D9C4A8;">{valeur}</td>
+        </tr>"""
+        for cle, valeur in champs.items()
+    )
+    return f"""
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="color-scheme" content="light">
+  <meta name="supported-color-schemes" content="light">
+</head>
+<body style="margin:0;padding:0;background-color:#FAFAFA;font-family:Georgia,'Cormorant Garamond',serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#FAFAFA;padding:40px 20px;">
+    <tr>
+      <td align="center">
+        <table width="600" cellpadding="0" cellspacing="0" style="background-color:#FFFFFF;border:1px solid #D9C4A8;border-radius:4px;overflow:hidden;max-width:600px;width:100%;">
+
+          <!-- HEADER -->
+          <tr>
+            <td style="background-color:#3d3530;padding:28px 32px;text-align:center;">
+              <p style="margin:0;font-size:26px;letter-spacing:0.05em;font-family:Georgia,'Cormorant Garamond',serif;color:#D9C4A8;">
+                Nadia Gazaille
+              </p>
+              <p style="margin:4px 0 0;font-size:11px;letter-spacing:0.15em;text-transform:uppercase;font-family:Arial,Helvetica,sans-serif;color:#FAFAFA;">
+                Accompagnatrice périnatale
+              </p>
+            </td>
+          </tr>
+
+          <!-- CONTENU -->
+          <tr>
+            <td style="padding:32px;font-family:Arial,Helvetica,sans-serif;">
+              <p style="margin:0 0 6px;font-size:20px;font-weight:bold;color:#3d3530;font-family:Georgia,'Cormorant Garamond',serif;">Nouvelle demande de consultation 🌙</p>
+              <p style="margin:0 0 24px;color:#3d3530;font-size:13px;">Reçue via le formulaire du site web.</p>
+
+              <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;border-radius:4px;overflow:hidden;border:1px solid #D9C4A8;">
+                {lignes}
+              </table>
+            </td>
+          </tr>
+
+          <!-- FOOTER -->
+          <tr>
+            <td style="padding:20px 32px;border-top:1px solid #D9C4A8;text-align:center;font-family:Arial,Helvetica,sans-serif;">
+              <p style="margin:0;color:#3d3530;font-size:11px;">Formulaire de nadiatadoula.ca</p>
+              <p style="margin:6px 0 0;font-size:11px;">
+                <a href="https://tntm.ca" style="color:#3d3530;text-decoration:underline;">Site &amp; système par TNTMom</a>
+              </p>
+            </td>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
+"""
+
+
 def email_form_submission_client(nom_site, champs):
     lignes = "".join(
         f'<p style="margin:0 0 10px;color:#6e6e9a;font-size:13px;">{cle} : '

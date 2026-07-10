@@ -68,6 +68,12 @@
 
 ---
 
+## 🗑️ Nettoyage — À retirer
+
+- [ ] **Système de messagerie interne** — retirer complètement, jugé inutile (redondant avec les outils de messagerie déjà utilisés au quotidien) — 2026-07-09
+
+---
+
 ## ✅ Ordre suggéré
 
 | Priorité | Item | Effort |

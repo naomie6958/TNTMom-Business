@@ -6,13 +6,15 @@ from database import get_db
 from utils import send_notification_email
 from email_templates import (
     email_lead_naomie, email_lead_confirmation,
-    email_form_submission_client, email_form_submission_underground_motorsport
+    email_form_submission_client, email_form_submission_underground_motorsport,
+    email_form_submission_nadia_ta_doula
 )
 from client_form_config import CLIENT_SITES
 
 # Gabarits brandés par client — sinon fallback sur le gabarit générique TNTMom
 CUSTOM_EMAIL_TEMPLATES = {
     'underground-motorsport': lambda nom_site, champs: email_form_submission_underground_motorsport(champs),
+    'nadia-ta-doula': lambda nom_site, champs: email_form_submission_nadia_ta_doula(champs),
 }
 
 # Création du Blueprint avec le préfixe /api
