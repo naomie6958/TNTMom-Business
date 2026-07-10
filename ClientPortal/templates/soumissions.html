@@ -21,7 +21,7 @@
                     {{ s.client_nom }}
                     {% if not s.lu %}<span class="nav-badge" style="margin-left: 0.4rem;">Nouveau</span>{% endif %}
                 </div>
-                <div style="font-size: 0.75rem; color: var(--muted); margin-top: 0.1rem;">{{ s.created_at[:16] }}</div>
+                <div style="font-size: 0.75rem; color: var(--muted); margin-top: 0.1rem;">{{ s.created_at | to_local | replace('T', ' ') }}</div>
                 <div style="margin-top: 0.4rem; display: flex; gap: 0.4rem; flex-wrap: wrap;">
                     {% if s.notif_owner_statut == 'ok' %}
                         <span class="badge badge-actif" title="Notification envoyée avec succès au propriétaire du site">✅ Formulaire reçu</span>
