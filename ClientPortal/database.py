@@ -616,6 +616,15 @@ def migrate_db():
     except Exception:
         pass
 
+    # Traçabilité des envois de courriel liés à une soumission —
+    # statuts possibles : 'en_attente' (pas encore résolu) / 'ok' / 'erreur' / 'na' (non applicable)
+    for col in ('notif_owner_statut', 'confirmation_client_statut'):
+        try:
+            conn.execute(f"ALTER TABLE client_form_submissions ADD COLUMN {col} TEXT DEFAULT 'en_attente'")
+            conn.commit()
+        except Exception:
+            pass
+
     # Ajout des colonnes de la V2 pour éviter les futurs crashs
     for table, col, col_type in [
         ('contrats', 'package_snapshot', 'TEXT'),

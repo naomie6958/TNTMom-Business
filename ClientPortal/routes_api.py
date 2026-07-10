@@ -124,19 +124,34 @@ def api_public_form_submit():
         return erreur('Formulaire vide.', 400)
 
     conn = get_db()
-    conn.execute(
+    cur = conn.execute(
         'INSERT INTO client_form_submissions (client_site, data) VALUES (?, ?)',
         (client_slug, json.dumps(champs, ensure_ascii=False))
     )
+    submission_id = cur.lastrowid
     conn.commit()
     conn.close()
+
+    def _maj_statut(colonne, submission_id):
+        # Callback exécuté depuis le thread d'envoi une fois le résultat connu —
+        # ouvre sa propre connexion DB (celle de la requête est déjà fermée à ce moment-là)
+        def callback(succes):
+            c = get_db()
+            c.execute(
+                "UPDATE client_form_submissions SET " + colonne + " = ? WHERE id = ?",
+                ('ok' if succes else 'erreur', submission_id)
+            )
+            c.commit()
+            c.close()
+        return callback
 
     render_html = CUSTOM_EMAIL_TEMPLATES.get(client_slug, email_form_submission_client)
     send_notification_email(
         f"Nouvelle demande — {site['nom']}",
         "\n".join(f"{k} : {v}" for k, v in champs.items()),
         to=site['email'],
-        html=render_html(site['nom'], champs)
+        html=render_html(site['nom'], champs),
+        on_result=_maj_statut('notif_owner_statut', submission_id)
     )
 
     # Confirmation au client qui a soumis le formulaire, si on a son courriel et un gabarit brandé
@@ -147,8 +162,18 @@ def api_public_form_submit():
             f"Merci pour ta demande — {site['nom']}",
             "Merci pour ta demande, on te répond bientôt !",
             to=email_client,
-            html=confirmation(champs)
+            html=confirmation(champs),
+            on_result=_maj_statut('confirmation_client_statut', submission_id)
         )
+    else:
+        # Pas de courriel client fourni ou pas de gabarit brandé pour ce site — rien à confirmer
+        conn = get_db()
+        conn.execute(
+            "UPDATE client_form_submissions SET confirmation_client_statut = 'na' WHERE id = ?",
+            (submission_id,)
+        )
+        conn.commit()
+        conn.close()
 
     return succes(site['nom'])
 

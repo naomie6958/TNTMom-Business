@@ -496,6 +496,7 @@ body.sidebar-collapsed #nav-toggle { left: 0.6rem; }
 .badge-livré      { background: rgba(135, 206, 235, 0.15); color: var(--accent2); }
 .badge-payé       { background: rgba(212, 175, 55, .15);   color: var(--gold-light); border-color: rgba(212,175,55,.3); animation: gold-pulse 2.5s ease-in-out infinite; }
 .badge-approuvé   { background: rgba(62, 207, 142, 0.15); color: var(--green); border-color: rgba(62,207,142,0.3); }
+.badge-erreur     { background: rgba(239, 68, 68, 0.15);   color: var(--red);  }
 
 /* ── BOUTONS ─────────────────────────────────────────────────────────────── */
 .btn {

@@ -6,12 +6,16 @@ from functools import wraps
 import json
 from flask import session, redirect
 
-def _send_email_thread(subject, body, to, html):
-    """Fonction interne exécutée par le thread en arrière-plan."""
+def _send_email_thread(subject, body, to, html, on_result=None):
+    """Fonction interne exécutée par le thread en arrière-plan.
+    on_result(bool), si fourni, est appelé avec True/False une fois l'envoi tenté —
+    permet à l'appelant de tracer le résultat (ex: statut d'une soumission en DB)."""
     resend.api_key = os.getenv('RESEND_API_KEY')
     if not resend.api_key:
         import sys
         print('[EMAIL ERROR] RESEND_API_KEY manquant dans le .env', file=sys.stderr)
+        if on_result:
+            on_result(False)
         return
 
     try:
@@ -24,16 +28,20 @@ def _send_email_thread(subject, body, to, html):
             # Resend accepte html=None si t'as juste du texte brut à envoyer
             "html": html or None,
         })
+        if on_result:
+            on_result(True)
     except Exception as e:
         import sys
         print(f'[EMAIL ERROR] {subject} → {to}: {e}', file=sys.stderr)
+        if on_result:
+            on_result(False)
 
 
-def send_notification_email(subject, body, to=None, html=None):
+def send_notification_email(subject, body, to=None, html=None, on_result=None):
     """Lance l'envoi d'e-mail en arrière-plan sans bloquer l'interface Flask."""
     thread = threading.Thread(
         target=_send_email_thread,
-        args=(subject, body, to, html)
+        args=(subject, body, to, html, on_result)
     )
     thread.start()
     return True

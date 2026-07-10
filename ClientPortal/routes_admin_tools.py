@@ -28,6 +28,8 @@ def soumissions_list():
             'champs': json.loads(row['data']),
             'lu': row['lu'],
             'created_at': row['created_at'],
+            'notif_owner_statut': row['notif_owner_statut'],
+            'confirmation_client_statut': row['confirmation_client_statut'],
         })
 
     return render_template('soumissions.html', soumissions=soumissions)
