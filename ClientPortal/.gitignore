@@ -3,6 +3,7 @@
 
 # Base de données SQLite — données réelles, pas dans le dépôt
 portal.db
+portal_local_backup.db
 
 # Fichiers uploadés par les clients — données réelles, pas dans le dépôt
 uploads/

@@ -24,14 +24,14 @@
 ## 🟠 Phase 3 — Outils Naomie (Bill/Nao)
 
 ### 3.1 Budget Bill — Revenus du ménage
-- [ ] **Table `budget_revenus`** — ajouter une table pour les revenus : source, montant, date, mois
-- [ ] **UI revenus** dans `bill/budget.html` — section revenus avec ajout/suppression
-- [ ] **Solde mensuel** — afficher revenus - dépenses = solde en bas de page
-- [ ] **Route API** `GET/POST/DELETE /api/budget-revenu`
+- [x] **Table `budget_revenus`** — ajouter une table pour les revenus : source, montant, date, mois
+- [x] **UI revenus** dans `bill/budget.html` — section revenus avec ajout/suppression
+- [x] **Solde mensuel** — afficher revenus - dépenses = solde en bas de page
+- [x] **Route API** `GET/POST/DELETE /api/budget-revenu`
 
 ### 3.2 Comptabilité Naomie — Améliorations
 - [ ] **Filtre par période** dans heures_rapports.html (actuellement vue globale seulement)
-- [ ] **Résumé fiscal annuel** — revenus totaux + dépenses déductibles + bénéfice net par année
+- [x] **Résumé fiscal annuel** — revenus totaux + dépenses déductibles + bénéfice net par année
 
 ---
 
@@ -50,13 +50,13 @@
 - [x] **Page `/portfolio`** dans le portail admin — liste des cartes avec statut, couleur, ordre, visible
 - [x] **Formulaire création/édition** — nom, tagline, description, tags, statut, couleur (9 options), lien, image_url, ordre
 - [x] **Suppression** — modale de confirmation stylée (pas de confirm() natif)
-- [ ] **Prévisualisation live** — aperçu de la carte telle qu'elle apparaît sur tntm.ca
+- [x] **Prévisualisation live** — aperçu de la carte telle qu'elle apparaît sur tntm.ca
 - [ ] **Upload image** — depuis le portail directement (utilise le système d'upload existant)
 
 ### 4.3 tntm.ca — Connexion live
-- [ ] **Modifier `script.js`** — changer `fetch('data/projets.json')` pour `fetch('https://portail.tntm.ca/api/projets')`
-- [ ] **Fallback** — si l'API ne répond pas, afficher un message gracieux
-- [ ] **CORS** — activer sur la route `/api/projets` dans Flask
+- [x] **Modifier `script.js`** — changer `fetch('data/projets.json')` pour `fetch('https://portail.tntm.ca/api/projets')`
+- [x] **Fallback** — si l'API ne répond pas, afficher un message gracieux
+- [x] **CORS** — activer sur la route `/api/projets` dans Flask
 
 ---
 
