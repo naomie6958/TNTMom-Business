@@ -226,7 +226,7 @@ def export_csv():
 @admin_compta_bp.route('/api/household-revenues', methods=['POST'])
 @login_required
 def add_household_revenue():
-    if session.get('user_role') != 'staff':
+    if session.get('user_role') not in ('staff', 'admin'):
         return jsonify({'success': False, 'error': 'Accès refusé'}), 403
     try:
         label, amount_str, date_received = (request.form.get('label') or '').strip(), (request.form.get('amount') or '').strip(), (request.form.get('date_received') or '').strip()
@@ -243,7 +243,7 @@ def add_household_revenue():
 @admin_compta_bp.route('/api/household-revenues/<int:rev_id>', methods=['DELETE'])
 @login_required
 def delete_household_revenue(rev_id):
-    if session.get('user_role') != 'staff':
+    if session.get('user_role') not in ('staff', 'admin'):
         return jsonify({'success': False, 'error': 'Accès refusé'}), 403
     try:
         conn = get_db()
@@ -647,8 +647,20 @@ def heures_categories():
 @admin_compta_bp.route('/heures/rapports')
 @login_required
 def heures_rapports():
+    debut = request.args.get('debut', '').strip()
+    fin = request.args.get('fin', '').strip()
+
+    filtre_dates = ''
+    params = []
+    if debut:
+        filtre_dates += ' AND e.date >= ?'
+        params.append(debut)
+    if fin:
+        filtre_dates += ' AND e.date <= ?'
+        params.append(fin)
+
     conn = get_db()
-    par_categorie = conn.execute('''
+    par_categorie = conn.execute(f'''
         SELECT c.nom as cat_nom, c.couleur,
                COALESCE(SUM(e.duree_minutes), 0) as total_min,
                COALESCE(SUM(CASE WHEN e.type_facturation='horaire' AND e.taux_applique IS NOT NULL
@@ -656,12 +668,12 @@ def heures_rapports():
                COUNT(*) as nb_entrees
         FROM entrees_temps e
         JOIN categories_temps c ON c.id = e.categorie_id
-        WHERE e.heure_fin IS NOT NULL OR e.mode = 'manuel'
+        WHERE (e.heure_fin IS NOT NULL OR e.mode = 'manuel'){filtre_dates}
         GROUP BY e.categorie_id
         ORDER BY total_min DESC
-    ''').fetchall()
+    ''', params).fetchall()
 
-    par_projet = conn.execute('''
+    par_projet = conn.execute(f'''
         SELECT cl.nom as client_nom, co.nom as projet_nom,
                COALESCE(cl.rnd, 0) as rnd,
                COALESCE(SUM(e.duree_minutes), 0) as total_min,
@@ -674,29 +686,31 @@ def heures_rapports():
         JOIN categories_temps cat ON cat.id = e.categorie_id
         LEFT JOIN clients cl ON cl.id = e.client_id
         LEFT JOIN contrats co ON co.id = e.contrat_id
-        WHERE e.heure_fin IS NOT NULL OR e.mode = 'manuel'
+        WHERE (e.heure_fin IS NOT NULL OR e.mode = 'manuel'){filtre_dates}
         GROUP BY e.contrat_id, e.client_id
         ORDER BY total_min DESC
-    ''').fetchall()
+    ''', params).fetchall()
 
-    par_semaine = conn.execute('''
+    par_semaine = conn.execute(f'''
         SELECT strftime('%Y — sem. %W', e.date) as semaine,
                strftime('%Y%W', e.date) as semaine_sort,
                COALESCE(SUM(e.duree_minutes), 0) as total_min,
                COALESCE(SUM(CASE WHEN e.type_facturation='horaire' AND e.taux_applique IS NOT NULL
                     THEN (e.duree_minutes / 60.0) * e.taux_applique ELSE 0 END), 0) as montant
         FROM entrees_temps e
-        WHERE e.heure_fin IS NOT NULL OR e.mode = 'manuel'
+        WHERE (e.heure_fin IS NOT NULL OR e.mode = 'manuel'){filtre_dates}
         GROUP BY semaine_sort
         ORDER BY semaine_sort DESC
         LIMIT 8
-    ''').fetchall()
+    ''', params).fetchall()
 
     conn.close()
     return render_template('heures_rapports.html',
         par_categorie=par_categorie,
         par_projet=par_projet,
-        par_semaine=par_semaine
+        par_semaine=par_semaine,
+        debut=debut,
+        fin=fin,
     )
 
 @admin_compta_bp.route('/api/heures/milestones/<int:contrat_id>')
