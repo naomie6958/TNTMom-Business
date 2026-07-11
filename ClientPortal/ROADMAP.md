@@ -30,7 +30,7 @@
 - [x] **Route API** `GET/POST/DELETE /api/budget-revenu`
 
 ### 3.2 Comptabilité Naomie — Améliorations
-- [ ] **Filtre par période** dans heures_rapports.html (actuellement vue globale seulement)
+- [x] **Filtre par période** dans heures_rapports.html ✅ 2026-07-11 (formulaire GET debut/fin, appliqué aux 3 requêtes)
 - [x] **Résumé fiscal annuel** — revenus totaux + dépenses déductibles + bénéfice net par année
 
 ---
@@ -74,13 +74,13 @@
 
 ---
 
-## ✅ Ordre suggéré
+## ✅ Ordre suggéré (restants — mis à jour 2026-07-11)
 
 | Priorité | Item | Effort |
 |---|---|---|
-| 1 | Budget Bill — revenus du ménage (3.1) | ~1h30 |
-| 2 | Portfolio Manager back-end + API (4.1) | ~1h |
-| 3 | Interface admin portfolio (4.2) | ~1h30 |
-| 4 | Connexion tntm.ca live (4.3) | ~30 min |
-| 5 | Filtres comptabilité (3.2) | ~45 min |
-| 6 | Stripe (5) | ~2h |
+| 1 | Statut « Disponible » tntm.ca géré depuis l'admin (voir ROADMAP-MASTER) | ~1h |
+| 2 | Retrait de la messagerie interne (Nettoyage) | ~30 min |
+| 3 | Upload image portfolio (4.2) | ~45 min |
+| 4 | Stripe (5) | ~2h, session dédiée |
+
+> ⚠️ Note restructuration (plan cowork Phases B/C — templates + app.py) : `migrate_db.py` doit **rester à la racine** (le Procfile le lance au démarrage — l'avoir déplacé a causé un 502 en prod le 2026-07-11). À corriger avant tout re-déplacement : faire importer `DB_PATH` depuis `database.py`.
