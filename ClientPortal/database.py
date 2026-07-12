@@ -192,8 +192,16 @@ def init_db():
             FOREIGN KEY(formulaire_id) REFERENCES formulaires(id) ON DELETE CASCADE,
             FOREIGN KEY(client_id) REFERENCES clients(id) ON DELETE CASCADE
         );
-
+        
+        CREATE TABLE IF NOT EXISTS site_settings (
+            cle     TEXT PRIMARY KEY,
+            valeur  TEXT NOT NULL
+        );
     ''')
+    conn.execute(
+        "INSERT OR IGNORE INTO site_settings (cle, valeur) VALUES (?, ?)",
+        ('statut_disponible', 'disponible')
+    )
     conn.commit()
     conn.close()
 

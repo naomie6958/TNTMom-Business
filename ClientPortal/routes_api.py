@@ -190,6 +190,20 @@ def api_public_tarifs():
     return resp
 
 
+@api_bp.route('/public/statut')
+def api_public_statut():
+    conn = get_db()
+    row = conn.execute(
+        "SELECT valeur FROM site_settings WHERE cle = ?",
+        ('statut_disponible',)
+    ).fetchone()
+    conn.close()
+    # Filet de sécurité : si la ligne n'existe pas, on reste "disponible"
+    resp = jsonify({'statut': row['valeur'] if row else 'disponible'})
+    resp.headers['Access-Control-Allow-Origin'] = '*'
+    return resp
+
+
 @api_bp.route('/public/projets')
 def api_public_projets():
     conn = get_db()

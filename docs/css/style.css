@@ -1337,6 +1337,12 @@ footer {
     margin-bottom: 1.2rem;
 }
 
+.disponible-badge--occupe {
+    background: rgba(240, 208, 96, 0.12);
+    color: #F0D060;
+    border-color: rgba(240, 208, 96, 0.35);
+}
+
 /* Services */
 .about-services {
     display: grid;

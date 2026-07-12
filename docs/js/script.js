@@ -26,6 +26,18 @@ document.querySelectorAll('.screenshot-item img').forEach(img => {
     img.addEventListener('click', () => openLightbox(img.src, img.alt));
 });
 
+// ── Statut « Disponible » géré depuis le ClientPortal ─────────────────────
+fetch('https://portail.tntm.ca/api/public/statut')
+    .then(r => r.json())
+    .then(data => {
+        const badge = document.querySelector('.disponible-badge');
+        // Par défaut (ou si l'API est injoignable), le badge codé en dur reste affiché
+        if (!badge || data.statut !== 'indisponible') return;
+        badge.textContent = '● Occupé pour le moment — écris-moi quand même';
+        badge.classList.add('disponible-badge--occupe');
+    })
+    .catch(() => {});
+
 const STATUT_LABELS = {
     'live':      { label: '● Live',       cls: 'statut-live' },
     'en-cours':  { label: '◐ En cours',   cls: 'statut-en-cours' },

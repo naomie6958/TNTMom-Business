@@ -358,8 +358,25 @@ def package_creer_contrat(pkg_id):
 def portfolio_list():
     conn = get_db()
     projets = conn.execute('SELECT * FROM portfolio_projets ORDER BY ordre, id').fetchall()
+    row = conn.execute(
+        "SELECT valeur FROM site_settings WHERE cle = ?", ('statut_disponible',)
+    ).fetchone()
     conn.close()
-    return render_template('admin/portfolio.html', projets=projets)
+    statut_site = row['valeur'] if row else 'disponible'
+    return render_template('admin/portfolio.html', projets=projets, statut_site=statut_site)
+
+@admin_tools_bp.route('/statut-site/toggle', methods=['POST'])
+@login_required
+def statut_site_toggle():
+    conn = get_db()
+    conn.execute('''
+        UPDATE site_settings
+        SET valeur = CASE WHEN valeur = 'disponible' THEN 'indisponible' ELSE 'disponible' END
+        WHERE cle = ?
+    ''', ('statut_disponible',))
+    conn.commit()
+    conn.close()
+    return redirect('/portfolio')
 
 @admin_tools_bp.route('/portfolio/<int:pid>/toggle', methods=['POST'])
 @login_required

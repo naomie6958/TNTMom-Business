@@ -9,6 +9,24 @@
     <a href="/portfolio/new" class="btn btn-primary">+ Nouveau projet</a>
 </div>
 
+<div class="card" style="display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-bottom: 1rem;">
+    <div>
+        <div style="font-weight: 600;">Statut affiché sur tntm.ca</div>
+        <div class="text-muted-sm">
+            {% if statut_site == 'disponible' %}
+                <span class="text-green">● Disponible pour de nouveaux projets</span>
+            {% else %}
+                <span style="color: var(--gold);">● Occupé pour le moment</span>
+            {% endif %}
+        </div>
+    </div>
+    <form method="POST" action="/statut-site/toggle">
+        <button type="submit" class="btn btn-secondary btn-sm">
+            {% if statut_site == 'disponible' %}Passer à Occupé{% else %}Passer à Disponible{% endif %}
+        </button>
+    </form>
+</div>
+
 <div class="card" style="padding: 0; overflow: hidden;">
     <table class="client-table">
         <thead>
