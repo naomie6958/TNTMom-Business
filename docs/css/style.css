@@ -490,7 +490,33 @@ main {
     margin-bottom: 0;
     border-bottom: none;
     animation: fadeIn 0.8s ease-in;
+    background-color: rgb(24,11,29);
 }
+
+.hero-bg-clip {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 50%;
+    width: 100vw;
+    transform: translateX(-50%);
+    overflow: hidden;
+    z-index: 0;
+    pointer-events: none;
+}
+
+.hero-bg {
+    position: absolute;
+    inset: 0;
+    background:
+        linear-gradient(to right, rgba(24,11,29,0) 0%, rgba(24,11,29,0.6) 70%, rgb(24,11,29) 100%),
+        url('../images/decorations/hero-code-decoration.png');
+    background-size: auto 100%, auto 100%;
+    background-position: left center, left center;
+    background-repeat: no-repeat, no-repeat;
+    pointer-events: none;
+}
+
 
 .snap-scroll #hero,
 .snap-scroll .projets-section {
@@ -510,6 +536,8 @@ main {
     flex-direction: column;
     align-items: center;
     gap: 1vh;
+    position: relative;
+    z-index: 1;
 }
 
 #hero-tagline {
@@ -530,6 +558,15 @@ main {
     animation: gold-shimmer 4s linear infinite;
 }
 
+.hero-line2 {
+    background: linear-gradient(90deg, #6bbcd8 0%, #b8dff0 40%, #e8f6fb 50%, #87CEEB 60%, #6bbcd8 100%);
+    background-size: 200% auto;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    animation: gold-shimmer 5s linear infinite;
+}
+
 #hero-tagline strong {
     font-size: 1.3em;
     display: inline-block;
@@ -548,6 +585,8 @@ main {
     justify-content: center;
     gap: 7vh;
     padding: 0 1rem;
+    position: relative;
+    z-index: 1;
 }
 
 #hero-cta {
