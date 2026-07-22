@@ -8,6 +8,33 @@
     </div>
 </div>
 
+<div class="card" style="margin-bottom: 1.5rem;">
+    <h2 style="margin-top: 0; font-size: 1rem;">Créer un compte</h2>
+    <form method="POST" action="/admin/comptes/creer"
+          style="display: grid; grid-template-columns: 1fr 1fr 1fr 1fr auto; gap: 0.75rem; align-items: end;">
+        <div>
+            <label for="creer-name" style="display:block; font-size:0.75rem; color:var(--muted); margin-bottom:0.3rem;">Nom</label>
+            <input type="text" id="creer-name" name="name" required style="width:100%;">
+        </div>
+        <div>
+            <label for="creer-username" style="display:block; font-size:0.75rem; color:var(--muted); margin-bottom:0.3rem;">Identifiant</label>
+            <input type="text" id="creer-username" name="username" required style="width:100%;">
+        </div>
+        <div>
+            <label for="creer-role" style="display:block; font-size:0.75rem; color:var(--muted); margin-bottom:0.3rem;">Rôle</label>
+            <select id="creer-role" name="role" style="width:100%;">
+                <option value="staff">staff</option>
+                <option value="admin">admin</option>
+            </select>
+        </div>
+        <div>
+            <label for="creer-password" style="display:block; font-size:0.75rem; color:var(--muted); margin-bottom:0.3rem;">Mot de passe initial</label>
+            <input type="password" id="creer-password" name="password" required minlength="8" style="width:100%;">
+        </div>
+        <button type="submit" class="btn btn-primary btn-sm">Créer</button>
+    </form>
+</div>
+
 <div class="card">
     <div class="comptes-table-wrap">
         <table class="client-table">
