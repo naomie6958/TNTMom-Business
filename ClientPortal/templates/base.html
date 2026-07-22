@@ -98,6 +98,12 @@
                  <span class="nav-icon">📈</span> <span class="nav-label">Analytics</span>
             </a>
 
+            <div class="sidebar-cat">Système</div>
+            <a href="/admin/comptes" title="Comptes internes"
+                {% if request.path.startswith('/admin/comptes') %}class="active"{% endif %}>
+                 <span class="nav-icon">🔑</span> <span class="nav-label">Comptes internes</span>
+            </a>
+
             {% endif %}
 
         </nav>

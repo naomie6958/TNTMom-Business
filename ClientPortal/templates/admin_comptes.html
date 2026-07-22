@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block title %}Comptes internes{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1 class="page-title">🔑 <span>Comptes</span> internes</h1>
+    </div>
+</div>
+
+<div class="card">
+    <div class="comptes-table-wrap">
+        <table class="client-table">
+            <thead>
+                <tr>
+                    <th style="width: 18%;">Nom</th>
+                    <th style="width: 18%;">Identifiant</th>
+                    <th style="width: 14%;">Rôle</th>
+                    <th style="width: 50%;">Nouveau mot de passe</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for compte in comptes %}
+                <tr>
+                    <td>{{ compte.name }}</td>
+                    <td>{{ compte.username }}</td>
+                    <td><span class="badge badge-{{ compte.role }}">{{ compte.role }}</span></td>
+                    <td>
+                        <form method="POST" action="/admin/comptes/{{ compte.id }}/reset-password"
+                              onsubmit="return confirm('Réinitialiser le mot de passe de {{ compte.name }} ?');"
+                              style="display:flex; gap:0.75rem; align-items:center;">
+                            <input type="password" name="nouveau_mot_de_passe" placeholder="Nouveau mot de passe" required minlength="8" style="flex:1; max-width: 320px;">
+                            <button type="submit" class="btn btn-secondary btn-sm">Réinitialiser</button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

@@ -66,6 +66,8 @@ from routes_admin_compta import admin_compta_bp
 app.register_blueprint(admin_compta_bp)
 from routes_admin_tools import admin_tools_bp
 app.register_blueprint(admin_tools_bp)
+from routes_admin_comptes import admin_comptes_bp
+app.register_blueprint(admin_comptes_bp)
 
 _MOIS = ['jan', 'fév', 'mar', 'avr', 'mai', 'juin', 'juil', 'août', 'sep', 'oct', 'nov', 'déc']
 
