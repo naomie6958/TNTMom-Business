@@ -29,9 +29,12 @@
         </div>
         <div>
             <label for="creer-password" style="display:block; font-size:0.75rem; color:var(--muted); margin-bottom:0.3rem;">Mot de passe initial</label>
-            <input type="password" id="creer-password" name="password" required minlength="8" style="width:100%;">
+            <input type="password" id="creer-password" name="password" class="champ-mdp" required minlength="8" style="width:100%;">
         </div>
-        <button type="submit" class="btn btn-primary btn-sm">Créer</button>
+        <div style="display:flex; flex-direction:column; align-items:center; gap:0.4rem;">
+            <button type="button" class="btn btn-secondary btn-sm" onclick="remplirMotDePasse(this)" title="Générer un mot de passe">🎲</button>
+            <button type="submit" class="btn btn-primary btn-sm">Créer</button>
+        </div>
     </form>
 </div>
 
@@ -56,7 +59,8 @@
                         <form method="POST" action="/admin/comptes/{{ compte.id }}/reset-password"
                               onsubmit="return confirm('Réinitialiser le mot de passe de {{ compte.name }} ?');"
                               style="display:flex; gap:0.75rem; align-items:center;">
-                            <input type="password" name="nouveau_mot_de_passe" placeholder="Nouveau mot de passe" required minlength="8" style="flex:1; max-width: 320px;">
+                            <input type="password" name="nouveau_mot_de_passe" class="champ-mdp" placeholder="Nouveau mot de passe" required minlength="8" style="flex:1; max-width: 320px;">
+                            <button type="button" class="btn btn-secondary btn-sm" onclick="remplirMotDePasse(this)" title="Générer un mot de passe">🎲</button>
                             <button type="submit" class="btn btn-secondary btn-sm">Réinitialiser</button>
                         </form>
                     </td>
@@ -66,4 +70,73 @@
         </table>
     </div>
 </div>
+
+<div class="page-header" style="margin-top: 2rem;">
+    <div>
+        <h1 class="page-title">🌐 <span>Comptes</span> clients</h1>
+    </div>
+</div>
+
+<div class="card">
+    <div class="comptes-table-wrap">
+        <table class="client-table">
+            <thead>
+                <tr>
+                    <th style="width: 20%;">Nom</th>
+                    <th style="width: 20%;">Entreprise</th>
+                    <th style="width: 20%;">Courriel</th>
+                    <th style="width: 40%;">Nouveau mot de passe</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for client in clients_portail %}
+                <tr>
+                    <td>{{ client.nom }}</td>
+                    <td>{{ client.entreprise or '—' }}</td>
+                    <td>{{ client.email or '—' }}</td>
+                    <td>
+                        <form method="POST" action="/clients/{{ client.id }}/set-password"
+                              onsubmit="return confirm('Réinitialiser le mot de passe de {{ client.nom }} ? Un courriel lui sera envoyé automatiquement.');"
+                              style="display:flex; gap:0.75rem; align-items:center;">
+                            <input type="password" name="password" class="champ-mdp" placeholder="Nouveau mot de passe" required minlength="6" style="flex:1; max-width: 320px;">
+                            <button type="button" class="btn btn-secondary btn-sm" onclick="remplirMotDePasse(this)" title="Générer un mot de passe">🎲</button>
+                            <button type="submit" class="btn btn-secondary btn-sm">Réinitialiser</button>
+                        </form>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="4" class="text-muted" style="text-align:center; padding: 1.5rem;">Aucun client n'a encore d'accès portail actif.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+
+<script>
+    const LISTE_MOTS = ["tortue","fusee","cactus","nuage","piano","souris","montagne","citron","hibou","velo","jardin","comete","panda","riviere","bougie","tigre","sirop","flocon","navire","muffin","castor","lampe","orage","sentier","cerise","robot","plume","glacier","banjo","koala","tulipe","moulin","sardine","cabane","trapeze","biscuit","renard","volcan","hamac","perle","dragon","tambour","mesange","igloo","safran","luciole","baleine","pretzel","erable","boussole","harpon","colibri","meteore","phoque","lasso","origami","tornade","bambou","goeland","falaise","satellite","yaourt","zephyr","totem","canyon","harpe","lezard","mangue","nectar","opale","papaye","quartz","radis","sequoia","toucan","vanille","wagon","xylophone","dauphin","escargot","fromage","girafe","homard","iceberg","jaguar","kiwi","lavande","matelot","noisette","ouragan","pieuvre","raquette","scarabee","telescope","ukulele","varech","wapiti","corail","brindille","chalet","denim","etoile","foret","galaxie","horizon","iris","jonquille","kayak","liane","meduse","nenuphar","ocean","pistache","quenouille","rocher","saphir","tresor","urubu","vortex","brise","cascade","dune"];
+
+    function pigerIndex(max) {
+        const tampon = new Uint32Array(1);
+        crypto.getRandomValues(tampon);
+        return tampon[0] % max;
+    }
+
+    function genererMotDePasse() {
+        const mot1   = LISTE_MOTS[pigerIndex(LISTE_MOTS.length)];
+        const mot2   = LISTE_MOTS[pigerIndex(LISTE_MOTS.length)];
+        const mot3   = LISTE_MOTS[pigerIndex(LISTE_MOTS.length)];
+        const nombre = 10 + pigerIndex(90);
+        return `${mot1}-${mot2}-${mot3}-${nombre}`;
+    }
+
+    function remplirMotDePasse(bouton) {
+        const champ  = bouton.closest('form').querySelector('.champ-mdp');
+        champ.type   = 'text';
+        champ.value  = genererMotDePasse();
+    }
+</script>
+
 {% endblock %}

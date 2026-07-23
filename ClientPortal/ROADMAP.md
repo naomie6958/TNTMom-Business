@@ -68,6 +68,30 @@
 
 ---
 
+## 💡 Idée capturée — Refonte Command Center (2026-07-22, soir)
+
+> Flash de fin de session pendant le lab générateur de mots de passe. **Pas commencé — à évaluer/planifier à tête reposée.**
+
+**Le vrai problème nommé par Naomie :** « je perds le fil de touuuute » — la nav actuelle est éclatée en pages séparées (Leads, Soumissions, Dashboard, Heures, Comptes, Portfolio, Analytics...), donc rien n'indique *où est le feu* sans cliquer partout pour vérifier.
+
+**La vision :**
+- Remplacer (ou compléter) la nav à tiroirs par **un écran central** dans l'esprit Kanban — colonnes/cartes par statut plutôt que tableaux plats
+- **Indicateurs visuels clairs** : d'un coup d'œil, savoir ce qui a besoin d'attention (pas juste des pastilles "nouveau", quelque chose de plus lisible/priorisé)
+- **Alertes centralisées** — nouvelle soumission, facture impayée, milestone à approuver, etc. remontent toutes au même endroit au lieu d'être découvertes page par page
+- Référence : `/command-center` existe déjà dans `app.py` mais c'est un stub mort (`return redirect('/dashboard')`) — jamais construit pour vrai. `command-center-legacy` (autre chose, un vieux redirect) a été retiré le 2026-07-08.
+- Comparaison mentale : Family Dashboard, mais "next level" — Naomie veut mieux, pas une copie
+
+**Premier réflexe nommé par Naomie en ouvrant le portail :** punch d'heures — donc le Command Center n'est pas QUE des alertes clients, c'est aussi un geste quotidien récurrent (punch) à rendre visible/rapide dès l'écran d'accueil, pas juste un tableau d'alertes passif.
+
+**Pour la session de reprise, se demander :**
+- Quelles sources d'alertes regrouper en premier (soumissions non lues ? factures en retard ? milestones en attente d'approbation client ?)
+- Le punch d'heures devient une action rapide directement sur le Command Center (pas besoin d'aller sur /heures) ?
+- Kanban = literally des colonnes de statut, ou juste "l'esprit" (cartes + indicateurs) sans le drag-and-drop ?
+- Ça remplace le dashboard actuel ou ça devient la nouvelle page d'accueil du portail ?
+- Chantier de taille — prévoir une session dédiée, pas un ajout en fin de soirée
+
+---
+
 ## 🗑️ Nettoyage — À retirer
 
 - [ ] **Système de messagerie interne** — retirer complètement, jugé inutile (redondant avec les outils de messagerie déjà utilisés au quotidien) — 2026-07-09

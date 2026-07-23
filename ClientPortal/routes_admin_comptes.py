@@ -14,9 +14,15 @@ def liste_comptes():
 
     conn = get_db()
     comptes = conn.execute('SELECT id, username, name, role FROM users ORDER BY name').fetchall()
+    clients_portail = conn.execute('''
+        SELECT id, nom, email, entreprise
+        FROM clients
+        WHERE password IS NOT NULL AND (deleted IS NULL OR deleted = 0)
+        ORDER BY nom
+    ''').fetchall()
     conn.close()
 
-    return render_template('admin_comptes.html', comptes=comptes)
+    return render_template('admin_comptes.html', comptes=comptes, clients_portail=clients_portail)
 
 
 @admin_comptes_bp.route('/admin/comptes/<int:user_id>/reset-password', methods=['POST'])
