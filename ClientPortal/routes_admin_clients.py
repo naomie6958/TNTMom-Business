@@ -5,7 +5,7 @@ import os
 from flask import Blueprint, render_template, request, redirect, session, flash, jsonify, send_from_directory
 from database import get_db
 from utils import login_required, _compute_deadlines, group_messages, send_notification_email, _now, safe_json_loads
-from email_templates import email_contrat_envoye, email_milestone_livre, email_bienvenue, email_reponse_message, email_message_naomie, email_commentaire_fichier_admin
+from email_templates import email_contrat_envoye, email_milestone_livre, email_bienvenue, email_reponse_message, email_message_naomie, email_commentaire_fichier_admin, email_message_libre
 from werkzeug.utils import secure_filename
 from werkzeug.security import generate_password_hash
 
@@ -603,6 +603,47 @@ def commenter_fichier_admin(client_id, fichier_id):
                 )
         conn.close()
         flash('Commentaire ajouté.', 'success')
+    return redirect(f'/clients/{client_id}')
+
+@admin_clients_bp.route('/clients/<int:client_id>/envoyer-email-libre', methods=['POST'])
+@login_required
+def envoyer_email_libre(client_id):
+    message = request.form.get('message', '').strip()
+    if not message:
+        flash('Écris un message avant d\'envoyer.', 'error')
+        return redirect(f'/clients/{client_id}')
+
+    conn = get_db()
+    client = conn.execute('SELECT nom, email FROM clients WHERE id = ?', (client_id,)).fetchone()
+    if not client or not client['email']:
+        conn.close()
+        flash('Ce client n\'a pas d\'adresse email enregistrée.', 'error')
+        return redirect(f'/clients/{client_id}')
+
+    fichier_ids = request.form.getlist('fichier_ids')
+    chemins, noms = [], []
+    if fichier_ids:
+        placeholders = ','.join('?' * len(fichier_ids))
+        rows = conn.execute(
+            f'SELECT nom_original, nom_fichier FROM fichiers WHERE id IN ({placeholders}) AND client_id = ?',
+            (*fichier_ids, client_id)
+        ).fetchall()
+        for r in rows:
+            chemins.append(os.path.join(UPLOAD_ROOT, str(client_id), r['nom_fichier']))
+            noms.append(r['nom_original'])
+    conn.close()
+
+    ok = send_notification_email(
+        '[TNTMom] Un message de Naomie',
+        message,
+        to=client['email'],
+        html=email_message_libre(client['nom'], message, noms),
+        attachments=chemins
+    )
+    if ok:
+        flash(f'Courriel envoyé à {client["email"]}.', 'success')
+    else:
+        flash('Échec de l\'envoi.', 'error')
     return redirect(f'/clients/{client_id}')
 
 # ─── ACCÈS PORTAIL CLIENT ─────────────────────────────────────────────────────

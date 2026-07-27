@@ -159,6 +159,30 @@ def email_commentaire_fichier_admin(nom_client, nom_fichier, commentaire):
     return base_email(contenu)
 
 
+def email_message_libre(nom_client, message_texte, noms_fichiers=None):
+    # Le textarea renvoie du texte brut avec des \n — on les convertit en <br>
+    # pour que les retours à la ligne s'affichent dans le HTML du courriel.
+    message_html = message_texte.replace('\n', '<br>')
+
+    fichiers_html = ''
+    if noms_fichiers:
+        items = ''.join(f'<li style="margin-bottom:4px;">{nom}</li>' for nom in noms_fichiers)
+        fichiers_html = f"""
+      <p style="margin:24px 0 8px;color:#6e6e9a;font-size:12px;">Pièce(s) jointe(s) :</p>
+      <ul style="margin:0 0 24px;padding-left:20px;color:#f0eeff;font-size:13px;">{items}</ul>
+        """
+
+    contenu = f"""
+      <p style="margin:0 0 8px;font-size:22px;font-weight:bold;color:#d94fbd;">Un petit mot de Naomie</p>
+      <p style="margin:0 0 24px;color:#6e6e9a;font-size:13px;">{nom_client}, une mise à jour sur ton projet.</p>
+
+      <div style="margin:0 0 24px;">{message_html}</div>
+      {fichiers_html}
+      <p style="margin:0;color:#6e6e9a;font-size:12px;">Des questions ? Réponds directement à ce courriel.</p>
+    """
+    return base_email(contenu)
+
+
 def email_reponse_message(nom_client, sujet):
     contenu = f"""
       <p style="margin:0 0 8px;font-size:22px;font-weight:bold;color:#d94fbd;">Naomie t'a répondu 💬</p>

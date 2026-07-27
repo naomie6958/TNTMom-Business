@@ -642,6 +642,31 @@
                 <div class="empty-state">Aucun fichier partagé.</div>
             {% endif %}
         </div>
+        {# ── COURRIEL LIBRE ───────────────────────────────────────────── #}
+        <div class="card" style="margin-top: 1rem;">
+            <div class="section-header">
+                <div class="section-title">Envoyer un courriel</div>
+            </div>
+
+            <form method="POST" action="/clients/{{ client.id }}/envoyer-email-libre">
+                <textarea name="message" placeholder="Ton message pour {{ client.nom }}..." required
+                          style="width: 100%; min-height: 120px; padding: 0.6rem; border-radius: var(--radius); border: 1px solid var(--border); background: var(--surface2); color: var(--text); font-family: inherit; resize: vertical; margin-bottom: 0.6rem;"></textarea>
+
+                {% if fichiers %}
+                <div style="margin-bottom: 0.8rem;">
+                    <div class="text-muted" style="font-size: 0.78rem; margin-bottom: 0.4rem;">Joindre des fichiers déjà partagés :</div>
+                    {% for f in fichiers %}
+                    <label style="display: flex; align-items: center; gap: 0.4rem; font-size: 0.82rem; margin-bottom: 0.3rem;">
+                        <input type="checkbox" name="fichier_ids" value="{{ f.id }}">
+                        {{ f.nom_original }}
+                    </label>
+                    {% endfor %}
+                </div>
+                {% endif %}
+
+                <button type="submit" class="btn btn-primary">✉ Envoyer le courriel</button>
+            </form>
+        </div>
 
 </div>{# /tab-messages #}
 
