@@ -26,6 +26,19 @@ ALLOWED_EXTENSIONS = {
     '.zip', '.doc', '.docx', '.xls', '.xlsx', '.mp4', '.mov', '.txt', '.fig',
 }
 
+def recalculer_banque_heures(conn, client_id):
+    banque = conn.execute(
+        "SELECT id, date_achat FROM banque_heures WHERE client_id=? AND statut='actif' ORDER BY date_achat DESC LIMIT 1",
+        (client_id,)
+    ).fetchone()
+    if not banque:
+        return
+    total = conn.execute(
+        "SELECT COALESCE(SUM(duree_minutes), 0) FROM entrees_temps WHERE client_id=? AND date >= ?",
+        (client_id, banque['date_achat'])
+    ).fetchone()[0]
+    conn.execute('UPDATE banque_heures SET minutes_utilisees=? WHERE id=?', (total, banque['id']))
+
 # ── COMPTABILITÉ & DÉPENSES ───────────────────────────────────────────────────
 
 @admin_compta_bp.route('/comptabilite')
@@ -445,16 +458,8 @@ def heures_stop():
 
     conn.execute('UPDATE entrees_temps SET heure_fin=?, duree_minutes=? WHERE id=?',
                  (heure_fin, duree, entree['id']))
-    if entree['client_id'] and duree:
-        banque = conn.execute(
-            "SELECT id FROM banque_heures WHERE client_id=? AND statut='actif' ORDER BY date_achat DESC LIMIT 1",
-            (entree['client_id'],)
-        ).fetchone()
-        if banque:
-            conn.execute(
-                "UPDATE banque_heures SET minutes_utilisees = minutes_utilisees + ? WHERE id=?",
-                (duree, banque['id'])
-            )
+    if entree['client_id']:
+        recalculer_banque_heures(conn, entree['client_id'])
     conn.commit()
     conn.close()
     return jsonify({'ok': True, 'duree_minutes': duree})
@@ -504,16 +509,8 @@ def heures_manuel():
         taux,
     ))
     client_id_val = f.get('client_id') or None
-    if client_id_val and duree:
-        banque = conn.execute(
-            "SELECT id FROM banque_heures WHERE client_id=? AND statut='actif' ORDER BY date_achat DESC LIMIT 1",
-            (client_id_val,)
-        ).fetchone()
-        if banque:
-            conn.execute(
-                "UPDATE banque_heures SET minutes_utilisees = minutes_utilisees + ? WHERE id=?",
-                (duree, banque['id'])
-            )
+    if client_id_val:
+        recalculer_banque_heures(conn, client_id_val)
     conn.commit()
     conn.close()
 
@@ -528,10 +525,14 @@ def heures_manuel():
 @login_required
 def heures_supprimer(eid):
     conn = get_db()
+    entree = conn.execute('SELECT client_id FROM entrees_temps WHERE id=?', (eid,)).fetchone()
     conn.execute('DELETE FROM entrees_temps WHERE id=?', (eid,))
+    if entree and entree['client_id']:
+        recalculer_banque_heures(conn, entree['client_id'])
     conn.commit()
     conn.close()
     return jsonify({'ok': True})
+
 
 @admin_compta_bp.route('/heures/<int:eid>/edit', methods=['POST'])
 @login_required
@@ -575,6 +576,10 @@ def heures_edit(eid):
         f.get('categorie_id') or None,
         eid,
     ))
+    entree = conn.execute('SELECT client_id FROM entrees_temps WHERE id=?', (eid,)).fetchone()
+    if entree and entree['client_id']:
+        recalculer_banque_heures(conn, entree['client_id'])
+
     conn.commit()
     conn.close()
     flash('Entrée mise à jour.', 'success')
