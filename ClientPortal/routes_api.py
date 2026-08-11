@@ -1,6 +1,10 @@
 import datetime
 import secrets
 import json
+import anthropic
+import time
+from collections import defaultdict
+from chatbot_config import SYSTEM_PROMPT
 from flask import Blueprint, request, jsonify, current_app, render_template
 from database import get_db
 from utils import send_notification_email
@@ -11,6 +15,30 @@ from email_templates import (
     email_confirmation_underground_motorsport, email_confirmation_nadia_ta_doula
 )
 from client_form_config import CLIENT_SITES
+
+_rate_limit_hits = defaultdict(list)
+
+def _client_ip():
+    xff = request.headers.get('X-Forwarded-For', '')
+    return xff.split(',')[0].strip() if xff else request.remote_addr
+
+def _is_rate_limited(ip, max_hits=5, windows_seconds=600):
+    now = time.time()
+    hits = _rate_limit_hits[ip]
+    hits[:] = [t for t in hits if now - t < windows_seconds]
+    hits.append(now)
+    return len(hits) > max_hits
+
+def _anti_bot_bloque(data):
+    if(data.get('_honeypot') or '').strip():
+        return True
+    try:
+        loaded_at = float(data.get('_ts') or 0)
+    except ValueError:
+        loaded_at = 0
+    if loaded_at and (time.time() - loaded_at) < 2:
+        return True
+    return False
 
 # Gabarits brandés par client — sinon fallback sur le gabarit générique TNTMom
 CUSTOM_EMAIL_TEMPLATES = {
@@ -40,9 +68,15 @@ def api_public_contact():
         return resp, 204
 
     data    = request.get_json(silent=True) or request.form
+    ip      = _client_ip()
     nom     = (data.get('nom') or '').strip()
     email   = (data.get('email') or data.get('courriel') or '').strip()
     message = (data.get('message') or '').strip()
+
+    if _is_rate_limited(ip) or _anti_bot_bloque(data):
+        resp = jsonify({'ok': True})
+        resp.headers['Access-Control-Allow-Origin'] = '*'
+        return resp
 
     if not nom or not message:
         resp = jsonify({'error': 'Nom et message requis.'})
@@ -78,6 +112,35 @@ def api_public_contact():
     resp.headers['Access-Control-Allow-Origin'] = '*'
     return resp
 
+@api_bp.route('/public/chat', methods=['POST', 'OPTIONS'])
+def api_public_chat():
+    if request.method == 'OPTIONS':
+        resp = current_app.make_response('')
+        resp.headers['Access-Control-Allow-Origin']  = '*'
+        resp.headers['Access-Control-Allow-Methods'] = 'POST, OPTIONS'
+        resp.headers['Access-Control-Allow-Headers'] = 'Content-Type'
+        return resp, 204
+
+    data = request.get_json(silent=True) or {}
+    messages = data.get('messages', [])
+
+    if not messages:
+        resp = jsonify({'error': 'Aucun message reçu.'})
+        resp.headers['Access-Control-Allow-Origin'] = '*'
+        return resp, 400
+    
+    client = anthropic.Anthropic()
+    reponse = client.messages.create(
+        model='claude-haiku-4-5-20251001',
+        max_tokens=500,
+        system=SYSTEM_PROMPT,
+        messages=messages
+    )
+
+    resp = jsonify({'reply': reponse.content[0].text})
+    resp.headers['Access-Control-Allow-Origin'] = '*'
+    return resp
+
 @api_bp.route('/public/form-submit', methods=['POST', 'OPTIONS'])
 def api_public_form_submit():
     # Preflight CORS
@@ -110,14 +173,17 @@ def api_public_form_submit():
     if not site:
         return erreur('Site client inconnu.', 400)
 
-    # Honeypot anti-spam : champ caché "_honeypot" — un humain ne le remplit jamais.
-    # On répond succès sans rien envoyer ni stocker, pour ne pas alerter le bot.
-    if (data.get('_honeypot') or '').strip():
+    # Anti-bot : honeypot + timing + rate limit par IP (mêmes règles que /public/contact).
+    # Note : les sites qui n'ont pas encore de champ caché "_ts" (Nadia, Underground pour l'instant)
+    # ne déclenchent simplement pas le piège de timing — pas cassant, juste moins protégé
+    # jusqu'à ce qu'on ajoute _ts sur leurs formulaires dans une prochaine session.
+    ip = _client_ip()
+    if _is_rate_limited(ip) or _anti_bot_bloque(data):
         return succes(site['nom'])
 
     champs = {
         k: v for k, v in data.items()
-        if k not in ('client', '_honeypot') and str(v).strip()
+        if k not in ('client', '_honeypot', '_ts') and str(v).strip()
     }
 
     if not champs:

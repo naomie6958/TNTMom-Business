@@ -73,10 +73,13 @@
                         <label for="projet">Décris moi ton projet</label>
                         <textarea id="projet" name="projet" rows="2" placeholder="Décris ton projet..." required></textarea>
                     </div>
+                    <input type="text" name="_honeypot" id="_honeypot" style="position: absolute; left: -9999px;" tabindex="-1" autocomplete="off">
+                    <input type="hidden" name="_ts" id="_ts">
                     <button type="submit" class="btn-submit" id="contact-submit">Envoyer</button>
                     <div id="contact-feedback" style="display:none; margin-top:1rem; font-size:0.9rem;"></div>
                 </form>
                 <script>
+                document.getElementById('_ts').value = Date.now() / 1000;
                 document.getElementById('contact-form').addEventListener('submit', function(e) {
                     e.preventDefault();
                     const btn = document.getElementById('contact-submit');
@@ -89,7 +92,9 @@
                         recontact:   document.querySelector('input[name="recontact"]:checked').value,
                         typeProjet:  document.getElementById('type_projet').value,
                         budget:      document.getElementById('budget').value,
-                        message:     document.getElementById('projet').value
+                        message:     document.getElementById('projet').value,
+                        _honeypot:   document.getElementById('_honeypot').value,
+                        _ts:         document.getElementById('_ts').value,
                     };
                     fetch('https://portail.tntm.ca/api/public/contact', {
                         method: 'POST',
