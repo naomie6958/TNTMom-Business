@@ -8,7 +8,7 @@ if (heroBg && hero) {
         const heroHeight = hero.offsetHeight;
         const progres = Math.min(Math.max(window.scrollY / heroHeight, 0), 1);
 
-        const flou = progres * 8;
+        const flou = (1 - progres) * 2;
         const decalageY = progres * 40;
 
         heroBg.style.filter = `blur(${flou}px)`;

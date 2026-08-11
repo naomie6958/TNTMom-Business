@@ -505,6 +505,19 @@ main {
     pointer-events: none;
 }
 
+/* Frost statique par-dessus la déco du hero, présent dès le chargement
+   (contrairement au flou du scroll dans hero-parallax.js, qui lui monte
+   progressivement) — backdrop-filter floute .hero-bg qui est juste en
+   dessous dans le DOM, sans toucher à son propre filter: blur(). */
+.hero-bg-clip::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    backdrop-filter: blur(2.5px);
+    -webkit-backdrop-filter: blur(2.5px);
+    background: rgba(24, 11, 29, 0.12);
+}
+
 .hero-bg {
     position: absolute;
     inset: 0;
