@@ -132,3 +132,86 @@ class TntmFooter extends HTMLElement {
     }
 }
 customElements.define('tntm-footer', TntmFooter);
+
+class TntmChat extends HTMLElement {
+    connectedCallback() {
+        this.innerHTML = `
+            <button class="tntm-chat-bulle" aria-label="Ouvrir le chat">💬</button>
+            <div class="tntm-chat-panneau" hidden>
+                <div class="tntm-chat-entete">
+                    <span>Nao IA — assistante TNTM</span>
+                    <button class="tntm-chat-fermer" aria-label="Fermer">✕</button>
+                </div>
+                <div class="tntm-chat-messages"></div>
+                <div class="tntm-chat-saisie">
+                    <input type="text" class="tntm-chat-input" placeholder="Écris ton message...">
+                    <button class="tntm-chat-envoyer" aria-label="Envoyer">➤</button>
+                </div>
+            </div>
+        `;
+
+        const tntmChatBulle    = this.querySelector('.tntm-chat-bulle');
+        const tntmChatPanneau  = this.querySelector('.tntm-chat-panneau');
+        const tntmChatFermer   = this.querySelector('.tntm-chat-fermer');
+        const tntmChatMessages = this.querySelector('.tntm-chat-messages');
+        const tntmChatInput    = this.querySelector('.tntm-chat-input');
+        const tntmChatEnvoyer  = this.querySelector('.tntm-chat-envoyer');
+
+        let historique = [];
+
+        tntmChatBulle.addEventListener('click', () => {
+            tntmChatPanneau.hidden = !tntmChatPanneau.hidden;
+        });
+
+        tntmChatFermer.addEventListener('click', () => {
+            tntmChatPanneau.hidden = true;
+        });
+
+        function ajouterMessage(role, texte) {
+            historique.push({ role, content: texte });
+
+            const bulle = document.createElement('div');
+            bulle.className = `tntm-chat-msg tntm-chat-msg--${role}`;
+            bulle.textContent = texte;
+            tntmChatMessages.appendChild(bulle);
+
+            tntmChatMessages.scrollTop = tntmChatMessages.scrollHeight;
+        }
+
+        function envoyerMessage() {
+            const texte = tntmChatInput.value.trim();
+            if (!texte) return;
+
+            ajouterMessage('user', texte);
+            tntmChatInput.value = '';
+            tntmChatEnvoyer.disabled = true;
+
+            fetch('https://portail.tntm.ca/api/public/chat', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ messages: historique })
+            })
+                .then(r => r.json())
+                .then(data => {
+                    ajouterMessage('assistant', data.reply || 'Désolé, je n\'ai pas compris — tu peux reformuler ?');
+                })
+                .catch(() => {
+                    ajouterMessage('assistant', 'Oups, petit problème technique — réessaie dans un instant.');
+                })
+                .finally(() => {
+                    tntmChatEnvoyer.disabled = false;
+                });
+        }
+
+        tntmChatEnvoyer.addEventListener('click', envoyerMessage);
+
+        tntmChatInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') envoyerMessage();
+        });
+    }
+}
+customElements.define('tntm-chat', TntmChat);
+
+document.addEventListener('DOMContentLoaded', () => {
+    document.body.appendChild(document.createElement('tntm-chat'));
+});
