@@ -518,6 +518,38 @@ main {
     background: rgba(24, 11, 29, 0.12);
 }
 
+/* Bande de lumière diagonale — activée par JS (classe .scintille) une fois
+   l'image bien clarifiée par le scroll (voir hero-parallax.js). En dehors
+   de cet état, opacity:0 donc aucun coût de rendu. */
+.hero-bg-clip::before {
+    content: '';
+    position: absolute;
+    inset: -20% -50%;
+    z-index: 2;
+    background: linear-gradient(
+        115deg,
+        transparent 42%,
+        rgba(255, 255, 255, 0.16) 48%,
+        rgba(255, 255, 255, 0.32) 50%,
+        rgba(255, 255, 255, 0.16) 52%,
+        transparent 58%
+    );
+    mix-blend-mode: overlay;
+    opacity: 0;
+    transform: translateX(-35%);
+    transition: opacity 0.5s ease;
+}
+
+.hero-bg-clip.scintille::before {
+    opacity: 1;
+    animation: scintillement 3.2s ease-in-out infinite;
+}
+
+@keyframes scintillement {
+    0%, 100% { transform: translateX(-35%); }
+    50%      { transform: translateX(35%); }
+}
+
 .hero-bg {
     position: absolute;
     inset: 0;
