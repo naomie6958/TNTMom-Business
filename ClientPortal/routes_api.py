@@ -129,11 +129,16 @@ def api_public_chat():
         resp.headers['Access-Control-Allow-Origin'] = '*'
         return resp, 400
     
+    # Le modèle n'a aucune notion de la vraie date courante sans qu'on la lui donne —
+    # sans ça il présume une année par défaut (ex. 2024) au lieu de la date réelle.
+    date_du_jour = datetime.date.today().strftime('%Y-%m-%d')
+    system_avec_date = f"{SYSTEM_PROMPT}\n\nDate d'aujourd'hui : {date_du_jour}. Ne présume jamais d'une autre année."
+
     client = anthropic.Anthropic()
     reponse = client.messages.create(
         model='claude-haiku-4-5-20251001',
         max_tokens=500,
-        system=SYSTEM_PROMPT,
+        system=system_avec_date,
         messages=messages
     )
 
