@@ -491,6 +491,7 @@ body.sidebar-collapsed #nav-toggle { left: 0.6rem; }
 .badge-draft      { background: rgba(110, 110, 154, 0.15); color: var(--muted);   }
 .badge-envoyé     { background: rgba(135, 206, 235, 0.15); color: var(--accent2); }
 .badge-signé      { background: rgba(62, 207, 142, 0.15);  color: var(--green);   }
+.badge-clos       { background: rgba(200, 150, 62, 0.15);  color: var(--gold);    }
 .badge-en-attente { background: rgba(110, 110, 154, 0.15); color: var(--muted);   }
 .badge-en-cours   { background: rgba(217, 79, 189, 0.15);  color: var(--accent);  }
 .badge-livré      { background: rgba(135, 206, 235, 0.15); color: var(--accent2); }

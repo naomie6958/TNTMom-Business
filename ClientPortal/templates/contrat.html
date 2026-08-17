@@ -53,7 +53,7 @@
         <div class="form-group">
             <label for="scope">Description détaillée du projet et des livrables</label>
             <textarea id="scope" name="scope" rows="5"
-                      placeholder="Décris ce qui est inclus : type de site, nombre de pages, fonctionnalités, intégrations...">{{ contrat.scope if contrat else '' }}</textarea>
+                      placeholder="Décris ce qui est inclus : type de site, nombre de pages, fonctionnalités, intégrations...">{{ contrat.scope if contrat and contrat.scope else '' }}</textarea>
         </div>
     </div>
 
@@ -97,7 +97,7 @@
         <div class="card-title">Conditions de paiement</div>
         <div class="form-group">
             <textarea name="conditions_paiement" rows="3"
-                      placeholder="ex: Virement interac dans les 5 jours ouvrables suivant la livraison de chaque milestone. Aucune propriété intellectuelle transférée avant paiement complet.">{{ contrat.conditions_paiement if contrat else '' }}</textarea>
+                      placeholder="ex: Virement interac dans les 5 jours ouvrables suivant la livraison de chaque milestone. Aucune propriété intellectuelle transférée avant paiement complet.">{{ contrat.conditions_paiement if contrat and contrat.conditions_paiement else '' }}</textarea>
         </div>
     </div>
 
@@ -106,7 +106,7 @@
         <div class="card-title">Politique de révisions</div>
         <div class="form-group">
             <textarea name="politique_revisions" rows="3"
-                      placeholder="ex: 2 rounds de révisions inclus par milestone. Au-delà, chaque round supplémentaire est facturé 75$/h.">{{ contrat.politique_revisions if contrat else '' }}</textarea>
+                      placeholder="ex: 2 rounds de révisions inclus par milestone. Au-delà, chaque round supplémentaire est facturé 75$/h.">{{ contrat.politique_revisions if contrat and contrat.politique_revisions else '' }}</textarea>
         </div>
     </div>
 
@@ -118,7 +118,7 @@
         </div>
         <div class="form-group">
             <textarea name="hors_scope" rows="3"
-                      placeholder="ex: Rédaction de contenu (textes fournis par le client), traduction, SEO avancé, maintenance mensuelle, fonctionnalités e-commerce...">{{ contrat.hors_scope if contrat else '' }}</textarea>
+                      placeholder="ex: Rédaction de contenu (textes fournis par le client), traduction, SEO avancé, maintenance mensuelle, fonctionnalités e-commerce...">{{ contrat.hors_scope if contrat and contrat.hors_scope else '' }}</textarea>
         </div>
     </div>
 
@@ -127,7 +127,7 @@
         <div class="card-title">Timeline estimée</div>
         <div class="form-group">
             <textarea name="timeline" rows="3"
-                      placeholder="ex: Milestone 1 : 2 semaines après dépôt initial. Milestone 2 : 3 semaines après approbation M1. Livraison finale : ~6-8 semaines au total.">{{ contrat.timeline if contrat else '' }}</textarea>
+                      placeholder="ex: Milestone 1 : 2 semaines après dépôt initial. Milestone 2 : 3 semaines après approbation M1. Livraison finale : ~6-8 semaines au total.">{{ contrat.timeline if contrat and contrat.timeline else '' }}</textarea>
         </div>
     </div>
 
@@ -141,6 +141,7 @@
                     <option value="draft"   {% if s == 'draft'   %}selected{% endif %}>Brouillon</option>
                     <option value="envoyé"  {% if s == 'envoyé'  %}selected{% endif %}>Envoyé au client</option>
                     <option value="signé"   {% if s == 'signé'   %}selected{% endif %}>Signé</option>
+                    <option value="clos"    {% if s == 'clos'    %}selected{% endif %}>Clos</option>
                 </select>
             </div>
             <div class="form-actions" style="margin-top: 1.2rem; flex: 2;">
