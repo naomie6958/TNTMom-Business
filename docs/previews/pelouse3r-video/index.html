@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex, nofollow">
+    <title>Aperçu vidéo — Pelouse 3R</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Open+Sans:ital,wght@0,300..800;1,300..800&display=swap" rel="stylesheet">
+    <link rel="icon" href="../../images/tntmom-icone-dark-magenta.svg" type="image/svg+xml">
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            background: #0f0f14;
+            color: #f0eeff;
+            font-family: 'Open Sans', sans-serif;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 3rem 1.5rem 2rem;
+        }
+
+        .logo-client {
+            width: 130px;
+            margin-bottom: 1.5rem;
+        }
+
+        h1 {
+            font-family: 'Bebas Neue', cursive;
+            font-size: 2.4rem;
+            letter-spacing: 0.04em;
+            text-align: center;
+            background: linear-gradient(135deg, #D4AF37 0%, #F0D060 40%, #fffde0 55%, #D4AF37 80%);
+            background-size: 200% auto;
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            margin-bottom: 0.5rem;
+        }
+
+        .sous-titre {
+            color: rgba(240, 238, 255, 0.65);
+            font-weight: 300;
+            text-align: center;
+            margin-bottom: 2.5rem;
+            max-width: 32em;
+        }
+
+        .cadre-video {
+            width: 100%;
+            max-width: 780px;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(217, 79, 189, 0.15);
+            background: #08080e;
+        }
+
+        video {
+            width: 100%;
+            display: block;
+        }
+
+        .message {
+            margin-top: 2rem;
+            text-align: center;
+            font-weight: 300;
+            color: rgba(240, 238, 255, 0.85);
+            max-width: 32em;
+            line-height: 1.7;
+        }
+
+        .message strong {
+            color: #F0D060;
+            font-weight: 600;
+        }
+
+        footer {
+            margin-top: auto;
+            padding-top: 3rem;
+            font-size: 0.8rem;
+            color: rgba(240, 238, 255, 0.4);
+        }
+
+        footer a {
+            color: rgba(217, 79, 189, 0.85);
+            text-decoration: none;
+        }
+
+        footer a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+
+    <img src="logo-pelouse3r.png" alt="Pelouse 3R" class="logo-client">
+
+    <h1>Vidéo promotionnelle</h1>
+    <p class="sous-titre">Un aperçu du montage — dis-nous ce que tu en penses !</p>
+
+    <div class="cadre-video">
+        <video controls playsinline preload="metadata">
+            <source src="video.mp4" type="video/mp4">
+            Ton navigateur ne supporte pas la lecture vidéo intégrée.
+        </video>
+    </div>
+
+    <p class="message">Salut David ! Voici un premier montage à partir de tes clips de déneigement. <strong>Dis-nous si le rythme, les extraits choisis et la musique te conviennent</strong> — c'est facile à ajuster avant la version finale.</p>
+
+    <footer>
+        Envoyé par <a href="https://tntm.ca" target="_blank" rel="noopener">The Nerdy Trap Mom</a>
+    </footer>
+
+</body>
+</html>
