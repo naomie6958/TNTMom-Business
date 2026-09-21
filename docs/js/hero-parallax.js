@@ -2,7 +2,9 @@ const heroBg = document.querySelector('.hero-bg');
 const heroBgClip = document.querySelector('.hero-bg-clip');
 const hero = document.getElementById('hero');
 
-if (heroBg && hero) {
+const prefereMouvementReduit = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+if (heroBg && hero && !prefereMouvementReduit) {
     let enAttente = false;
 
     function appliquerEffets() {

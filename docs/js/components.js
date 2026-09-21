@@ -55,7 +55,7 @@ class TntmHeader extends HTMLElement {
                     <a href="/tarifs.html">Tarifs</a>
                     <a href="https://portail.tntm.ca/portail/login" target="_blank" class="nav-portail">Portail client →</a>
                 </nav>
-                <button id="menu-toggle" aria-label="Ouvrir le menu" title="Menu">☰</button>
+                <button id="menu-toggle" aria-label="Ouvrir le menu" aria-expanded="false" title="Menu">☰</button>
             </header>
             </div>
         `;
@@ -68,7 +68,10 @@ class TntmHeader extends HTMLElement {
 
         toggle.addEventListener('click', () => {
             nav.classList.toggle('open');
-            if (!nav.classList.contains('open')) {
+            const isOpen = nav.classList.contains('open');
+            toggle.setAttribute('aria-expanded', String(isOpen));
+            toggle.setAttribute('aria-label', isOpen ? 'Fermer le menu' : 'Ouvrir le menu');
+            if (!isOpen) {
                 const sub = this.querySelector('.nav-sub');
                 const chevron = this.querySelector('.nav-chevron-btn');
                 if (sub) sub.classList.remove('open');
@@ -142,7 +145,7 @@ class TntmChat extends HTMLElement {
                     <span>Nao IA — assistante TNTM</span>
                     <button class="tntm-chat-fermer" aria-label="Fermer">✕</button>
                 </div>
-                <div class="tntm-chat-messages"></div>
+                <div class="tntm-chat-messages" aria-live="polite"></div>
                 <div class="tntm-chat-saisie">
                     <input type="text" class="tntm-chat-input" placeholder="Écris ton message...">
                     <button class="tntm-chat-envoyer" aria-label="Envoyer">➤</button>

@@ -9,6 +9,15 @@
     --radius-panel: 6px;
 }
 
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+        animation-duration: 0.001ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.001ms !important;
+        scroll-behavior: auto !important;
+    }
+}
+
 html.snap-scroll {
     scroll-snap-type: y proximity;
     scroll-padding-top: var(--header-h, 57px);
@@ -485,6 +494,7 @@ main {
     justify-content: center;
     text-align: center;
     min-height: calc(100vh - var(--header-h, 57px));
+    min-height: calc(100dvh - var(--header-h, 57px));
     padding: 8vh 1vh;
     gap: 12vh;
     margin-bottom: 0;
@@ -574,6 +584,7 @@ main {
     flex-direction: column;
     justify-content: center;
     min-height: calc(100vh - var(--header-h, 57px));
+    min-height: calc(100dvh - var(--header-h, 57px));
 }
 
 .hero-top {
@@ -586,7 +597,9 @@ main {
 }
 
 #hero-tagline {
+    font-family: 'Open Sans', sans-serif;
     font-size: clamp(1.1rem, 3vw, 1.6rem);
+    font-weight: 400;
     letter-spacing: 0.12em;
     text-transform: uppercase;
     color: rgba(245, 222, 179, 0.75);
@@ -1586,7 +1599,7 @@ footer {
     border-radius: var(--radius-panel);
 }
 
-h2.projet-hero-titre {
+h1.projet-hero-titre {
     font-family: 'Orbitron', sans-serif;
     font-size: clamp(2.2rem, 5vw, 3.5rem);
     font-weight: 900;
@@ -1595,7 +1608,7 @@ h2.projet-hero-titre {
     margin: 0;
 }
 
-.projet-hero--magenta h2.projet-hero-titre {
+.projet-hero--magenta h1.projet-hero-titre {
     background: linear-gradient(90deg, rgba(217,79,189,0.9) 0%, #f07cd8 40%, #fdd9f5 50%, #d94fbd 60%, rgba(217,79,189,0.9) 100%);
     background-size: 200% auto;
     -webkit-background-clip: text;
@@ -1604,7 +1617,7 @@ h2.projet-hero-titre {
     animation: gold-shimmer 4s linear infinite;
 }
 
-.projet-hero--bleu h2.projet-hero-titre {
+.projet-hero--bleu h1.projet-hero-titre {
     background: linear-gradient(90deg, #6bbcd8 0%, #b8dff0 40%, #e8f6fb 50%, #87CEEB 60%, #6bbcd8 100%);
     background-size: 200% auto;
     -webkit-background-clip: text;
@@ -2276,7 +2289,7 @@ h3.projet-section-titre {
     margin: 0.5rem auto 4rem;
     padding: 0 2rem;
     text-align: center;
-    color: rgba(240,238,255,0.4);
+    color: rgba(240,238,255,0.62);
     font-size: 0.88rem;
     line-height: 1.7;
 }
